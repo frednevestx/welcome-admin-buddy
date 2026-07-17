@@ -9,24 +9,31 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { supabase } from "@/integrations/supabase/client";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Página não encontrada</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          A página que você procura não existe.
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            Voltar
           </Link>
         </div>
       </div>
@@ -45,26 +52,23 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Algo deu errado
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Tente recarregar a página.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
+            onClick={() => { router.invalidate(); reset(); }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Tentar novamente
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            Início
           </a>
         </div>
       </div>
@@ -77,21 +81,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "LUUD — Descubra seu lucro" },
+      { name: "description", content: "Conecte seu iFood, registre seus custos e descubra quanto realmente sobra em cada pedido. Inteligência financeira premium para restaurantes." },
+      { property: "og:title", content: "LUUD — Descubra seu lucro" },
+      { property: "og:description", content: "Conecte seu iFood, registre seus custos e descubra quanto realmente sobra em cada pedido. Inteligência financeira premium para restaurantes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "LUUD — Descubra seu lucro" },
+      { name: "twitter:description", content: "Conecte seu iFood, registre seus custos e descubra quanto realmente sobra em cada pedido. Inteligência financeira premium para restaurantes." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d8b8a98f-3c0d-4109-a4dc-dee4e375d578/id-preview-7b64020b--4081ff28-8b0b-487b-9dee-42d9ac160cc7.lovable.app-1784226137757.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d8b8a98f-3c0d-4109-a4dc-dee4e375d578/id-preview-7b64020b--4081ff28-8b0b-487b-9dee-42d9ac160cc7.lovable.app-1784226137757.png" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,
@@ -102,7 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR" className="dark">
       <head>
         <HeadContent />
       </head>
@@ -116,11 +119,28 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Apply saved theme as early as possible on the client
+    try {
+      const mode = localStorage.getItem("sf.theme.mode") || "light";
+      const accent = localStorage.getItem("sf.theme.accent") || "green";
+      import("@/hooks/use-theme").then((m) => m.applyTheme(mode as any, accent as any));
+    } catch {}
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
