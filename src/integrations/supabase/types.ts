@@ -385,28 +385,52 @@ export type Database = {
       }
       restaurants: {
         Row: {
+          accent_color: string | null
           avatar_url: string | null
+          cidade: string | null
+          cnpj: string | null
           created_at: string
+          email: string | null
+          estado: string | null
           id: string
           name: string
+          onboarding_completed: boolean
           owner_id: string
+          razao_social: string | null
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
+          accent_color?: string | null
           avatar_url?: string | null
+          cidade?: string | null
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
+          estado?: string | null
           id?: string
           name: string
+          onboarding_completed?: boolean
           owner_id: string
+          razao_social?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
+          accent_color?: string | null
           avatar_url?: string | null
+          cidade?: string | null
+          cnpj?: string | null
           created_at?: string
+          email?: string | null
+          estado?: string | null
           id?: string
           name?: string
+          onboarding_completed?: boolean
           owner_id?: string
+          razao_social?: string | null
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
