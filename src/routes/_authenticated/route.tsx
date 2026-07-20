@@ -59,7 +59,9 @@ function AuthenticatedLayout() {
           </main>
         </div>
       </div>
-      {!loading && !restaurant && <OnboardingDialog onCreated={() => refetch()} />}
+      {!loading && (!restaurant || !restaurant.onboarding_completed) && (
+        <OnboardingDialog onCreated={() => refetch()} />
+      )}
     </SidebarProvider>
   );
 }
