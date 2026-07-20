@@ -119,41 +119,6 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
     </SidebarGroup>
   );
 
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="h-8 w-8 rounded-lg grid place-items-center shrink-0" style={{ background: "var(--gradient-primary)" }}>
-            <Wallet className="h-4 w-4 text-primary-foreground" />
-          </div>
-  const { restaurant: r, refetch } = useRestaurant();
-  const fileRef = useRef<HTMLInputElement | null>(null);
-  const [uploading, setUploading] = useState(false);
-
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !r?.id) return;
-    setUploading(true);
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("Sessão expirada");
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${u.user.id}/${r.id}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("restaurant-avatars").upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
-      const { data: signed, error: sErr } = await supabase.storage.from("restaurant-avatars").createSignedUrl(path, 60 * 60 * 24 * 365);
-      if (sErr) throw sErr;
-      const { error: updErr } = await supabase.from("restaurants").update({ avatar_url: signed.signedUrl }).eq("id", r.id);
-      if (updErr) throw updErr;
-      toast.success("Foto atualizada!");
-      await refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto");
-    } finally {
-      setUploading(false);
-    }
-  }
 
   return (
     <Sidebar collapsible="icon">
