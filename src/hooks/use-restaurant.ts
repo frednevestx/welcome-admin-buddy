@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface RestaurantInfo {
   profile: { id: string; restaurant_id: string | null; full_name: string | null; email: string | null } | null;
-  restaurant: { id: string; name: string; owner_id: string } | null;
+  restaurant: { id: string; name: string; owner_id: string; avatar_url: string | null } | null;
   loading: boolean;
 }
 
@@ -18,11 +18,11 @@ export function useRestaurant() {
         .select("id, restaurant_id, full_name, email")
         .eq("id", userData.user.id)
         .maybeSingle();
-      let restaurant: { id: string; name: string; owner_id: string } | null = null;
+      let restaurant: { id: string; name: string; owner_id: string; avatar_url: string | null } | null = null;
       if (profile?.restaurant_id) {
         const { data: r } = await supabase
           .from("restaurants")
-          .select("id, name, owner_id")
+          .select("id, name, owner_id, avatar_url")
           .eq("id", profile.restaurant_id)
           .maybeSingle();
         restaurant = r;
