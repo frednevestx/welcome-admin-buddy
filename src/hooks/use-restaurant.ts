@@ -14,6 +14,7 @@ export interface Restaurant {
   email: string | null;
   accent_color: string | null;
   onboarding_completed: boolean;
+  tour_completed: boolean;
 }
 
 export function useRestaurant() {
