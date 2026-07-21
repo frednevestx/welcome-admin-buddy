@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PLAN_FEATURES, PLAN_LABEL, PLAN_PRICES } from "@/lib/plan-features";
 import { cn } from "@/lib/utils";
+import heroImage from "@/assets/hero-luud.jpg";
 import {
   TrendingUp, TrendingDown, PiggyBank, ShoppingBag,
   BarChart3, Bell, CheckCircle2, ArrowRight, Sparkles, Star, Crown,
