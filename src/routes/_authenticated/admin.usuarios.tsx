@@ -52,6 +52,11 @@ function AdminUsersPage() {
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<PlanTier>("pro");
   const [days, setDays] = useState<number>(30);
+  const [chatUser, setChatUser] = useState<{ id: string; name: string } | null>(null);
+  const { data: currentUser } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user,
+  });
 
   const { data: rows, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -245,6 +250,15 @@ function AdminUsersPage() {
                       ) : "—"}
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setChatUser({ id: r.user_id, name: r.full_name || r.email || r.user_id.slice(0, 8) })}
+                        className="gap-1"
+                        title="Abrir chat de suporte com este usuário"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" /> Chat
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => extend.mutate({ user_id: r.user_id, d: 30 })}>
                         +30d
                       </Button>
