@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
-import { UserPlus, Link2, Save } from "lucide-react";
+import { UserPlus, Link2, Save, MessageSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { SupportThread } from "@/components/support-thread";
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   ssr: false,
