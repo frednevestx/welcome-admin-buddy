@@ -18,6 +18,8 @@ export function applyTheme(mode: Mode, accent: Accent) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.toggle("dark", mode === "dark");
+  root.classList.toggle("light", mode === "light");
+  root.style.colorScheme = mode;
   const a = ACCENTS[accent];
   root.style.setProperty("--primary", a.primary);
   root.style.setProperty("--ring", a.ring);
