@@ -306,7 +306,7 @@ function AdminUserChat({ userId, currentUserId }: { userId: string; currentUserI
         .eq("user_id", userId)
         .order("last_message_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; subject: string; last_message_at: string }>;
+      return (data ?? []) as unknown as Array<{ id: string; subject: string; last_message_at: string }>;
     },
   });
   const [selected, setSelected] = useState<string | null>(null);
