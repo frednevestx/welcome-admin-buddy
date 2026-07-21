@@ -32,7 +32,7 @@ export function useRestaurant() {
       if (profile?.restaurant_id) {
         const { data: r } = await supabase
           .from("restaurants")
-          .select("id, name, owner_id, avatar_url, razao_social, cnpj, cidade, estado, whatsapp, email, accent_color, onboarding_completed")
+          .select("id, name, owner_id, avatar_url, razao_social, cnpj, cidade, estado, whatsapp, email, accent_color, onboarding_completed, tour_completed")
           .eq("id", profile.restaurant_id)
           .maybeSingle();
         restaurant = (r as Restaurant | null) ?? null;
