@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PLAN_FEATURES, PLAN_LABEL, PLAN_PRICES } from "@/lib/plan-features";
 import { cn } from "@/lib/utils";
+import heroImage from "@/assets/hero-luud.jpg";
 import {
   TrendingUp, TrendingDown, PiggyBank, ShoppingBag,
   BarChart3, Bell, CheckCircle2, ArrowRight, Sparkles, Star, Crown,
@@ -69,6 +70,12 @@ function TopBar() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
+      <div
+        className="absolute inset-0 -z-20 bg-cover bg-center opacity-25"
+        style={{ backgroundImage: `url(${heroImage})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background" aria-hidden="true" />
       <div className="absolute inset-0 -z-10 opacity-90" style={{ background: "var(--gradient-hero)" }} />
       <div className="absolute inset-x-0 top-0 -z-10 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 

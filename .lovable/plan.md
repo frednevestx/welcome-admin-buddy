@@ -1,46 +1,55 @@
-## Objetivo
+## Contexto
 
-Importar o código do ZIP `luud-finance-fix-main` para este projeto vazio, provisionar um novo backend Lovable Cloud (Supabase novo, credenciais novas), aplicar o schema/RLS via migrations, e corrigir os bugs de login (Google + email/senha) e de criação de restaurante. Criar seu usuário `frednevestx@live.com` já como admin.
+Bug do tema claro já foi corrigido nesta mesma mensagem (havia só `.dark`, criei tokens `.light` de verdade). O resto abaixo é escopo novo.
 
-> Importante: como criaremos um Cloud novo, os dados do Supabase antigo (`lipyqhpwynvitfbdhvio`) NÃO serão migrados — só o schema é recriado. Se você precisa dos dados antigos, me diga antes de aprovar.
+## 1. Sistema de Suporte (tickets)
 
-## Passos
+Nova página `/suporte` (usuário) e integração no admin.
 
-1. **Importar código do ZIP**
-   - Copiar `src/`, `public/`, `supabase/`, `components.json`, `package.json`, `bunfig.toml`, `tsconfig.json` e demais arquivos de config do ZIP para este projeto, **excluindo** `.git`, `node_modules`, `.lovable/`, `src/routeTree.gen.ts` e `src/integrations/supabase/client.ts` / `types.ts` (esses últimos serão regerados pelo Cloud novo).
-   - Manter os wrappers de erro atuais (`src/server.ts`, `src/start.ts`) e o `vite.config.ts` deste projeto.
+**Banco (migration):**
+- `support_tickets` — id, user_id, restaurant_id, subject, status (`open`/`awaiting_user`/`awaiting_support`/`resolved`), priority, created_at, updated_at, last_message_at
+- `support_messages` — id, ticket_id, author_id (nullable p/ IA), author_role (`user`/`admin`/`ai`), body, attachments (jsonb com paths), created_at
+- Bucket privado `support-attachments` com RLS (usuário só vê próprios anexos; admin vê todos)
+- RLS: user vê/edita só tickets próprios; admin (`has_role admin`) vê tudo
+- GRANTs para `authenticated` e `service_role`
 
-2. **Provisionar Lovable Cloud novo**
-   - Ativar Cloud (cria projeto Supabase novo com URL/keys novas, injetadas automaticamente em `VITE_SUPABASE_*` / `SUPABASE_*`).
-   - Regenerar `src/integrations/supabase/client.ts` e `types.ts` para o projeto novo.
+**UI usuário (`/suporte`):**
+- Lista de tickets à esquerda, thread à direita (estilo chat, mas assíncrono)
+- Botão "Novo ticket" → assunto + primeira mensagem + anexos (drag-drop imagem/PDF)
+- Aviso: "Resposta em até 12h"
+- Ao enviar mensagem, chama server fn que:
+  1. Salva mensagem
+  2. Se for a 1ª mensagem, roda IA (Lovable AI Gateway, `google/gemini-2.5-flash`) contra FAQ interno (temas simples: como criar restaurante, importar iFood, trocar plano, resetar senha, CMV, calculadora). Se IA tiver confiança alta, posta resposta automática como `author_role='ai'` e marca `awaiting_user`. Senão, deixa `awaiting_support`.
 
-3. **Aplicar schema via migrations**
-   - Rodar as 2 migrations do ZIP (`supabase/migrations/*.sql`) no Cloud novo — cria todas as tabelas (restaurantes, user_roles, categorias, movimentações, planos, etc.), RLS e triggers.
-   - Verificar/adicionar GRANTs no schema `public` (a Data API do Supabase moderno exige GRANTs explícitos).
+**UI admin:**
+- Nova página `/admin/suporte` — inbox de tickets com filtros por status
+- Em `/admin/usuarios`, adicionar ação "Abrir chat" na coluna Ações → abre drawer com thread completa + campo de resposta
 
-4. **Configurar auth**
-   - Habilitar Email/Password no Cloud novo.
-   - Habilitar Google OAuth via `supabase--configure_social_auth` (login com Google pelo broker Lovable — não requer configuração manual de client_id/secret).
-   - Garantir que `_authenticated/route.tsx` gerenciado está correto para o novo Cloud.
+## 2. Tutorial dinâmico (product tour)
 
-5. **Criar seu usuário admin**
-   - Criar `frednevestx@live.com` com senha `Fred2013142536` via Auth Admin API.
-   - Inserir role `admin` na tabela `user_roles` para esse user_id.
+Substituir o slideshow atual do `onboarding-dialog` por tour interativo real:
+- Usar `driver.js` (leve, ~10KB, sem dependência pesada)
+- 10 steps que apontam para elementos reais da UI via `data-tour` attrs: sidebar Dashboard, Movimentações, Importações, Metas, Alertas, CMV (badge PRO), Calculadora Preço (PRO), Lucro Plataforma (PRO), Assistente IA (Premium), Configurações
+- Tour começa após criar restaurante + escolher tema, dispara navegação real entre páginas
+- Botão "Refazer tour" em Configurações
+- Persiste `tour_completed` em `restaurants`
 
-6. **Corrigir bugs específicos**
-   - **Erro de login Google/email**: revisar `src/routes/auth.tsx` para usar `lovable.auth.signInWithOAuth("google", ...)` (broker) em vez de `supabase.auth.signInWithOAuth` direto; confirmar `redirect_uri` público.
-   - **Erro ao criar restaurante**: revisar a rota/fluxo de criação (provavelmente em `onboarding-dialog.tsx` ou `configuracoes.tsx`) para conferir que `user_id` está sendo passado e que RLS/GRANTs permitem o INSERT do usuário autenticado.
-   - Rodar dev server e validar login + criação de restaurante via Playwright.
+## 3. Hero visual da landing (`/`)
+
+Adicionar visual de negócio na home pública:
+- Gerar imagem hero (imagegen premium) — cena minimalista de pessoa em notebook com gráficos financeiros verdes/azuis flutuando ao redor, estilo LUUD (preto + verde neon + azul)
+- Aplicar como background com overlay gradient (`--gradient-hero`) + blur sutil nas bordas
+- Adicionar animações minimalistas: números subindo, linhas de gráfico se desenhando (CSS puro + `animate-fade-in`)
+- Copy reforçando "Descubra seu lucro"
 
 ## Detalhes técnicos
 
-- Migrations: 482 linhas de SQL no arquivo principal (schema completo). Aplicadas via `supabase--migration`.
-- Auth: `@lovable.dev/cloud-auth-js` já está nas deps — Google flui pelo broker.
-- Admin user: criado via `supabaseAdmin.auth.admin.createUser({ email_confirm: true })` + `INSERT INTO user_roles`.
-- `.env` / secrets: não copiar `.env` do ZIP. Todas as chaves do Supabase novo são injetadas automaticamente ao ativar Cloud. Secrets extras (ex: `LOVABLE_API_KEY` para o Assistente IA) serão criados sob demanda.
-- Arquivos preservados deste projeto: `src/server.ts`, `src/start.ts`, `src/lib/error-*.ts`, `vite.config.ts` (wrappers de erro do template atual).
+- IA de auto-resposta: server fn `answerTicketWithAI` chama `openai/gpt-5.5` via Lovable AI Gateway com prompt contendo FAQ + mensagem do usuário; retorna `{ shouldAnswer: boolean, answer: string }`
+- Anexos: upload direto pro bucket via signed URL, path `{user_id}/{ticket_id}/{filename}`
+- Tour: `data-tour="dashboard"` etc em cada `NavLink` da sidebar
+- Landing hero: `src/assets/hero-luud.jpg` (1920x1024, premium quality porque é a primeira impressão)
 
-## O que NÃO será feito
+## Fora de escopo
 
-- Migração de dados do Supabase antigo (`lipyqhpwynvitfbdhvio`).
-- Reuso das chaves antigas — tudo passa a apontar para o Cloud novo deste projeto.
+- Notificações push/email de nova resposta em ticket (posso adicionar depois se quiser)
+- Multilíngua no tutorial (fica só em PT-BR)

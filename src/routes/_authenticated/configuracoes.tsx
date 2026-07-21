@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useTheme, type Accent, type Mode } from "@/hooks/use-theme";
-import { Sun, Moon, Check, Camera, Loader2 } from "lucide-react";
+import { Sun, Moon, Check, Camera, Loader2, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RestaurantAvatar } from "@/components/restaurant-avatar";
+import { useProductTour } from "@/hooks/use-product-tour";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: SettingsPage,
@@ -45,6 +46,7 @@ function SettingsPage() {
   const { mode, accent, setMode, setAccent } = useTheme();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const startTour = useProductTour();
 
   useEffect(() => {
     if (!restaurant) return;
@@ -234,6 +236,18 @@ function SettingsPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="pt-2 border-t border-border/60">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => startTour({ restaurantId: restaurant?.id, onDone: () => refetch() })}
+          >
+            <PlayCircle className="h-4 w-4" /> Refazer tour da plataforma
+          </Button>
         </div>
       </Card>
     </div>

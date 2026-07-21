@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
-import { UserPlus, Link2, Save } from "lucide-react";
+import { UserPlus, Link2, Save, MessageSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { SupportThread } from "@/components/support-thread";
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
   ssr: false,
@@ -50,6 +52,11 @@ function AdminUsersPage() {
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<PlanTier>("pro");
   const [days, setDays] = useState<number>(30);
+  const [chatUser, setChatUser] = useState<{ id: string; name: string } | null>(null);
+  const { data: currentUser } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user,
+  });
 
   const { data: rows, isLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -243,6 +250,15 @@ function AdminUsersPage() {
                       ) : "—"}
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setChatUser({ id: r.user_id, name: r.full_name || r.email || r.user_id.slice(0, 8) })}
+                        className="gap-1"
+                        title="Abrir chat de suporte com este usuário"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" /> Chat
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => extend.mutate({ user_id: r.user_id, d: 30 })}>
                         +30d
                       </Button>
@@ -262,6 +278,59 @@ function AdminUsersPage() {
           </table>
         </div>
       </Card>
+
+      <Dialog open={!!chatUser} onOpenChange={(o) => !o && setChatUser(null)}>
+        <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+          <DialogHeader className="px-5 pt-5">
+            <DialogTitle>Suporte — {chatUser?.name}</DialogTitle>
+            <DialogDescription>Converse diretamente com o usuário. Mensagens aparecem como "Suporte LUUD".</DialogDescription>
+          </DialogHeader>
+          {chatUser && currentUser && (
+            <div className="h-[520px] border-t border-border/60 mt-3">
+              <AdminUserChat userId={chatUser.id} currentUserId={currentUser.id} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function AdminUserChat({ userId, currentUserId }: { userId: string; currentUserId: string }) {
+  const { data: tickets, isLoading } = useQuery({
+    queryKey: ["admin-user-tickets", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("support_tickets" as any)
+        .select("id, subject, last_message_at")
+        .eq("user_id", userId)
+        .order("last_message_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{ id: string; subject: string; last_message_at: string }>;
+    },
+  });
+  const [selected, setSelected] = useState<string | null>(null);
+  const activeId = selected ?? tickets?.[0]?.id ?? null;
+
+  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
+  if (!tickets || tickets.length === 0) return <div className="p-6 text-sm text-muted-foreground">Este usuário ainda não abriu tickets.</div>;
+
+  return (
+    <div className="grid grid-cols-[200px_1fr] h-full">
+      <div className="border-r border-border/60 overflow-y-auto">
+        {tickets.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setSelected(t.id)}
+            className={`w-full text-left px-3 py-2 text-xs border-b border-border/40 hover:bg-secondary/60 ${activeId === t.id ? "bg-secondary" : ""}`}
+          >
+            <div className="font-medium truncate">{t.subject}</div>
+          </button>
+        ))}
+      </div>
+      <div className="min-h-0">
+        {activeId && <SupportThread ticketId={activeId} currentUserId={currentUserId} isAdmin />}
+      </div>
     </div>
   );
 }

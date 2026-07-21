@@ -22,6 +22,7 @@ import {
   History,
   Sliders,
   Bot,
+  LifeBuoy,
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,13 +42,13 @@ import { usePlan, type PlanTier } from "@/hooks/use-plan";
 import { cn } from "@/lib/utils";
 import { RestaurantAvatar } from "@/components/restaurant-avatar";
 
-type Item = { title: string; url: string; icon: typeof LayoutDashboard; min?: PlanTier };
+type Item = { title: string; url: string; icon: typeof LayoutDashboard; min?: PlanTier; tour?: string };
 
 const basico: Item[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Metas", url: "/metas", icon: Target },
-  { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft },
-  { title: "Importações", url: "/importacoes", icon: Upload },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, tour: "dashboard" },
+  { title: "Metas", url: "/metas", icon: Target, tour: "metas" },
+  { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft, tour: "movimentacoes" },
+  { title: "Importações", url: "/importacoes", icon: Upload, tour: "importacoes" },
   { title: "Categorias", url: "/categorias", icon: Tag },
   { title: "Comparativos", url: "/comparativos", icon: BarChart3 },
   { title: "Evolução", url: "/evolucao", icon: TrendingUp },
@@ -55,9 +56,9 @@ const basico: Item[] = [
 ];
 
 const pro: Item[] = [
-  { title: "CMV", url: "/cmv", icon: PieChart, min: "pro" },
-  { title: "Calculadora de Preço", url: "/calculadora-preco", icon: Calculator, min: "pro" },
-  { title: "Lucro por Plataforma", url: "/lucro-plataforma", icon: BarChart3, min: "pro" },
+  { title: "CMV", url: "/cmv", icon: PieChart, min: "pro", tour: "cmv" },
+  { title: "Calculadora de Preço", url: "/calculadora-preco", icon: Calculator, min: "pro", tour: "calculadora-preco" },
+  { title: "Lucro por Plataforma", url: "/lucro-plataforma", icon: BarChart3, min: "pro", tour: "lucro-plataforma" },
   { title: "Fornecedores", url: "/fornecedores", icon: Package, min: "pro" },
   { title: "Histórico de Preços", url: "/historico-precos", icon: History, min: "pro" },
   { title: "Simulador de Lucro", url: "/simulador", icon: Sliders, min: "pro" },
@@ -65,12 +66,13 @@ const pro: Item[] = [
 ];
 
 const premium: Item[] = [
-  { title: "Assistente IA", url: "/assistente-ia", icon: Bot, min: "premium" },
+  { title: "Assistente IA", url: "/assistente-ia", icon: Bot, min: "premium", tour: "assistente-ia" },
 ];
 
 const conta: Item[] = [
+  { title: "Suporte", url: "/suporte", icon: LifeBuoy, tour: "suporte" },
   { title: "Planos", url: "/planos", icon: CreditCard },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, tour: "configuracoes" },
 ];
 
 export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: string; onSignOut: () => void }) {
@@ -91,7 +93,7 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
             return (
               <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                  <Link to={item.url}>
+                  <Link to={item.url} data-tour={item.tour ? `menu-${item.tour}` : undefined}>
                     <item.icon className={cn("h-4 w-4", locked && "opacity-60")} />
                     <span className={cn("flex-1", locked && "opacity-60")}>{item.title}</span>
                     {item.min && !collapsed && (
@@ -119,7 +121,7 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-3">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
+        <div className="flex items-center gap-2.5 px-2 py-1.5" data-tour="brand">
           <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0 border border-border/60 bg-secondary grid place-items-center">
             <img src={luudLogo.url} alt="LUUD" className="h-full w-full object-cover" />
           </div>
