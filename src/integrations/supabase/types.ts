@@ -397,6 +397,7 @@ export type Database = {
           onboarding_completed: boolean
           owner_id: string
           razao_social: string | null
+          tour_completed: boolean
           updated_at: string
           whatsapp: string | null
         }
@@ -413,6 +414,7 @@ export type Database = {
           onboarding_completed?: boolean
           owner_id: string
           razao_social?: string | null
+          tour_completed?: boolean
           updated_at?: string
           whatsapp?: string | null
         }
@@ -429,6 +431,7 @@ export type Database = {
           onboarding_completed?: boolean
           owner_id?: string
           razao_social?: string | null
+          tour_completed?: boolean
           updated_at?: string
           whatsapp?: string | null
         }
@@ -585,6 +588,88 @@ export type Database = {
           },
         ]
       }
+      support_messages: {
+        Row: {
+          attachments: Json
+          author_id: string | null
+          author_role: Database["public"]["Enums"]["ticket_author_role"]
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json
+          author_id?: string | null
+          author_role: Database["public"]["Enums"]["ticket_author_role"]
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json
+          author_id?: string | null
+          author_role?: Database["public"]["Enums"]["ticket_author_role"]
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          priority: string
+          restaurant_id: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          priority?: string
+          restaurant_id?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          priority?: string
+          restaurant_id?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -720,6 +805,8 @@ export type Database = {
       plan_tier: "basico" | "pro" | "premium"
       sale_source: "ifood" | "99food" | "loja" | "whatsapp"
       subscription_status: "trialing" | "active" | "expired" | "canceled"
+      ticket_author_role: "user" | "admin" | "ai"
+      ticket_status: "open" | "awaiting_user" | "awaiting_support" | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -854,6 +941,8 @@ export const Constants = {
       plan_tier: ["basico", "pro", "premium"],
       sale_source: ["ifood", "99food", "loja", "whatsapp"],
       subscription_status: ["trialing", "active", "expired", "canceled"],
+      ticket_author_role: ["user", "admin", "ai"],
+      ticket_status: ["open", "awaiting_user", "awaiting_support", "resolved"],
     },
   },
 } as const
