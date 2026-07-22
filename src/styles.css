@@ -101,30 +101,31 @@
 
   --border: oklch(1 0 0 / 0.08);
   --input: oklch(1 0 0 / 0.1);
-  --ring: oklch(0.9 0.28 135);
+  --ring: oklch(0.82 0.16 172);
 
-  --chart-1: oklch(0.9 0.28 135);
+  --chart-1: oklch(0.82 0.16 172);
   --chart-2: oklch(0.65 0.19 255);
-  --chart-3: oklch(0.78 0.16 75);
+  --chart-3: oklch(0.92 0.18 158);
   --chart-4: oklch(0.7 0.2 305);
   --chart-5: oklch(0.65 0.22 27);
 
-  --sidebar: oklch(0.155 0.006 265);
+  --sidebar: oklch(0.14 0.03 240);
   --sidebar-foreground: oklch(0.85 0.005 250);
-  --sidebar-primary: oklch(0.9 0.28 135);
-  --sidebar-primary-foreground: oklch(0.14 0.005 265);
-  --sidebar-accent: oklch(0.22 0.008 265);
+  --sidebar-primary: oklch(0.82 0.16 172);
+  --sidebar-primary-foreground: oklch(0.14 0.02 220);
+  --sidebar-accent: oklch(0.22 0.03 230);
   --sidebar-accent-foreground: oklch(0.985 0.002 250);
   --sidebar-border: oklch(1 0 0 / 0.08);
-  --sidebar-ring: oklch(0.9 0.28 135);
+  --sidebar-ring: oklch(0.82 0.16 172);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.9 0.28 135) 0%, oklch(0.65 0.19 255) 100%);
-  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.9 0.28 135 / 0.18), transparent 60%),
-                   radial-gradient(ellipse 60% 50% at 80% 20%, oklch(0.65 0.19 255 / 0.14), transparent 60%);
-  --gradient-surface: linear-gradient(180deg, oklch(0.19 0.006 265) 0%, oklch(0.155 0.006 265) 100%);
-  --gradient-glass: linear-gradient(180deg, oklch(1 0 0 / 0.04) 0%, oklch(1 0 0 / 0.01) 100%);
+  --gradient-primary: linear-gradient(135deg, oklch(0.82 0.16 172) 0%, oklch(0.92 0.18 158) 100%);
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.82 0.16 172 / 0.22), transparent 60%),
+                   radial-gradient(ellipse 60% 50% at 85% 15%, oklch(0.92 0.18 158 / 0.16), transparent 60%),
+                   radial-gradient(ellipse 50% 40% at 15% 80%, oklch(0.65 0.19 255 / 0.10), transparent 60%);
+  --gradient-surface: linear-gradient(180deg, oklch(0.22 0.03 225) 0%, oklch(0.17 0.03 240) 100%);
+  --gradient-glass: linear-gradient(180deg, oklch(1 0 0 / 0.05) 0%, oklch(1 0 0 / 0.01) 100%);
   --shadow-card: 0 1px 0 0 oklch(1 0 0 / 0.05) inset, 0 20px 40px -20px oklch(0 0 0 / 0.6);
-  --shadow-glow: 0 0 40px -8px oklch(0.9 0.28 135 / 0.35);
+  --shadow-glow: 0 0 60px -10px oklch(0.82 0.16 172 / 0.55);
   --shadow-glow-blue: 0 0 40px -8px oklch(0.65 0.19 255 / 0.35);
 }
 
