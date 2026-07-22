@@ -74,10 +74,10 @@
   --popover: oklch(0.175 0.006 265);
   --popover-foreground: oklch(0.985 0.002 250);
 
-  /* Verde Neon #8EFF3A */
-  --primary: oklch(0.9 0.28 135);
-  --primary-foreground: oklch(0.14 0.005 265);
-  --primary-glow: oklch(0.9 0.28 135 / 0.35);
+  /* Neon Mint #2DD4A8 → glow #73FFB8 */
+  --primary: oklch(0.82 0.16 172);
+  --primary-foreground: oklch(0.14 0.02 220);
+  --primary-glow: oklch(0.92 0.18 158 / 0.5);
 
   --secondary: oklch(0.22 0.008 265);
   --secondary-foreground: oklch(0.985 0.002 250);
