@@ -64,14 +64,14 @@
 :root {
   --radius: 0.875rem;
 
-  /* Preto #0B0B0D */
-  --background: oklch(0.14 0.005 265);
+  /* Base Neon Mint: navy #0d1b2a + surface #1b4332 */
+  --background: oklch(0.16 0.03 245);
   --foreground: oklch(0.985 0.002 250);
 
-  --card: oklch(0.175 0.006 265);
+  --card: oklch(0.2 0.03 230);
   --card-foreground: oklch(0.985 0.002 250);
 
-  --popover: oklch(0.175 0.006 265);
+  --popover: oklch(0.2 0.03 230);
   --popover-foreground: oklch(0.985 0.002 250);
 
   /* Neon Mint #2DD4A8 → glow #73FFB8 */
