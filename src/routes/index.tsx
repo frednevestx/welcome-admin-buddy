@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PLAN_FEATURES, PLAN_LABEL, PLAN_PRICES } from "@/lib/plan-features";
 import { cn } from "@/lib/utils";
+import rafaelPhoto from "@/assets/testimonial-rafael.jpg.asset.json";
+import julianaPhoto from "@/assets/testimonial-juliana.jpg.asset.json";
+import diegoPhoto from "@/assets/testimonial-diego.jpg.asset.json";
 import {
   TrendingUp, TrendingDown, PiggyBank,
   BarChart3, Bell, CheckCircle2, ArrowRight, Sparkles, Star, Crown,
@@ -32,6 +35,16 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  // Landing sempre com paleta premium dark, independente do tema escolhido pelo usuário logado.
+  useEffect(() => {
+    const html = document.documentElement;
+    const hadLight = html.classList.contains("light");
+    html.classList.remove("light");
+    return () => {
+      if (hadLight) html.classList.add("light");
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden antialiased">
       <TopBar />
