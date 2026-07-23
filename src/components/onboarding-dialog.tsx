@@ -146,7 +146,7 @@ export function OnboardingDialog({ onCreated }: { onCreated: () => void }) {
           </DialogDescription>
         </DialogHeader>
         <div className="pt-2 pb-1 grid gap-2 text-sm text-muted-foreground">
-          <div className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Dashboard, Movimentações, Importações, Metas</div>
+          <div className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Dashboard, Movimentações, Entrada de Vendas, Metas</div>
           <div className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Recursos <strong>PRO</strong>: CMV, Preço, Lucro por plataforma</div>
           <div className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" /> <strong>Premium IA</strong>, Suporte e Configurações</div>
         </div>
