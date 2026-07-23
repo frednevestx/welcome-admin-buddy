@@ -40,10 +40,16 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    const html = document.documentElement;
+    const hadLight = html.classList.contains("light");
+    html.classList.remove("light");
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") window.location.assign("/dashboard");
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      sub.subscription.unsubscribe();
+      if (hadLight) html.classList.add("light");
+    };
   }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {

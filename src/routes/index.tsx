@@ -112,7 +112,7 @@ function Hero() {
             </div>
             <h1 className="font-display text-5xl md:text-6xl lg:text-[4.25rem] font-bold tracking-tight leading-[1.02]">
               Você vende muito.<br />
-              <span className="bg-gradient-to-r from-primary via-primary to-primary-glow bg-clip-text text-transparent">
+              <span className="text-primary">
                 Mas quanto realmente sobra?
               </span>
             </h1>
@@ -839,7 +839,7 @@ function FinalCTA() {
         <h2 className="font-display text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
           Todo mês que passa <br />
           sem saber seu lucro real, <br />
-          <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">é dinheiro que você perde</span>.
+          <span className="text-primary">é dinheiro que você perde</span>.
         </h2>
         <p className="text-muted-foreground mt-6 max-w-xl mx-auto text-lg">
           Conhecer o lucro real é o primeiro passo para crescer com segurança.
