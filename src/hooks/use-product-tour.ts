@@ -32,8 +32,8 @@ const STEPS: TourStepDef[] = [
   },
   {
     selector: '[data-tour="menu-importacoes"]',
-    title: "3. Importações",
-    description: "Importe planilhas do iFood e outros sistemas para consolidar tudo automaticamente.",
+    title: "3. Entrada de Vendas",
+    description: "Importe planilhas do iFood/99Food ou preencha a planilha inteligente para lançar pedidos manuais.",
     side: "right",
   },
   {
