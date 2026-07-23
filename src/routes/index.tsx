@@ -839,7 +839,7 @@ function FinalCTA() {
         <h2 className="font-display text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
           Todo mês que passa <br />
           sem saber seu lucro real, <br />
-          <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">é dinheiro que você perde</span>.
+          <span className="text-primary">é dinheiro que você perde</span>.
         </h2>
         <p className="text-muted-foreground mt-6 max-w-xl mx-auto text-lg">
           Conhecer o lucro real é o primeiro passo para crescer com segurança.
