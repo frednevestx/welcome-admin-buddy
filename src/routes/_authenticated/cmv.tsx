@@ -55,7 +55,7 @@ function CmvPage() {
       const { data } = await supabase.from("movements")
         .select("amount, movement_date, category_id, categories(name)")
         .eq("restaurant_id", restaurant!.id)
-        .eq("type", "compra")
+        .eq("type", "saida")
         .gte("movement_date", rangeFrom)
         .order("movement_date");
       return (data ?? []) as any[];
