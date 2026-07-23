@@ -600,16 +600,19 @@ function SocialProof() {
   const items = [
     {
       name: "Rafael Moraes", role: "Proprietário", restaurant: "Burger House", city: "São Paulo, SP",
+      photo: rafaelPhoto.url,
       text: "Descobri que perdia R$ 4.300 por mês com embalagens. Em 30 dias virei o jogo.",
       metrics: [{ label: "Lucro", value: "+22%" }, { label: "Economia/mês", value: "R$ 4.3k" }],
     },
     {
       name: "Juliana Ferreira", role: "Sócia", restaurant: "Pizzaria Bella Massa", city: "Campinas, SP",
+      photo: julianaPhoto.url,
       text: "Identifiquei produtos que davam prejuízo e reajustei preços com a IA sem perder cliente.",
       metrics: [{ label: "Margem", value: "+31%" }, { label: "Ticket médio", value: "+R$ 8" }],
     },
     {
       name: "Diego Cardoso", role: "CEO", restaurant: "Sushi Express", city: "Curitiba, PR",
+      photo: diegoPhoto.url,
       text: "Finalmente entendi meu lucro real. A LUUD mostra o que o iFood não mostra.",
       metrics: [{ label: "Lucro", value: "+18%" }, { label: "Tempo em planilha", value: "-90%" }],
     },
@@ -629,6 +632,21 @@ function SocialProof() {
               className="rounded-2xl border border-border bg-card/60 backdrop-blur p-6 flex flex-col hover:border-primary/40 hover:-translate-y-1 transition-all duration-300"
               style={{ boxShadow: "var(--shadow-card)" }}
             >
+              <div className="flex items-center gap-3 mb-4">
+                <img
+                  src={t.photo}
+                  alt={`${t.name} — ${t.restaurant}`}
+                  loading="lazy"
+                  width={56}
+                  height={56}
+                  className="h-14 w-14 rounded-full object-cover border-2 border-primary/30 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold truncate">{t.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{t.role} • {t.restaurant}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{t.city}</div>
+                </div>
+              </div>
               <div className="flex gap-0.5 mb-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-primary text-primary" />
@@ -642,10 +660,6 @@ function SocialProof() {
                     <div className="font-display text-lg font-bold text-primary">{m.value}</div>
                   </div>
                 ))}
-              </div>
-              <div className="mt-5 pt-5 border-t border-border">
-                <div className="text-sm font-semibold truncate">{t.name}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{t.role} • {t.restaurant} — {t.city}</div>
               </div>
             </div>
           ))}
