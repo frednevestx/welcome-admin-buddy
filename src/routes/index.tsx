@@ -112,7 +112,7 @@ function Hero() {
             </div>
             <h1 className="font-display text-5xl md:text-6xl lg:text-[4.25rem] font-bold tracking-tight leading-[1.02]">
               Você vende muito.<br />
-              <span className="bg-gradient-to-r from-primary via-primary to-primary-glow bg-clip-text text-transparent">
+              <span className="text-primary">
                 Mas quanto realmente sobra?
               </span>
             </h1>
