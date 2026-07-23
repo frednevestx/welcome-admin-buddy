@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean
+          movement_type: Database["public"]["Enums"]["movement_type"] | null
           name: string
           restaurant_id: string
         }
@@ -26,6 +27,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          movement_type?: Database["public"]["Enums"]["movement_type"] | null
           name: string
           restaurant_id: string
         }
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          movement_type?: Database["public"]["Enums"]["movement_type"] | null
           name?: string
           restaurant_id?: string
         }
@@ -801,7 +804,7 @@ export type Database = {
       app_role: "admin" | "user"
       billing_cycle: "mensal" | "semestral" | "anual"
       goal_period: "diaria" | "semanal" | "mensal"
-      movement_type: "compra" | "despesa"
+      movement_type: "entrada" | "saida" | "transferencia"
       plan_tier: "basico" | "pro" | "premium"
       sale_source: "ifood" | "99food" | "loja" | "whatsapp"
       subscription_status: "trialing" | "active" | "expired" | "canceled"
@@ -937,7 +940,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       billing_cycle: ["mensal", "semestral", "anual"],
       goal_period: ["diaria", "semanal", "mensal"],
-      movement_type: ["compra", "despesa"],
+      movement_type: ["entrada", "saida", "transferencia"],
       plan_tier: ["basico", "pro", "premium"],
       sale_source: ["ifood", "99food", "loja", "whatsapp"],
       subscription_status: ["trialing", "active", "expired", "canceled"],

@@ -73,7 +73,7 @@ function FornecedoresPage() {
         .from("movements")
         .select("supplier_id, amount, movement_date")
         .eq("restaurant_id", restaurant!.id)
-        .eq("type", "compra")
+        .eq("type", "saida")
         .not("supplier_id", "is", null);
       const map = new Map<string, SupplierStats>();
       (mov ?? []).forEach((m: any) => {

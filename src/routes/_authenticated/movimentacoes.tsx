@@ -22,17 +22,25 @@ export const Route = createFileRoute("/_authenticated/movimentacoes")({
   component: MovementsPage,
 });
 
+type MovementType = "entrada" | "saida" | "transferencia";
+
+const TYPE_LABEL: Record<MovementType, string> = {
+  entrada: "Entrada",
+  saida: "Saída",
+  transferencia: "Transferência",
+};
+
 type MovementRow = {
   id: string;
   movement_date: string;
   description: string | null;
   amount: number;
-  type: "compra" | "despesa";
+  type: MovementType;
   payment_method: string | null;
   notes: string | null;
   category_id: string | null;
   supplier_id: string | null;
-  categories?: { id: string; name: string } | null;
+  categories?: { id: string; name: string; movement_type: MovementType | null } | null;
   suppliers?: { name: string } | null;
 };
 
@@ -50,7 +58,7 @@ function MovementsPage() {
     queryFn: async () => {
       const rid = restaurant!.id;
       const { data } = await supabase.from("movements")
-        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, categories(id, name), suppliers(name)")
+        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, categories(id, name, movement_type), suppliers(name)")
         .eq("restaurant_id", rid)
         .gte("movement_date", period.from).lte("movement_date", period.to)
         .order("movement_date", { ascending: false });
@@ -114,9 +122,10 @@ function MovementsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard icon={<ShoppingCart className="h-4 w-4" />} label="Compras" value={formatNumber(totalCount)} />
-        <SummaryCard icon={<DollarSign className="h-4 w-4" />} label="Valor Gasto" value={formatBRL(totalValue)} />
-        <SummaryCard icon={<BarChart2 className="h-4 w-4" />} label="Média por compra" value={formatBRL(avg)} />
+        <SummaryCard icon={<ShoppingCart className="h-4 w-4" />} label="Lançamentos" value={formatNumber(totalCount)} />
+        <SummaryCard icon={<DollarSign className="h-4 w-4" />} label="Valor total" value={formatBRL(totalValue)} />
+        <SummaryCard icon={<BarChart2 className="h-4 w-4" />} label="Média por lançamento" value={formatBRL(avg)} />
+
       </div>
 
       <Card className="p-5">
@@ -170,7 +179,7 @@ function MovementsPage() {
                 <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
                 <TableCell>{r.categories?.name || "—"}</TableCell>
                 <TableCell>{r.suppliers?.name || "—"}</TableCell>
-                <TableCell className="capitalize text-muted-foreground">{r.type}</TableCell>
+                <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type]}</TableCell>
                 <TableCell className="text-right tabular-nums font-medium">{formatBRL(r.amount)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
@@ -234,7 +243,7 @@ function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: str
 
 function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () => void }) {
   const { restaurant } = useRestaurant();
-  const [type, setType] = useState<"compra" | "despesa">(initial?.type ?? "compra");
+  const [type, setType] = useState<MovementType>(initial?.type ?? "saida");
   const [categoryId, setCategoryId] = useState<string>(initial?.category_id ?? "");
   const [supplier, setSupplier] = useState(initial?.suppliers?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -247,10 +256,18 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
     enabled: !!restaurant?.id,
     queryKey: ["cats", restaurant?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("id, name").eq("restaurant_id", restaurant!.id).order("name");
-      return data ?? [];
+      const { data } = await supabase
+        .from("categories")
+        .select("id, name, movement_type")
+        .eq("restaurant_id", restaurant!.id)
+        .order("name");
+      return (data ?? []) as { id: string; name: string; movement_type: MovementType | null }[];
     },
   });
+
+  const filteredCats = (cats.data ?? []).filter(
+    (c) => c.movement_type === type || c.movement_type === null,
+  );
 
   const save = useMutation({
     mutationFn: async () => {
@@ -295,11 +312,12 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>Tipo</Label>
-          <Select value={type} onValueChange={(v) => setType(v as any)}>
+          <Select value={type} onValueChange={(v) => { setType(v as MovementType); setCategoryId(""); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="compra">Compra</SelectItem>
-              <SelectItem value="despesa">Despesa</SelectItem>
+              <SelectItem value="entrada">Entrada</SelectItem>
+              <SelectItem value="saida">Saída</SelectItem>
+              <SelectItem value="transferencia">Transferência</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -311,12 +329,16 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
       <div className="space-y-2">
         <Label>Categoria</Label>
         <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger><SelectValue placeholder="Escolha uma categoria" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={`Escolha uma categoria de ${TYPE_LABEL[type]}`} /></SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {filteredCats.length === 0 && (
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhuma categoria para este tipo.</div>
+            )}
+            {filteredCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>Fornecedor</Label>
