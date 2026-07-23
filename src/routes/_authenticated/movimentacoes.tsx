@@ -122,9 +122,10 @@ function MovementsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard icon={<ShoppingCart className="h-4 w-4" />} label="Compras" value={formatNumber(totalCount)} />
-        <SummaryCard icon={<DollarSign className="h-4 w-4" />} label="Valor Gasto" value={formatBRL(totalValue)} />
-        <SummaryCard icon={<BarChart2 className="h-4 w-4" />} label="Média por compra" value={formatBRL(avg)} />
+        <SummaryCard icon={<ShoppingCart className="h-4 w-4" />} label="Lançamentos" value={formatNumber(totalCount)} />
+        <SummaryCard icon={<DollarSign className="h-4 w-4" />} label="Valor total" value={formatBRL(totalValue)} />
+        <SummaryCard icon={<BarChart2 className="h-4 w-4" />} label="Média por lançamento" value={formatBRL(avg)} />
+
       </div>
 
       <Card className="p-5">
