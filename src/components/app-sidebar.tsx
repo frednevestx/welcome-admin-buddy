@@ -23,6 +23,7 @@ import {
   Sliders,
   Bot,
   LifeBuoy,
+  Instagram,
 } from "lucide-react";
 import {
   Sidebar,
@@ -169,6 +170,17 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sair</span>}
         </Button>
+        {!collapsed && (
+          <a
+            href="https://www.instagram.com/luud.app/"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-sidebar-accent transition-colors"
+          >
+            <Instagram className="h-3.5 w-3.5" />
+            <span>@luud.app</span>
+          </a>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
