@@ -242,7 +242,7 @@ function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: str
 
 function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () => void }) {
   const { restaurant } = useRestaurant();
-  const [type, setType] = useState<"compra" | "despesa">(initial?.type ?? "compra");
+  const [type, setType] = useState<MovementType>(initial?.type ?? "saida");
   const [categoryId, setCategoryId] = useState<string>(initial?.category_id ?? "");
   const [supplier, setSupplier] = useState(initial?.suppliers?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -255,10 +255,18 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
     enabled: !!restaurant?.id,
     queryKey: ["cats", restaurant?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("id, name").eq("restaurant_id", restaurant!.id).order("name");
-      return data ?? [];
+      const { data } = await supabase
+        .from("categories")
+        .select("id, name, movement_type")
+        .eq("restaurant_id", restaurant!.id)
+        .order("name");
+      return (data ?? []) as { id: string; name: string; movement_type: MovementType | null }[];
     },
   });
+
+  const filteredCats = (cats.data ?? []).filter(
+    (c) => c.movement_type === type || c.movement_type === null,
+  );
 
   const save = useMutation({
     mutationFn: async () => {
@@ -303,11 +311,12 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>Tipo</Label>
-          <Select value={type} onValueChange={(v) => setType(v as any)}>
+          <Select value={type} onValueChange={(v) => { setType(v as MovementType); setCategoryId(""); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="compra">Compra</SelectItem>
-              <SelectItem value="despesa">Despesa</SelectItem>
+              <SelectItem value="entrada">Entrada</SelectItem>
+              <SelectItem value="saida">Saída</SelectItem>
+              <SelectItem value="transferencia">Transferência</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -319,12 +328,16 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
       <div className="space-y-2">
         <Label>Categoria</Label>
         <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger><SelectValue placeholder="Escolha uma categoria" /></SelectTrigger>
+          <SelectTrigger><SelectValue placeholder={`Escolha uma categoria de ${TYPE_LABEL[type]}`} /></SelectTrigger>
           <SelectContent>
-            {(cats.data ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            {filteredCats.length === 0 && (
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhuma categoria para este tipo.</div>
+            )}
+            {filteredCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>Fornecedor</Label>
