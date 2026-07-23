@@ -23,6 +23,7 @@ import {
   Sliders,
   Bot,
   LifeBuoy,
+  Instagram,
 } from "lucide-react";
 import {
   Sidebar,
