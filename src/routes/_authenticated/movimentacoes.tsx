@@ -22,17 +22,25 @@ export const Route = createFileRoute("/_authenticated/movimentacoes")({
   component: MovementsPage,
 });
 
+type MovementType = "entrada" | "saida" | "transferencia";
+
+const TYPE_LABEL: Record<MovementType, string> = {
+  entrada: "Entrada",
+  saida: "Saída",
+  transferencia: "Transferência",
+};
+
 type MovementRow = {
   id: string;
   movement_date: string;
   description: string | null;
   amount: number;
-  type: "compra" | "despesa";
+  type: MovementType;
   payment_method: string | null;
   notes: string | null;
   category_id: string | null;
   supplier_id: string | null;
-  categories?: { id: string; name: string } | null;
+  categories?: { id: string; name: string; movement_type: MovementType | null } | null;
   suppliers?: { name: string } | null;
 };
 
