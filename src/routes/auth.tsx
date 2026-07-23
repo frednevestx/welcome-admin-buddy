@@ -41,7 +41,7 @@ function AuthPage() {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") navigate({ to: "/dashboard" });
+      if (event === "SIGNED_IN") window.location.assign("/dashboard");
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate]);
@@ -62,7 +62,7 @@ function AuthPage() {
         if (error) throw error;
         if (data.session) {
           toast.success("Conta criada! Entrando...");
-          navigate({ to: "/dashboard" });
+          window.location.assign("/dashboard");
           return;
         }
         toast.success("Cadastro iniciado! Confirme seu email pelo link enviado antes de entrar.");
@@ -77,7 +77,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/dashboard" });
+        window.location.assign("/dashboard");
       }
     } catch (err: unknown) {
       toast.error(translateAuthError(err, "Erro ao autenticar."));
@@ -95,7 +95,7 @@ function AuthPage() {
       if (result.error) throw result.error;
       if (!result.redirected) {
         const { data } = await supabase.auth.getUser();
-        if (data.user) navigate({ to: "/dashboard" });
+        if (data.user) window.location.assign("/dashboard");
         else setGoogleLoading(false);
       }
     } catch (err: unknown) {
