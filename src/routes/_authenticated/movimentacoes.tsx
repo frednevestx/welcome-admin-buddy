@@ -179,7 +179,7 @@ function MovementsPage() {
                 <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
                 <TableCell>{r.categories?.name || "—"}</TableCell>
                 <TableCell>{r.suppliers?.name || "—"}</TableCell>
-                <TableCell className="capitalize text-muted-foreground">{r.type}</TableCell>
+                <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type]}</TableCell>
                 <TableCell className="text-right tabular-nums font-medium">{formatBRL(r.amount)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
