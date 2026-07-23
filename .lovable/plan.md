@@ -1,59 +1,27 @@
-Esse pedido é grande — vou dividir em fases entregáveis para você ver evolução rápida e evitar quebrar o que já está bom. Podemos ajustar prioridades.
+## O que vou entregar
 
-## Fase 1 — Landing + tema claro + Instagram (rápido)
+Um arquivo **`LUUD-identidade-executivo.docx`** (1–2 páginas), pronto pra download em `/mnt/documents/`, feito pra você colar em outra IA como contexto de marketing.
 
-1. **Depoimentos com "fotos" dos donos**
-   - Gerar 3 avatares fake (rosto neutro, estilo fotografia) via `imagegen` e usar nos cards de prova social junto do nome, cidade, métrica e estrelas que já existem.
-2. **Tema claro legível**
-   - Auditar `src/styles.css`: no `.light`, aumentar contraste de `--foreground`, `--muted-foreground` e remover gradientes com texto verde-sobre-verde. Garantir que headings usam `text-foreground` puro no light e o efeito neon fica só no dark.
-   - A landing pública fica sempre no visual dark premium (não segue o toggle) — o toggle passa a valer só depois do login, como você pediu.
-3. **Instagram**
-   - Adicionar link `https://www.instagram.com/luud.app/` no footer da landing e no rodapé do sidebar autenticado, com ícone.
+## Estrutura do documento
 
-## Fase 2 — Movimentações por categoria fixa
+1. **O que é a LUUD** — 2 linhas de posicionamento (IA de lucro pra restaurantes, não "software financeiro").
+2. **Para quem é** — dono de restaurante / delivery / lanchonete que fatura mas não sabe quanto sobra.
+3. **Problema que resolve** — 4 dores diretas (não sei meu lucro real, planilhas quebram, iFood/99 confunde, decido no achismo).
+4. **Como funciona em 4 passos** — cadastro → entra vendas (import iFood/99 ou planilha inteligente) → IA cruza custos, clientes, plataformas → dashboards + alertas + sugestões.
+5. **Principais funcionalidades** — Dashboard, Movimentações por categoria, Entrada de Vendas (import + planilha inteligente com IA), Metas, CMV, Calculadora de Preço, Lucro por Plataforma, Clientes com perfil e sugestões da IA, Assistente IA, Alertas, Suporte por ticket.
+6. **Diferenciais** — IA que fala em português de dono de restaurante, cruzamento automático de vendas × custos × clientes, sugestões de promoção por cliente, importação nativa iFood/99, planilha inteligente que já vira venda no caixa.
+7. **Planos** (com preços reais do sistema):
+   - **Básico** R$ 49,90/mês — controle financeiro completo
+   - **PRO** R$ 79,90/mês — CMV, precificação, lucro por plataforma, relatórios
+   - **Premium IA** R$ 109,90/mês — IA financeira, diagnósticos, sugestões, previsões
+   - Preços semestral/anual incluídos.
+8. **Benefícios / promessa** — 5 bullets ("descubra quanto sobra de verdade", "pare de decidir no achismo", "recupere cliente sumido", "saiba qual prato dá prejuízo", "IA que te diz o próximo passo").
+9. **Tom de voz** — direto, prático, sem jargão financeiro, fala como dono de restaurante fala.
+10. **Provas sociais / âncoras já usadas na landing** — 900+ restaurantes, depoimentos com métrica de lucro.
+11. **Links** — site publicado, Instagram `@luud.app`.
 
-Hoje a página aceita categoria livre. Vou:
-- Definir listas fixas no front:
-  - Entradas: Venda WhatsApp, Venda Balcão, Outros Recebimentos
-  - Saídas: Ingredientes, Embalagens, Funcionários, Aluguel, Energia, Marketing, Impostos, Taxas Bancárias, Manutenção, Outros
-  - Transferências: Sangria de Caixa
-- No form de "Nova movimentação": primeiro escolhe tipo (Entrada/Saída/Transferência), depois o select de categoria mostra só as opções desse tipo.
-- Manter compatível com a tabela `categorias` atual (semeando automaticamente essas categorias no primeiro uso do restaurante).
+## Como vou gerar
 
-## Fase 3 — Renomear "Importações" + Planilha Inteligente
+Usar `docx-js` (Node) conforme a skill DOCX: US Letter, Arial, headings em preto, bullets via `LevelFormat.BULLET`. Salvar em `/mnt/documents/LUUD-identidade-executivo.docx` e validar antes de entregar via `<presentation-artifact>`.
 
-- Renomear no menu/rota: **Importações → Entrada de Vendas** (ou "Registrar Vendas" — me diga se prefere outro). Mantém o import iFood/99 como abas dentro dela.
-- Nova aba **"Planilha inteligente"**:
-  - Grid editável (linha a linha) com colunas: Descrição do pedido, Cliente, Telefone, Quantidade, Valor, Forma de pagamento, Data, Cidade, Observação.
-  - Salva automaticamente linha a linha (debounce) em uma tabela nova `pedidos_manuais`.
-  - Ao salvar, uma server function chama a IA (Lovable AI) para: normalizar cliente (cria/atualiza em `clientes`), criar registro em `movimentacoes` como Venda WhatsApp/Balcão conforme forma de pagamento, atualizar dashboard.
-
-## Fase 4 — Nova página **Clientes** (Premium)
-
-- Migração: tabelas `clientes` (nome, telefone, cidade, canal, primeiro_pedido, ultimo_pedido) e `cliente_pedidos` (referência a movimentação/pedido + produtos). RLS por restaurante + GRANTs.
-- Página com:
-  - Cards: Total, Ativos, Inativos, Novos no mês, Ticket médio, Pedidos/cliente, Cliente mais fiel, Maior comprador.
-  - Listas: Mais gastam, Sumiram (>30 dias), Novos.
-  - Perfil do cliente ao clicar: telefone, cidade, primeiro/último pedido, total gasto, ticket médio, produtos favoritos (%), canal, quantidade de pedidos.
-  - Sugestões da IA por cliente ("Envie promoção de X para João").
-- Cruzamento com a Planilha Inteligente da Fase 3.
-- Marcada como recurso **Premium** via `PlanGate`.
-
-## Fase 5 — Dashboards
-
-- **Dashboard comercial**: adicionar cards Pedidos do mês, Ticket médio, Clientes novos, Recorrentes %, Maior venda, Produto campeão, Menos vendido, Nunca vendidos, Em crescimento — puxando de movimentações + pedidos + clientes.
-- **Evolução**: reorganizar em blocos (Financeiro / Comercial / Clientes) com dados vindos das novas tabelas, e destacar quais gráficos são PRO/Premium.
-- Reorganização geral do sidebar em grupos: Operação (Movimentações, Vendas, Clientes), Análise (Dashboard, Evolução, Comparativos, Relatórios PRO), Inteligência (Alertas, IA Premium), Configurações.
-
-## Fora de escopo agora
-
-- Reformar Pró-labore, Simulador ou Calculadora de preço.
-- Mudar lógica de auth ou planos.
-
-## Como quero tocar
-
-Se aprovar, começo pela **Fase 1** já nesta rodada (landing, tema claro, Instagram, avatares fake). As fases 2–5 envolvem migrações e IA — cada uma vira uma rodada separada com aprovação da migração antes de codar.
-
-Me confirma:
-1. Aprovado seguir por essa ordem?
-2. "Importações" vira **Entrada de Vendas** ou você prefere outro nome (ex.: "Registro de Vendas", "Pedidos")?
+Nada é alterado no código do app — é só geração de artefato.
