@@ -876,8 +876,7 @@ function Footer() {
               IA financeira para restaurantes e delivery. Descubra seu lucro real.
             </p>
             <div className="mt-5 flex items-center gap-2">
-              <a aria-label="Instagram" href="#" className="h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"><Instagram className="h-4 w-4" /></a>
-              <a aria-label="LinkedIn" href="#" className="h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"><Linkedin className="h-4 w-4" /></a>
+              <a aria-label="Instagram" href="https://www.instagram.com/luud.app/" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"><Instagram className="h-4 w-4" /></a>
               <a aria-label="WhatsApp" href="https://wa.me/5562993969722" target="_blank" rel="noreferrer" className="h-9 w-9 rounded-lg border border-border grid place-items-center text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"><MessageCircle className="h-4 w-4" /></a>
             </div>
           </div>
