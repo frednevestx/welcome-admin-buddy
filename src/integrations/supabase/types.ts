@@ -299,6 +299,78 @@ export type Database = {
           },
         ]
       }
+      pedidos_manuais: {
+        Row: {
+          cidade: string | null
+          cliente: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          forma_pagamento: string | null
+          id: string
+          movement_id: string | null
+          observacao: string | null
+          pedido_data: string | null
+          processed_at: string | null
+          quantidade: number | null
+          restaurant_id: string
+          telefone: string | null
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          cidade?: string | null
+          cliente?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          movement_id?: string | null
+          observacao?: string | null
+          pedido_data?: string | null
+          processed_at?: string | null
+          quantidade?: number | null
+          restaurant_id: string
+          telefone?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          cidade?: string | null
+          cliente?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          movement_id?: string | null
+          observacao?: string | null
+          pedido_data?: string | null
+          processed_at?: string | null
+          quantidade?: number | null
+          restaurant_id?: string
+          telefone?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_manuais_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_manuais_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_history: {
         Row: {
           created_at: string
