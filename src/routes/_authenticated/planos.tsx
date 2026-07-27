@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, Star, Crown } from "lucide-react";
 import { usePlan, type PlanTier } from "@/hooks/use-plan";
-import { PLAN_FEATURES, PLAN_LABEL, PLAN_PRICES } from "@/lib/plan-features";
+import { PLAN_FEATURES, PLAN_LABEL, PLAN_PRICES, PLAN_PROMISE, PLAN_TAGLINE } from "@/lib/plan-features";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
