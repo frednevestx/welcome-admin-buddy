@@ -26,7 +26,19 @@ export const ROUTE_MIN_PLAN: Record<string, PlanTier> = {
 export const PLAN_LABEL: Record<PlanTier, string> = {
   basico: "Básico",
   pro: "Pro",
-  premium: "Premium",
+  premium: "Premium IA",
+};
+
+export const PLAN_PROMISE: Record<PlanTier, string> = {
+  basico: "Organize seu financeiro e descubra seu lucro real.",
+  pro: "Descubra exatamente onde aumentar sua margem.",
+  premium: "Tenha um consultor de IA analisando seu restaurante 24 horas por dia.",
+};
+
+export const PLAN_TAGLINE: Record<PlanTier, string> = {
+  basico: "Pare de apagar incêndios",
+  pro: "Descubra onde ganhar mais dinheiro",
+  premium: "Seu consultor financeiro 24 horas",
 };
 
 export const PLAN_PRICES: Record<PlanTier, { mensal: number; semestral: number; anual: number }> = {
