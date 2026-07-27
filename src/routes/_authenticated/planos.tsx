@@ -132,8 +132,9 @@ function PlanosPage() {
               )}
 
               <div>
-                <div className="text-sm text-muted-foreground">Plano</div>
-                <div className="text-2xl font-semibold tracking-tight">{PLAN_LABEL[p]}</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground font-medium">{PLAN_TAGLINE[p]}</div>
+                <div className="text-2xl font-semibold tracking-tight mt-1">{PLAN_LABEL[p]}</div>
+                <div className="text-sm text-primary mt-1 font-medium">{PLAN_PROMISE[p]}</div>
               </div>
 
               <div>
