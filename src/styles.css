@@ -242,8 +242,8 @@
 
 /* Landing animations — Neon Mint */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.82 0.16 172 / 0.5); }
-  50% { box-shadow: 0 0 0 12px oklch(0.82 0.16 172 / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.76 0.11 82 / 0.5); }
+  50% { box-shadow: 0 0 0 12px oklch(0.76 0.11 82 / 0); }
 }
 @keyframes float-y {
   0%, 100% { transform: translateY(0); }
