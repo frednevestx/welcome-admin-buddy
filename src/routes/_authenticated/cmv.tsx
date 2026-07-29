@@ -261,7 +261,7 @@ function CmvPage() {
 
         <Card className="p-5 space-y-3">
           <div className="font-medium">Definir meta de CMV</div>
-          <p className="text-xs text-muted-foreground">Restaurantes saudáveis costumam operar entre 28% e 35%.</p>
+          <p className="text-xs text-muted-foreground">Negócios saudáveis costumam operar entre 28% e 35%.</p>
           <div className="flex gap-2">
             <div className="flex-1">
               <Label>Novo alvo (%)</Label>

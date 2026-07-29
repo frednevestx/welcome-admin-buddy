@@ -58,7 +58,7 @@ function PlanosPage() {
           <Sparkles className="h-3.5 w-3.5" />
           {status === "trialing"
             ? `Você está no teste grátis — faltam ${daysLeftInTrial} ${daysLeftInTrial === 1 ? "dia" : "dias"}`
-            : "Escolha o plano ideal para o seu restaurante"}
+            : "Escolha o plano ideal para o seu negócio"}
         </div>
         <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Planos e preços</h1>
         <p className="text-muted-foreground max-w-xl mx-auto">

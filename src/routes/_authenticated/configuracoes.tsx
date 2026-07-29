@@ -68,7 +68,7 @@ function SettingsPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!restaurant) return;
-      if (!form.name.trim()) throw new Error("O nome do restaurante é obrigatório");
+      if (!form.name.trim()) throw new Error("O nome do negócio é obrigatório");
       const { error } = await supabase.from("restaurants").update({
         name: form.name.trim(),
         razao_social: form.razao_social.trim() || null,
@@ -115,7 +115,7 @@ function SettingsPage() {
     <div className="p-4 md:p-8 max-w-3xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Minha conta</h1>
-        <p className="text-sm text-muted-foreground mt-1">Dados do restaurante, foto e aparência.</p>
+        <p className="text-sm text-muted-foreground mt-1">Dados do negócio, foto e aparência.</p>
       </div>
 
       <Card className="p-6 space-y-6">
@@ -134,7 +134,7 @@ function SettingsPage() {
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
           <div className="min-w-0">
-            <div className="font-semibold truncate">{form.name || "Seu restaurante"}</div>
+            <div className="font-semibold truncate">{form.name || "Seu negócio"}</div>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -148,7 +148,7 @@ function SettingsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
-            <Label>Nome do restaurante <span className="text-destructive">*</span></Label>
+            <Label>Nome do negócio <span className="text-destructive">*</span></Label>
             <Input value={form.name} onChange={(e) => set("name", e.target.value)} required />
           </div>
           <div className="space-y-2">
@@ -173,7 +173,7 @@ function SettingsPage() {
           </div>
           <div className="space-y-2">
             <Label>E-mail de contato</Label>
-            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="contato@seurestaurante.com" />
+            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="contato@seunegocio.com" />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>E-mail da conta</Label>

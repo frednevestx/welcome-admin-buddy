@@ -105,7 +105,7 @@ function MovementsPage() {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight truncate">Movimentações</h1>
-          <p className="text-sm text-muted-foreground mt-1">Compras e despesas do restaurante.</p>
+          <p className="text-sm text-muted-foreground mt-1">Compras e despesas do negócio.</p>
         </div>
         <div className="flex items-center gap-2">
           <PeriodSelector period={period} onChange={setPeriod} />
@@ -271,7 +271,7 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
 
   const save = useMutation({
     mutationFn: async () => {
-      if (!restaurant) throw new Error("Sem restaurante");
+      if (!restaurant) throw new Error("Sem negócio");
       let supplierId: string | null = null;
       if (supplier.trim()) {
         const { data: existing } = await supabase.from("suppliers")
