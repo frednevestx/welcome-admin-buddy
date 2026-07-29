@@ -709,9 +709,9 @@ function QuickResults() {
 
 function SocialProof() {
   const items = [
-    { name: "Rafael Moraes", role: "Proprietário", restaurant: "Burger House", city: "São Paulo, SP", photo: rafaelPhoto.url, text: "Descobri que perdia R$ 4.300 por mês com embalagens. Em 30 dias virei o jogo.", metrics: [{ label: "Lucro", value: "+22%" }, { label: "Economia/mês", value: "R$ 4.3k" }] },
-    { name: "Juliana Ferreira", role: "Sócia", restaurant: "Pizzaria Bella Massa", city: "Campinas, SP", photo: julianaPhoto.url, text: "Identifiquei produtos que davam prejuízo e reajustei preços com a IA sem perder cliente.", metrics: [{ label: "Margem", value: "+31%" }, { label: "Ticket médio", value: "+R$ 8" }] },
-    { name: "Diego Cardoso", role: "CEO", restaurant: "Sushi Express", city: "Curitiba, PR", photo: diegoPhoto.url, text: "Finalmente entendi meu lucro real. A LUUD mostra o que o iFood não mostra.", metrics: [{ label: "Lucro", value: "+18%" }, { label: "Planilha", value: "-90%" }] },
+    { name: "Rafael Moraes", role: "Proprietário", restaurant: "Burger House", mono: "BH", hue: 32, city: "São Paulo, SP", photo: rafaelPhoto.url, text: "Descobri que perdia R$ 4.300 por mês com embalagens. Em 30 dias virei o jogo.", metrics: [{ label: "Lucro", value: "+22%" }, { label: "Economia/mês", value: "R$ 4.3k" }] },
+    { name: "Juliana Ferreira", role: "Sócia", restaurant: "Bella Massa", mono: "BM", hue: 15, city: "Campinas, SP", photo: julianaPhoto.url, text: "Identifiquei produtos que davam prejuízo e reajustei preços com a IA sem perder cliente.", metrics: [{ label: "Margem", value: "+31%" }, { label: "Ticket médio", value: "+R$ 8" }] },
+    { name: "Diego Cardoso", role: "CEO", restaurant: "Sushi Express", mono: "SE", hue: 200, city: "Curitiba, PR", photo: diegoPhoto.url, text: "Finalmente entendi meu lucro real. A LUUD mostra o que o iFood não mostra.", metrics: [{ label: "Lucro", value: "+18%" }, { label: "Planilha", value: "-90%" }] },
   ];
   return (
     <section className="border-b border-border">
@@ -723,8 +723,24 @@ function SocialProof() {
                 <img src={t.photo} alt={`${t.name} — ${t.restaurant}`} loading="lazy" width={56} height={56} className="h-14 w-14 rounded-full object-cover border-2 border-primary/30 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold truncate">{t.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{t.role} • {t.restaurant}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{t.city}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{t.role} • {t.city}</div>
+                </div>
+              </div>
+              <div
+                className="flex items-center gap-2 mb-4 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2"
+              >
+                <div
+                  className="h-8 w-8 shrink-0 rounded-md grid place-items-center font-display font-bold text-[11px] tracking-tight border border-primary/30"
+                  style={{
+                    background: `linear-gradient(135deg, oklch(0.32 0.05 ${t.hue}) 0%, oklch(0.22 0.04 ${t.hue}) 100%)`,
+                    color: "var(--primary)",
+                  }}
+                >
+                  {t.mono}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Negócio</div>
+                  <div className="text-sm font-semibold truncate text-foreground">{t.restaurant}</div>
                 </div>
               </div>
               <div className="flex gap-0.5 mb-3">
