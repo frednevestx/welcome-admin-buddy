@@ -199,21 +199,21 @@ function AIOpportunitiesMock() {
 /* ─────────────────── 2. RESTAURANTES QUE UTILIZAM ─────────────────── */
 
 function RestaurantTypes() {
-  const types = [
-    { icon: Beef, label: "Hamburguerias" },
-    { icon: Pizza, label: "Pizzarias" },
-    { icon: Fish, label: "Sushi" },
-    { icon: ShoppingBag, label: "Açaí" },
-    { icon: IceCream, label: "Sorveterias" },
-    { icon: Sandwich, label: "Lanchonetes" },
-    { icon: Utensils, label: "Marmitarias" },
-    { icon: Coffee, label: "Cafeterias" },
-    { icon: Ghost, label: "Dark Kitchens" },
+  const brands = [
+    { name: "Burger Prime",   tag: "Hamburgueria",  mono: "BP", hue: 32 },
+    { name: "Bella Massa",    tag: "Pizzaria",      mono: "BM", hue: 15 },
+    { name: "Sushi Wave",     tag: "Japonês",       mono: "SW", hue: 200 },
+    { name: "Açaí Point",     tag: "Açaí",          mono: "AP", hue: 290 },
+    { name: "Gelato Nero",    tag: "Sorveteria",    mono: "GN", hue: 340 },
+    { name: "Sanduba Co.",    tag: "Lanchonete",    mono: "SC", hue: 55 },
+    { name: "Marmita Vovó",   tag: "Marmitaria",    mono: "MV", hue: 100 },
+    { name: "Café Central",   tag: "Cafeteria",     mono: "CC", hue: 40 },
+    { name: "Dark Kitchen 7", tag: "Dark Kitchen",  hue: 260, mono: "D7" },
   ];
-  const names = ["Burger Prime", "Bella Massa", "Urban Burgers", "Sushi Wave", "Tempero Caseiro", "Hot Chicken", "Café Central", "Smash Club", "Pizza Nostra", "Açaí Point"];
+  const names = ["Burger Prime", "Bella Massa", "Urban Burgers", "Sushi Wave", "Tempero Caseiro", "Hot Chicken", "Café Central", "Smash Club", "Pizza Nostra", "Açaí Point", "Gelato Nero", "Marmita Vovó", "Sanduba Co.", "Dark Kitchen 7"];
   const loop = [...names, ...names];
   const numbers = [
-    { value: 3500, suffix: "+", label: "restaurantes" },
+    { value: 3500, suffix: "+", label: "negócios ativos" },
     { value: 18, suffix: "M+", label: "pedidos analisados" },
     { value: 96, suffix: "k+", label: "recomendações da IA" },
   ];
@@ -226,15 +226,30 @@ function RestaurantTypes() {
             <span className="h-px w-8 bg-primary/50" /> Feita para <span className="h-px w-8 bg-primary/50" />
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            Restaurantes que <span className="text-primary">usam LUUD</span>.
+            Negócios que <span className="text-primary">usam LUUD</span>.
           </h2>
         </div>
 
-        <div className="grid grid-cols-3 md:grid-cols-9 gap-2 md:gap-3 mb-10">
-          {types.map((t) => (
-            <div key={t.label} className="rounded-xl border border-border bg-card/40 backdrop-blur p-3 flex flex-col items-center gap-2 hover:border-primary/40 transition-colors">
-              <t.icon className="h-5 w-5 text-primary" />
-              <span className="text-[11px] text-center text-foreground/80 leading-tight">{t.label}</span>
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3 mb-10">
+          {brands.map((b) => (
+            <div
+              key={b.name}
+              className="group rounded-2xl border border-border bg-card/60 backdrop-blur p-4 flex items-center gap-3 hover:border-primary/40 transition-colors"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <div
+                className="h-11 w-11 shrink-0 rounded-xl grid place-items-center font-display font-bold text-sm tracking-tight border border-primary/25"
+                style={{
+                  background: `linear-gradient(135deg, oklch(0.32 0.05 ${b.hue}) 0%, oklch(0.22 0.04 ${b.hue}) 100%)`,
+                  color: "var(--primary)",
+                }}
+              >
+                {b.mono}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{b.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{b.tag}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -694,9 +709,9 @@ function QuickResults() {
 
 function SocialProof() {
   const items = [
-    { name: "Rafael Moraes", role: "Proprietário", restaurant: "Burger House", city: "São Paulo, SP", photo: rafaelPhoto.url, text: "Descobri que perdia R$ 4.300 por mês com embalagens. Em 30 dias virei o jogo.", metrics: [{ label: "Lucro", value: "+22%" }, { label: "Economia/mês", value: "R$ 4.3k" }] },
-    { name: "Juliana Ferreira", role: "Sócia", restaurant: "Pizzaria Bella Massa", city: "Campinas, SP", photo: julianaPhoto.url, text: "Identifiquei produtos que davam prejuízo e reajustei preços com a IA sem perder cliente.", metrics: [{ label: "Margem", value: "+31%" }, { label: "Ticket médio", value: "+R$ 8" }] },
-    { name: "Diego Cardoso", role: "CEO", restaurant: "Sushi Express", city: "Curitiba, PR", photo: diegoPhoto.url, text: "Finalmente entendi meu lucro real. A LUUD mostra o que o iFood não mostra.", metrics: [{ label: "Lucro", value: "+18%" }, { label: "Planilha", value: "-90%" }] },
+    { name: "Rafael Moraes", role: "Proprietário", restaurant: "Burger House", mono: "BH", hue: 32, city: "São Paulo, SP", photo: rafaelPhoto.url, text: "Descobri que perdia R$ 4.300 por mês com embalagens. Em 30 dias virei o jogo.", metrics: [{ label: "Lucro", value: "+22%" }, { label: "Economia/mês", value: "R$ 4.3k" }] },
+    { name: "Juliana Ferreira", role: "Sócia", restaurant: "Bella Massa", mono: "BM", hue: 15, city: "Campinas, SP", photo: julianaPhoto.url, text: "Identifiquei produtos que davam prejuízo e reajustei preços com a IA sem perder cliente.", metrics: [{ label: "Margem", value: "+31%" }, { label: "Ticket médio", value: "+R$ 8" }] },
+    { name: "Diego Cardoso", role: "CEO", restaurant: "Sushi Express", mono: "SE", hue: 200, city: "Curitiba, PR", photo: diegoPhoto.url, text: "Finalmente entendi meu lucro real. A LUUD mostra o que o iFood não mostra.", metrics: [{ label: "Lucro", value: "+18%" }, { label: "Planilha", value: "-90%" }] },
   ];
   return (
     <section className="border-b border-border">
@@ -708,8 +723,24 @@ function SocialProof() {
                 <img src={t.photo} alt={`${t.name} — ${t.restaurant}`} loading="lazy" width={56} height={56} className="h-14 w-14 rounded-full object-cover border-2 border-primary/30 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold truncate">{t.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{t.role} • {t.restaurant}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{t.city}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{t.role} • {t.city}</div>
+                </div>
+              </div>
+              <div
+                className="flex items-center gap-2 mb-4 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2"
+              >
+                <div
+                  className="h-8 w-8 shrink-0 rounded-md grid place-items-center font-display font-bold text-[11px] tracking-tight border border-primary/30"
+                  style={{
+                    background: `linear-gradient(135deg, oklch(0.32 0.05 ${t.hue}) 0%, oklch(0.22 0.04 ${t.hue}) 100%)`,
+                    color: "var(--primary)",
+                  }}
+                >
+                  {t.mono}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Negócio</div>
+                  <div className="text-sm font-semibold truncate text-foreground">{t.restaurant}</div>
                 </div>
               </div>
               <div className="flex gap-0.5 mb-3">

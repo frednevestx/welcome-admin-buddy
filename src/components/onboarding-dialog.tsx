@@ -43,10 +43,10 @@ export function OnboardingDialog({ onCreated }: { onCreated: () => void }) {
 
       await supabase.rpc("seed_default_categories", { _restaurant_id: rest.id });
       await refetch();
-      toast.success("Restaurante criado!");
+      toast.success("Negócio criado!");
       setStep("theme");
     } catch (err: unknown) {
-      toast.error(translateAuthError(err, "Erro ao criar restaurante."));
+      toast.error(translateAuthError(err, "Erro ao criar negócio."));
     } finally {
       setLoading(false);
     }
@@ -78,14 +78,14 @@ export function OnboardingDialog({ onCreated }: { onCreated: () => void }) {
       <>
         <DialogHeader>
           <DialogTitle>Bem-vindo à LUUD!</DialogTitle>
-          <DialogDescription>Comece dando um nome ao seu restaurante.</DialogDescription>
+          <DialogDescription>Comece dando um nome ao seu negócio.</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => { e.preventDefault(); void handleCreate(); }}
           className="space-y-4 pt-2"
         >
           <div className="space-y-2">
-            <Label htmlFor="rname">Nome do restaurante</Label>
+            <Label htmlFor="rname">Nome do negócio</Label>
             <Input id="rname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Pizzaria do João" autoFocus />
           </div>
           <Button type="submit" className="w-full" disabled={loading || !name.trim()}>

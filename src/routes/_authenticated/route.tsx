@@ -51,7 +51,7 @@ function AuthenticatedLayout() {
           <header className="h-14 border-b border-border/60 flex items-center gap-3 px-4 sticky top-0 bg-background/80 backdrop-blur z-10">
             <SidebarTrigger />
             <div className="text-sm text-muted-foreground truncate">
-              {restaurant?.name ?? (loading ? "Carregando..." : "Sem restaurante")}
+              {restaurant?.name ?? (loading ? "Carregando..." : "Sem negócio")}
             </div>
           </header>
           <main className="flex-1 min-w-0">

@@ -87,7 +87,7 @@ function Assistente() {
           <OneShotPanel
             mode="prolabore"
             title="Sugestão de pró-labore"
-            description="Quanto você pode retirar este mês sem comprometer a saúde do restaurante."
+            description="Quanto você pode retirar este mês sem comprometer a saúde do negócio."
             cta="Calcular pró-labore"
             icon={<Wallet className="h-5 w-5" />}
           />
@@ -368,7 +368,7 @@ function InsightsCard() {
       </div>
       {loading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Analisando padrões do seu restaurante...
+          <Loader2 className="h-4 w-4 animate-spin" /> Analisando padrões do seu negócio...
         </div>
       )}
       {error && <div className="text-sm text-destructive">{error}</div>}
