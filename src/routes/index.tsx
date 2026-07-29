@@ -199,21 +199,21 @@ function AIOpportunitiesMock() {
 /* ─────────────────── 2. RESTAURANTES QUE UTILIZAM ─────────────────── */
 
 function RestaurantTypes() {
-  const types = [
-    { icon: Beef, label: "Hamburguerias" },
-    { icon: Pizza, label: "Pizzarias" },
-    { icon: Fish, label: "Sushi" },
-    { icon: ShoppingBag, label: "Açaí" },
-    { icon: IceCream, label: "Sorveterias" },
-    { icon: Sandwich, label: "Lanchonetes" },
-    { icon: Utensils, label: "Marmitarias" },
-    { icon: Coffee, label: "Cafeterias" },
-    { icon: Ghost, label: "Dark Kitchens" },
+  const brands = [
+    { name: "Burger Prime",   tag: "Hamburgueria",  mono: "BP", hue: 32 },
+    { name: "Bella Massa",    tag: "Pizzaria",      mono: "BM", hue: 15 },
+    { name: "Sushi Wave",     tag: "Japonês",       mono: "SW", hue: 200 },
+    { name: "Açaí Point",     tag: "Açaí",          mono: "AP", hue: 290 },
+    { name: "Gelato Nero",    tag: "Sorveteria",    mono: "GN", hue: 340 },
+    { name: "Sanduba Co.",    tag: "Lanchonete",    mono: "SC", hue: 55 },
+    { name: "Marmita Vovó",   tag: "Marmitaria",    mono: "MV", hue: 100 },
+    { name: "Café Central",   tag: "Cafeteria",     mono: "CC", hue: 40 },
+    { name: "Dark Kitchen 7", tag: "Dark Kitchen",  hue: 260, mono: "D7" },
   ];
-  const names = ["Burger Prime", "Bella Massa", "Urban Burgers", "Sushi Wave", "Tempero Caseiro", "Hot Chicken", "Café Central", "Smash Club", "Pizza Nostra", "Açaí Point"];
+  const names = ["Burger Prime", "Bella Massa", "Urban Burgers", "Sushi Wave", "Tempero Caseiro", "Hot Chicken", "Café Central", "Smash Club", "Pizza Nostra", "Açaí Point", "Gelato Nero", "Marmita Vovó", "Sanduba Co.", "Dark Kitchen 7"];
   const loop = [...names, ...names];
   const numbers = [
-    { value: 3500, suffix: "+", label: "restaurantes" },
+    { value: 3500, suffix: "+", label: "negócios ativos" },
     { value: 18, suffix: "M+", label: "pedidos analisados" },
     { value: 96, suffix: "k+", label: "recomendações da IA" },
   ];
@@ -226,15 +226,30 @@ function RestaurantTypes() {
             <span className="h-px w-8 bg-primary/50" /> Feita para <span className="h-px w-8 bg-primary/50" />
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">
-            Restaurantes que <span className="text-primary">usam LUUD</span>.
+            Negócios que <span className="text-primary">usam LUUD</span>.
           </h2>
         </div>
 
-        <div className="grid grid-cols-3 md:grid-cols-9 gap-2 md:gap-3 mb-10">
-          {types.map((t) => (
-            <div key={t.label} className="rounded-xl border border-border bg-card/40 backdrop-blur p-3 flex flex-col items-center gap-2 hover:border-primary/40 transition-colors">
-              <t.icon className="h-5 w-5 text-primary" />
-              <span className="text-[11px] text-center text-foreground/80 leading-tight">{t.label}</span>
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3 mb-10">
+          {brands.map((b) => (
+            <div
+              key={b.name}
+              className="group rounded-2xl border border-border bg-card/60 backdrop-blur p-4 flex items-center gap-3 hover:border-primary/40 transition-colors"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <div
+                className="h-11 w-11 shrink-0 rounded-xl grid place-items-center font-display font-bold text-sm tracking-tight border border-primary/25"
+                style={{
+                  background: `linear-gradient(135deg, oklch(0.32 0.05 ${b.hue}) 0%, oklch(0.22 0.04 ${b.hue}) 100%)`,
+                  color: "var(--primary)",
+                }}
+              >
+                {b.mono}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{b.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{b.tag}</div>
+              </div>
             </div>
           ))}
         </div>
