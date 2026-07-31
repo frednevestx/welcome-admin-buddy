@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PLAN_FEATURES, PLAN_LABEL, PLAN_PRICES, PLAN_PROMISE, PLAN_TAGLINE } from "@/lib/plan-features";
 import { cn } from "@/lib/utils";
+import { resetThemeOverrides } from "@/hooks/use-theme";
 import rafaelPhoto from "@/assets/testimonial-rafael.jpg.asset.json";
 import julianaPhoto from "@/assets/testimonial-juliana.jpg.asset.json";
 import diegoPhoto from "@/assets/testimonial-diego.jpg.asset.json";
@@ -52,8 +53,10 @@ function Landing() {
     const html = document.documentElement;
     const hadLight = html.classList.contains("light");
     html.classList.remove("light");
+    resetThemeOverrides();
     return () => { if (hadLight) html.classList.add("light"); };
   }, []);
+
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden antialiased scroll-smooth">
