@@ -124,8 +124,8 @@ function RootComponent() {
   useEffect(() => {
     // Apply saved theme as early as possible on the client
     try {
-      const mode = localStorage.getItem("sf.theme.mode") || "light";
-      const accent = localStorage.getItem("sf.theme.accent") || "green";
+      const mode = localStorage.getItem("sf.theme.mode") || "dark";
+      const accent = localStorage.getItem("sf.theme.accent") || "gold";
       import("@/hooks/use-theme").then((m) => m.applyTheme(mode as any, accent as any));
     } catch {}
 

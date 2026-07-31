@@ -32,7 +32,7 @@ export const PLAN_LABEL: Record<PlanTier, string> = {
 export const PLAN_PROMISE: Record<PlanTier, string> = {
   basico: "Organize seu financeiro e descubra seu lucro real.",
   pro: "Descubra exatamente onde aumentar sua margem.",
-  premium: "Tenha um consultor de IA analisando seu restaurante 24 horas por dia.",
+  premium: "Tenha um consultor de IA analisando seu negócio 24 horas por dia.",
 };
 
 export const PLAN_TAGLINE: Record<PlanTier, string> = {

@@ -20,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 });
 
 const ACCENT_OPTIONS: { key: Accent; label: string; color: string }[] = [
+  { key: "gold",   label: "Dourado", color: "oklch(0.76 0.11 82)"  },
   { key: "green",  label: "Verde",   color: "oklch(0.72 0.18 148)" },
   { key: "blue",   label: "Azul",    color: "oklch(0.68 0.17 245)" },
   { key: "orange", label: "Laranja", color: "oklch(0.72 0.19 55)"  },

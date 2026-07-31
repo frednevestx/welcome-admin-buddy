@@ -19,7 +19,7 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Entrar na LUUD — IA financeira para restaurantes" },
-      { name: "description", content: "Acesse a LUUD, a inteligência artificial que descobre o lucro real do seu restaurante e mostra como aumentar sua margem." },
+      { name: "description", content: "Acesse a LUUD, a inteligência artificial que descobre o lucro real do seu negócio e mostra como aumentar sua margem." },
       { property: "og:title", content: "Entrar na LUUD" },
       { property: "og:description", content: "IA financeira para restaurantes e delivery. Descubra seu lucro real." },
     ],
@@ -114,7 +114,7 @@ function AuthPage() {
     mode === "signin" ? "Entrar na LUUD" : mode === "signup" ? "Criar sua conta LUUD" : "Recuperar senha";
   const subtitle =
     mode === "signin"
-      ? "Descubra o lucro real do seu restaurante."
+      ? "Descubra o lucro real do seu negócio."
       : mode === "signup"
       ? "Comece grátis por 7 dias — sem cartão."
       : "Enviaremos um link para você redefinir sua senha.";
@@ -147,7 +147,7 @@ function AuthPage() {
         <div className="max-w-md">
           <Logo className="mb-8 [&_img]:h-10" />
           <h1 className="font-display text-4xl xl:text-5xl font-bold tracking-tight leading-[1.05]">
-            Descubra o <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">lucro real</span> do seu restaurante.
+            Descubra o <span className="bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">lucro real</span> do seu negócio.
           </h1>
           <p className="mt-5 text-base xl:text-lg text-muted-foreground">
             Uma inteligência artificial que analisa seu negócio todos os dias e mostra como você pode lucrar mais.
@@ -170,7 +170,7 @@ function AuthPage() {
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Mais de 900 restaurantes já descobriram seu lucro com a LUUD.
+          Mais de 900 negócios já descobriram seu lucro com a LUUD.
         </div>
       </aside>
 
