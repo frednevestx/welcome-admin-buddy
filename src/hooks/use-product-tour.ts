@@ -63,7 +63,7 @@ const STEPS: TourStepDef[] = [
   {
     selector: '[data-tour="menu-assistente-ia"]',
     title: "8. Assistente IA — Premium",
-    description: "Uma IA que analisa seu restaurante e te diz o que fazer para lucrar mais.",
+    description: "Uma IA que analisa seu negócio e te diz o que fazer para lucrar mais.",
     side: "right",
   },
   {
@@ -75,7 +75,7 @@ const STEPS: TourStepDef[] = [
   {
     selector: '[data-tour="menu-configuracoes"]',
     title: "10. Configurações",
-    description: "Edite dados do restaurante, foto, tema e cor principal. Você pode refazer este tour aqui.",
+    description: "Edite dados do negócio, foto, tema e cor principal. Você pode refazer este tour aqui.",
     side: "right",
   },
 ];

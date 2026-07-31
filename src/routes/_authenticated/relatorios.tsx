@@ -132,7 +132,7 @@ function ReportsPage() {
       if (vendido > 0 && gasto / vendido > 0.7) alertas.push(`Gastos representam ${formatPct((gasto / vendido) * 100)} do faturamento.`);
 
       const html = buildHTML({
-        restaurant: restaurant.name || "Restaurante",
+        restaurant: restaurant.name || "Negócio",
         range,
         opts,
         resumo: { vendido, gasto, sobrou, pedidos },

@@ -48,7 +48,7 @@ function PlanosPage() {
   }, []);
 
   const plans: PlanTier[] = ["basico", "pro", "premium"];
-  const fallback = "https://wa.me/5562993969722?text=Ol%C3%A1%2C%20Quero%20descobrir%20os%20lucros%20do%20meu%20restaurante!%20%F0%9F%93%88";
+  const fallback = "https://wa.me/5562993969722?text=Ol%C3%A1%2C%20Quero%20descobrir%20os%20lucros%20do%20meu%20neg%C3%B3cio!%20%F0%9F%93%88";
 
 
   return (
@@ -175,7 +175,7 @@ function PlanosPage() {
 
       <p className="text-center text-xs text-muted-foreground max-w-xl mx-auto">
         Após o pagamento no checkout externo, a administração libera seu acesso pelo e-mail cadastrado.
-        Se precisar de ajuda, fale com o <a href="https://wa.me/5562993969722?text=Ol%C3%A1%2C%20Quero%20descobrir%20os%20lucros%20do%20meu%20restaurante!%20%F0%9F%93%88" target="_blank" rel="noreferrer" className="text-primary underline hover:no-underline">suporte</a>.
+        Se precisar de ajuda, fale com o <a href="https://wa.me/5562993969722?text=Ol%C3%A1%2C%20Quero%20descobrir%20os%20lucros%20do%20meu%20neg%C3%B3cio!%20%F0%9F%93%88" target="_blank" rel="noreferrer" className="text-primary underline hover:no-underline">suporte</a>.
       </p>
     </div>
   );
