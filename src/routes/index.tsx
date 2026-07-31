@@ -444,7 +444,7 @@ function SocialProof() {
                 loading="lazy"
                 width={816}
                 height={816}
-                className="mx-auto h-16 w-16 object-contain opacity-75 transition-all duration-300 group-hover:opacity-100 group-hover:scale-105"
+                className="mx-auto h-20 w-20 rounded-2xl bg-foreground/[0.06] p-2 object-contain brightness-125 transition-all duration-300 group-hover:scale-105 group-hover:bg-foreground/[0.1]"
               />
               <div className="mt-3 text-xs font-semibold">{b.name}</div>
               <div className="text-[11px] text-muted-foreground">{b.niche}</div>
@@ -752,7 +752,7 @@ function Testimonials() {
                   <div className="text-sm font-semibold truncate">{t.name}</div>
                   <div className="text-xs text-muted-foreground truncate">{t.role} · {t.brand}</div>
                 </div>
-                <img src={t.logo} alt={`Logotipo fictício ${t.brand}`} loading="lazy" width={816} height={816} className="h-9 w-9 object-contain opacity-70" />
+                <img src={t.logo} alt={`Logotipo fictício ${t.brand}`} loading="lazy" width={816} height={816} className="h-10 w-10 shrink-0 rounded-xl bg-foreground/[0.06] p-1 object-contain brightness-125" />
               </div>
             </div>
           </Reveal>
