@@ -1,6 +1,4 @@
-import {
-  Plug,
-Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useRestaurant } from "@/hooks/use-restaurant";
 import luudLogo from "@/assets/luud-logo.png.asset.json";
 import {
@@ -26,6 +24,7 @@ import {
   Bot,
   LifeBuoy,
   Instagram,
+  Plug,
 } from "lucide-react";
 import {
   Sidebar,
