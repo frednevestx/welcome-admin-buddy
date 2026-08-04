@@ -1,4 +1,5 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import {
+  Plug,Link, useRouterState } from "@tanstack/react-router";
 import { useRestaurant } from "@/hooks/use-restaurant";
 import luudLogo from "@/assets/luud-logo.png.asset.json";
 import {
@@ -50,6 +51,7 @@ const basico: Item[] = [
   { title: "Metas", url: "/metas", icon: Target, tour: "metas" },
   { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft, tour: "movimentacoes" },
   { title: "Entrada de Vendas", url: "/importacoes", icon: Upload, tour: "importacoes" },
+  { title: "Integrações", url: "/integracoes", icon: Plug, tour: "integracoes" },
   { title: "Categorias", url: "/categorias", icon: Tag },
   { title: "Comparativos", url: "/comparativos", icon: BarChart3 },
   { title: "Evolução", url: "/evolucao", icon: TrendingUp },

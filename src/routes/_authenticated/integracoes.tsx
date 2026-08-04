@@ -26,7 +26,7 @@ import {
   syncIntegrationNow,
   disconnectIntegration,
 } from "@/lib/integrations.functions";
-import { formatBRL, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   Bike,
@@ -492,5 +492,3 @@ function SyncLogs({ provider, restaurantId }: { provider: ProviderId; restaurant
     </Table>
   );
 }
-
-export { formatBRL };
