@@ -24,6 +24,7 @@ import {
   Bot,
   LifeBuoy,
   Instagram,
+  Plug,
 } from "lucide-react";
 import {
   Sidebar,
@@ -50,6 +51,7 @@ const basico: Item[] = [
   { title: "Metas", url: "/metas", icon: Target, tour: "metas" },
   { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft, tour: "movimentacoes" },
   { title: "Entrada de Vendas", url: "/importacoes", icon: Upload, tour: "importacoes" },
+  { title: "Integrações", url: "/integracoes", icon: Plug, tour: "integracoes" },
   { title: "Categorias", url: "/categorias", icon: Tag },
   { title: "Comparativos", url: "/comparativos", icon: BarChart3 },
   { title: "Evolução", url: "/evolucao", icon: TrendingUp },

@@ -20,6 +20,7 @@ import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedLucroPlataformaRouteImport } from './routes/_authenticated/lucro-plataforma'
+import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 import { Route as AuthenticatedHistoricoPrecosRouteImport } from './routes/_authenticated/historico-precos'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
@@ -33,6 +34,8 @@ import { Route as AuthenticatedCalculadoraPrecoRouteImport } from './routes/_aut
 import { Route as AuthenticatedAssistenteIaRouteImport } from './routes/_authenticated/assistente-ia'
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as ApiPublicIntegrationsSyncRouteImport } from './routes/api/public/integrations/sync'
+import { Route as ApiPublicIntegrationsProviderWebhookRouteImport } from './routes/api/public/integrations/$provider/webhook'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -88,6 +91,12 @@ const AuthenticatedLucroPlataformaRoute =
   AuthenticatedLucroPlataformaRouteImport.update({
     id: '/lucro-plataforma',
     path: '/lucro-plataforma',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIntegracoesRoute =
+  AuthenticatedIntegracoesRouteImport.update({
+    id: '/integracoes',
+    path: '/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedImportacoesRoute =
@@ -163,6 +172,18 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicIntegrationsSyncRoute =
+  ApiPublicIntegrationsSyncRouteImport.update({
+    id: '/api/public/integrations/sync',
+    path: '/api/public/integrations/sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicIntegrationsProviderWebhookRoute =
+  ApiPublicIntegrationsProviderWebhookRouteImport.update({
+    id: '/api/public/integrations/$provider/webhook',
+    path: '/api/public/integrations/$provider/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -180,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
@@ -188,6 +210,8 @@ export interface FileRoutesByFullPath {
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -205,6 +229,7 @@ export interface FileRoutesByTo {
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
@@ -213,6 +238,8 @@ export interface FileRoutesByTo {
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -232,6 +259,7 @@ export interface FileRoutesById {
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRoute
+  '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/movimentacoes': typeof AuthenticatedMovimentacoesRoute
@@ -240,6 +268,8 @@ export interface FileRoutesById {
   '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -259,6 +289,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/historico-precos'
     | '/importacoes'
+    | '/integracoes'
     | '/lucro-plataforma'
     | '/metas'
     | '/movimentacoes'
@@ -267,6 +298,8 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/suporte'
     | '/admin/usuarios'
+    | '/api/public/integrations/sync'
+    | '/api/public/integrations/$provider/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -284,6 +317,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/historico-precos'
     | '/importacoes'
+    | '/integracoes'
     | '/lucro-plataforma'
     | '/metas'
     | '/movimentacoes'
@@ -292,6 +326,8 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/suporte'
     | '/admin/usuarios'
+    | '/api/public/integrations/sync'
+    | '/api/public/integrations/$provider/webhook'
   id:
     | '__root__'
     | '/'
@@ -310,6 +346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fornecedores'
     | '/_authenticated/historico-precos'
     | '/_authenticated/importacoes'
+    | '/_authenticated/integracoes'
     | '/_authenticated/lucro-plataforma'
     | '/_authenticated/metas'
     | '/_authenticated/movimentacoes'
@@ -318,6 +355,8 @@ export interface FileRouteTypes {
     | '/_authenticated/simulador'
     | '/_authenticated/suporte'
     | '/_authenticated/admin/usuarios'
+    | '/api/public/integrations/sync'
+    | '/api/public/integrations/$provider/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -325,6 +364,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicIntegrationsSyncRoute: typeof ApiPublicIntegrationsSyncRoute
+  ApiPublicIntegrationsProviderWebhookRoute: typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -404,6 +445,13 @@ declare module '@tanstack/react-router' {
       path: '/lucro-plataforma'
       fullPath: '/lucro-plataforma'
       preLoaderRoute: typeof AuthenticatedLucroPlataformaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/integracoes': {
+      id: '/_authenticated/integracoes'
+      path: '/integracoes'
+      fullPath: '/integracoes'
+      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/importacoes': {
@@ -497,6 +545,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/integrations/sync': {
+      id: '/api/public/integrations/sync'
+      path: '/api/public/integrations/sync'
+      fullPath: '/api/public/integrations/sync'
+      preLoaderRoute: typeof ApiPublicIntegrationsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/integrations/$provider/webhook': {
+      id: '/api/public/integrations/$provider/webhook'
+      path: '/api/public/integrations/$provider/webhook'
+      fullPath: '/api/public/integrations/$provider/webhook'
+      preLoaderRoute: typeof ApiPublicIntegrationsProviderWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -513,6 +575,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedHistoricoPrecosRoute: typeof AuthenticatedHistoricoPrecosRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRoute
+  AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedLucroPlataformaRoute: typeof AuthenticatedLucroPlataformaRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMovimentacoesRoute: typeof AuthenticatedMovimentacoesRoute
@@ -536,6 +599,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedHistoricoPrecosRoute: AuthenticatedHistoricoPrecosRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRoute,
+  AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedLucroPlataformaRoute: AuthenticatedLucroPlataformaRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMovimentacoesRoute: AuthenticatedMovimentacoesRoute,
@@ -554,17 +618,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicIntegrationsSyncRoute: ApiPublicIntegrationsSyncRoute,
+  ApiPublicIntegrationsProviderWebhookRoute:
+    ApiPublicIntegrationsProviderWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
