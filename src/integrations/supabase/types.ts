@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_insights: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          impact_amount: number | null
+          kind: string
+          payload: Json | null
+          reference_date: string
+          restaurant_id: string
+          severity: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          impact_amount?: number | null
+          kind: string
+          payload?: Json | null
+          reference_date?: string
+          restaurant_id: string
+          severity?: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          impact_amount?: number | null
+          kind?: string
+          payload?: Json | null
+          reference_date?: string
+          restaurant_id?: string
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -94,6 +141,115 @@ export type Database = {
             foreignKeyName: "cmv_settings_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_adjustments: {
+        Row: {
+          adjusted_value: number | null
+          created_at: string
+          created_by: string | null
+          delta_amount: number
+          field: string | null
+          id: string
+          original_value: number | null
+          reason: string
+          restaurant_id: string
+          target_id: string
+          target_table: string
+          updated_at: string
+        }
+        Insert: {
+          adjusted_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          delta_amount?: number
+          field?: string | null
+          id?: string
+          original_value?: number | null
+          reason: string
+          restaurant_id: string
+          target_id: string
+          target_table: string
+          updated_at?: string
+        }
+        Update: {
+          adjusted_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          delta_amount?: number
+          field?: string | null
+          id?: string
+          original_value?: number | null
+          reason?: string
+          restaurant_id?: string
+          target_id?: string
+          target_table?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_adjustments_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_metrics: {
+        Row: {
+          average_ticket: number
+          computed_at: string
+          cost_auto: number
+          cost_manual: number
+          gross_profit: number
+          id: string
+          margin_pct: number
+          metric_date: string
+          net_profit: number
+          orders_count: number
+          restaurant_id: string
+          revenue_auto: number
+          revenue_manual: number
+        }
+        Insert: {
+          average_ticket?: number
+          computed_at?: string
+          cost_auto?: number
+          cost_manual?: number
+          gross_profit?: number
+          id?: string
+          margin_pct?: number
+          metric_date: string
+          net_profit?: number
+          orders_count?: number
+          restaurant_id: string
+          revenue_auto?: number
+          revenue_manual?: number
+        }
+        Update: {
+          average_ticket?: number
+          computed_at?: string
+          cost_auto?: number
+          cost_manual?: number
+          gross_profit?: number
+          id?: string
+          margin_pct?: number
+          metric_date?: string
+          net_profit?: number
+          orders_count?: number
+          restaurant_id?: string
+          revenue_auto?: number
+          revenue_manual?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_metrics_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
@@ -232,6 +388,71 @@ export type Database = {
           },
         ]
       }
+      integrations: {
+        Row: {
+          access_token_ciphertext: string | null
+          connected_by: string | null
+          created_at: string
+          external_merchant_id: string | null
+          external_merchant_name: string | null
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          orders_synced: number
+          provider: Database["public"]["Enums"]["integration_provider"]
+          refresh_token_ciphertext: string | null
+          restaurant_id: string
+          scopes: string[]
+          status: Database["public"]["Enums"]["integration_status"]
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_ciphertext?: string | null
+          connected_by?: string | null
+          created_at?: string
+          external_merchant_id?: string | null
+          external_merchant_name?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          orders_synced?: number
+          provider: Database["public"]["Enums"]["integration_provider"]
+          refresh_token_ciphertext?: string | null
+          restaurant_id: string
+          scopes?: string[]
+          status?: Database["public"]["Enums"]["integration_status"]
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_ciphertext?: string | null
+          connected_by?: string | null
+          created_at?: string
+          external_merchant_id?: string | null
+          external_merchant_name?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          orders_synced?: number
+          provider?: Database["public"]["Enums"]["integration_provider"]
+          refresh_token_ciphertext?: string | null
+          restaurant_id?: string
+          scopes?: string[]
+          status?: Database["public"]["Enums"]["integration_status"]
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movements: {
         Row: {
           amount: number
@@ -240,10 +461,13 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          integration_id: string | null
           movement_date: string
           notes: string | null
+          origin: Database["public"]["Enums"]["data_origin"]
           payment_method: string | null
           restaurant_id: string
+          source_ref: string | null
           supplier_id: string | null
           type: Database["public"]["Enums"]["movement_type"]
         }
@@ -254,10 +478,13 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          integration_id?: string | null
           movement_date?: string
           notes?: string | null
+          origin?: Database["public"]["Enums"]["data_origin"]
           payment_method?: string | null
           restaurant_id: string
+          source_ref?: string | null
           supplier_id?: string | null
           type: Database["public"]["Enums"]["movement_type"]
         }
@@ -268,10 +495,13 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          integration_id?: string | null
           movement_date?: string
           notes?: string | null
+          origin?: Database["public"]["Enums"]["data_origin"]
           payment_method?: string | null
           restaurant_id?: string
+          source_ref?: string | null
           supplier_id?: string | null
           type?: Database["public"]["Enums"]["movement_type"]
         }
@@ -281,6 +511,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
             referencedColumns: ["id"]
           },
           {
@@ -295,6 +532,108 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders_imported: {
+        Row: {
+          cancellation_amount: number
+          commission: number
+          coupons: number
+          created_at: string
+          customer_name: string | null
+          delivery_fee: number
+          external_order_id: string
+          gross_amount: number
+          id: string
+          integration_id: string | null
+          is_cancelled: boolean
+          items: Json
+          items_count: number
+          marketing_fee: number
+          net_amount: number
+          order_date: string
+          order_hour: number | null
+          order_number: string | null
+          ordered_at: string
+          other_fees: number
+          payment_method: string | null
+          payout_amount: number
+          provider: Database["public"]["Enums"]["integration_provider"]
+          raw_payload: Json | null
+          restaurant_id: string
+          synced_at: string
+        }
+        Insert: {
+          cancellation_amount?: number
+          commission?: number
+          coupons?: number
+          created_at?: string
+          customer_name?: string | null
+          delivery_fee?: number
+          external_order_id: string
+          gross_amount?: number
+          id?: string
+          integration_id?: string | null
+          is_cancelled?: boolean
+          items?: Json
+          items_count?: number
+          marketing_fee?: number
+          net_amount?: number
+          order_date: string
+          order_hour?: number | null
+          order_number?: string | null
+          ordered_at: string
+          other_fees?: number
+          payment_method?: string | null
+          payout_amount?: number
+          provider: Database["public"]["Enums"]["integration_provider"]
+          raw_payload?: Json | null
+          restaurant_id: string
+          synced_at?: string
+        }
+        Update: {
+          cancellation_amount?: number
+          commission?: number
+          coupons?: number
+          created_at?: string
+          customer_name?: string | null
+          delivery_fee?: number
+          external_order_id?: string
+          gross_amount?: number
+          id?: string
+          integration_id?: string | null
+          is_cancelled?: boolean
+          items?: Json
+          items_count?: number
+          marketing_fee?: number
+          net_amount?: number
+          order_date?: string
+          order_hour?: number | null
+          order_number?: string | null
+          ordered_at?: string
+          other_fees?: number
+          payment_method?: string | null
+          payout_amount?: number
+          provider?: Database["public"]["Enums"]["integration_provider"]
+          raw_payload?: Json | null
+          restaurant_id?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_imported_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_imported_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -524,12 +863,15 @@ export type Database = {
           gross_amount: number
           id: string
           import_id: string | null
+          integration_id: string | null
           marketing_fee: number
           net_amount: number
           orders_count: number
+          origin: Database["public"]["Enums"]["data_origin"]
           restaurant_id: string
           sale_date: string
           source: Database["public"]["Enums"]["sale_source"]
+          source_ref: string | null
         }
         Insert: {
           cancellations?: number
@@ -542,12 +884,15 @@ export type Database = {
           gross_amount?: number
           id?: string
           import_id?: string | null
+          integration_id?: string | null
           marketing_fee?: number
           net_amount?: number
           orders_count?: number
+          origin?: Database["public"]["Enums"]["data_origin"]
           restaurant_id: string
           sale_date: string
           source: Database["public"]["Enums"]["sale_source"]
+          source_ref?: string | null
         }
         Update: {
           cancellations?: number
@@ -560,14 +905,24 @@ export type Database = {
           gross_amount?: number
           id?: string
           import_id?: string | null
+          integration_id?: string | null
           marketing_fee?: number
           net_amount?: number
           orders_count?: number
+          origin?: Database["public"]["Enums"]["data_origin"]
           restaurant_id?: string
           sale_date?: string
           source?: Database["public"]["Enums"]["sale_source"]
+          source_ref?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -745,6 +1100,60 @@ export type Database = {
           },
         ]
       }
+      sync_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          integration_id: string
+          kind: Database["public"]["Enums"]["sync_kind"]
+          records_processed: number
+          restaurant_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["sync_status"]
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          integration_id: string
+          kind: Database["public"]["Enums"]["sync_kind"]
+          records_processed?: number
+          restaurant_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["sync_status"]
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          integration_id?: string
+          kind?: Database["public"]["Enums"]["sync_kind"]
+          records_processed?: number
+          restaurant_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["sync_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_logs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -875,11 +1284,29 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       billing_cycle: "mensal" | "semestral" | "anual"
+      data_origin: "automatico" | "manual" | "ajuste" | "importado"
       goal_period: "diaria" | "semanal" | "mensal"
+      integration_provider:
+        | "ifood"
+        | "99food"
+        | "rappi"
+        | "consumer"
+        | "saipos"
+        | "goomer"
+        | "cardapioweb"
+        | "open_finance"
+      integration_status:
+        | "disconnected"
+        | "connecting"
+        | "connected"
+        | "error"
+        | "expired"
       movement_type: "entrada" | "saida" | "transferencia"
       plan_tier: "basico" | "pro" | "premium"
       sale_source: "ifood" | "99food" | "loja" | "whatsapp"
       subscription_status: "trialing" | "active" | "expired" | "canceled"
+      sync_kind: "historico" | "incremental" | "webhook" | "manual"
+      sync_status: "running" | "success" | "error"
       ticket_author_role: "user" | "admin" | "ai"
       ticket_status: "open" | "awaiting_user" | "awaiting_support" | "resolved"
     }
@@ -1011,11 +1438,31 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       billing_cycle: ["mensal", "semestral", "anual"],
+      data_origin: ["automatico", "manual", "ajuste", "importado"],
       goal_period: ["diaria", "semanal", "mensal"],
+      integration_provider: [
+        "ifood",
+        "99food",
+        "rappi",
+        "consumer",
+        "saipos",
+        "goomer",
+        "cardapioweb",
+        "open_finance",
+      ],
+      integration_status: [
+        "disconnected",
+        "connecting",
+        "connected",
+        "error",
+        "expired",
+      ],
       movement_type: ["entrada", "saida", "transferencia"],
       plan_tier: ["basico", "pro", "premium"],
       sale_source: ["ifood", "99food", "loja", "whatsapp"],
       subscription_status: ["trialing", "active", "expired", "canceled"],
+      sync_kind: ["historico", "incremental", "webhook", "manual"],
+      sync_status: ["running", "success", "error"],
       ticket_author_role: ["user", "admin", "ai"],
       ticket_status: ["open", "awaiting_user", "awaiting_support", "resolved"],
     },
