@@ -1,5 +1,6 @@
 import {
-  Plug,Link, useRouterState } from "@tanstack/react-router";
+  Plug,
+Link, useRouterState } from "@tanstack/react-router";
 import { useRestaurant } from "@/hooks/use-restaurant";
 import luudLogo from "@/assets/luud-logo.png.asset.json";
 import {
