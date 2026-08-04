@@ -20,6 +20,7 @@ import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedLucroPlataformaRouteImport } from './routes/_authenticated/lucro-plataforma'
+import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
 import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
 import { Route as AuthenticatedHistoricoPrecosRouteImport } from './routes/_authenticated/historico-precos'
 import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
@@ -90,6 +91,12 @@ const AuthenticatedLucroPlataformaRoute =
   AuthenticatedLucroPlataformaRouteImport.update({
     id: '/lucro-plataforma',
     path: '/lucro-plataforma',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedIntegracoesRoute =
+  AuthenticatedIntegracoesRouteImport.update({
+    id: '/integracoes',
+    path: '/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedImportacoesRoute =
@@ -194,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
@@ -221,6 +229,7 @@ export interface FileRoutesByTo {
   '/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
   '/importacoes': typeof AuthenticatedImportacoesRoute
+  '/integracoes': typeof AuthenticatedIntegracoesRoute
   '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
@@ -250,6 +259,7 @@ export interface FileRoutesById {
   '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
   '/_authenticated/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
   '/_authenticated/importacoes': typeof AuthenticatedImportacoesRoute
+  '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
   '/_authenticated/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/movimentacoes': typeof AuthenticatedMovimentacoesRoute
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/historico-precos'
     | '/importacoes'
+    | '/integracoes'
     | '/lucro-plataforma'
     | '/metas'
     | '/movimentacoes'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/fornecedores'
     | '/historico-precos'
     | '/importacoes'
+    | '/integracoes'
     | '/lucro-plataforma'
     | '/metas'
     | '/movimentacoes'
@@ -334,6 +346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/fornecedores'
     | '/_authenticated/historico-precos'
     | '/_authenticated/importacoes'
+    | '/_authenticated/integracoes'
     | '/_authenticated/lucro-plataforma'
     | '/_authenticated/metas'
     | '/_authenticated/movimentacoes'
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       path: '/lucro-plataforma'
       fullPath: '/lucro-plataforma'
       preLoaderRoute: typeof AuthenticatedLucroPlataformaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/integracoes': {
+      id: '/_authenticated/integracoes'
+      path: '/integracoes'
+      fullPath: '/integracoes'
+      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/importacoes': {
@@ -555,6 +575,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
   AuthenticatedHistoricoPrecosRoute: typeof AuthenticatedHistoricoPrecosRoute
   AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRoute
+  AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
   AuthenticatedLucroPlataformaRoute: typeof AuthenticatedLucroPlataformaRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMovimentacoesRoute: typeof AuthenticatedMovimentacoesRoute
@@ -578,6 +599,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
   AuthenticatedHistoricoPrecosRoute: AuthenticatedHistoricoPrecosRoute,
   AuthenticatedImportacoesRoute: AuthenticatedImportacoesRoute,
+  AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
   AuthenticatedLucroPlataformaRoute: AuthenticatedLucroPlataformaRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMovimentacoesRoute: AuthenticatedMovimentacoesRoute,
