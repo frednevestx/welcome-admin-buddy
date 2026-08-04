@@ -33,6 +33,7 @@ import { Route as AuthenticatedCalculadoraPrecoRouteImport } from './routes/_aut
 import { Route as AuthenticatedAssistenteIaRouteImport } from './routes/_authenticated/assistente-ia'
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as ApiPublicIntegrationsProviderWebhookRouteImport } from './routes/api/public/integrations/$provider/webhook'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -163,6 +164,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicIntegrationsProviderWebhookRoute =
+  ApiPublicIntegrationsProviderWebhookRouteImport.update({
+    id: '/api/public/integrations/$provider/webhook',
+    path: '/api/public/integrations/$provider/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -240,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/suporte'
     | '/admin/usuarios'
+    | '/api/public/integrations/$provider/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/suporte'
     | '/admin/usuarios'
+    | '/api/public/integrations/$provider/webhook'
   id:
     | '__root__'
     | '/'
@@ -318,6 +330,7 @@ export interface FileRouteTypes {
     | '/_authenticated/simulador'
     | '/_authenticated/suporte'
     | '/_authenticated/admin/usuarios'
+    | '/api/public/integrations/$provider/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -325,6 +338,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicIntegrationsProviderWebhookRoute: typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -497,6 +511,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/integrations/$provider/webhook': {
+      id: '/api/public/integrations/$provider/webhook'
+      path: '/api/public/integrations/$provider/webhook'
+      fullPath: '/api/public/integrations/$provider/webhook'
+      preLoaderRoute: typeof ApiPublicIntegrationsProviderWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -554,6 +575,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicIntegrationsProviderWebhookRoute:
+    ApiPublicIntegrationsProviderWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
