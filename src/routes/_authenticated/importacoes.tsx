@@ -424,13 +424,19 @@ function findColumn(headers: string[], aliases: string[]): number {
   }
   return -1;
 }
+const DATE_LIKE = /^\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/;
 function toNumber(v: unknown): number {
   if (v == null || v === "") return 0;
+  if (v instanceof Date) return 0;
   if (typeof v === "number") return v;
-  const s = String(v).replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+  const raw = String(v).trim();
+  if (DATE_LIKE.test(raw)) return 0; // nunca interpretar data como valor
+  const s = raw.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+  if (!/\d/.test(s)) return 0;
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
+
 function toDate(v: unknown): string | null {
   if (v == null || v === "") return null;
   if (v instanceof Date) return v.toISOString().slice(0, 10);
