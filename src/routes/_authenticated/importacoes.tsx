@@ -463,6 +463,82 @@ function toDate(v: unknown): string | null {
   return null;
 }
 
+/** Detecta o Relatório de Conciliação do iFood (uma linha por lançamento financeiro). */
+function isIfoodConciliation(headers: string[]): boolean {
+  const h = headers.map(normalize);
+  const has = (n: string) => h.some((x) => x === n);
+  return has("fato gerador") && has("tipo lancamento") && has("valor") && has("pedido associado ifood");
+}
+
+/**
+ * Leitor do Relatório de Conciliação do iFood.
+ * Agrupa por dia do pedido: pedidos distintos, cesta bruta por pedido,
+ * custos por tipo de lançamento e repasse = soma da coluna "valor".
+ */
+function parseIfoodConciliation(json: Record<string, unknown>[]): ParsedRow[] {
+  interface Acc extends ParsedRow {
+    orderIds: Set<string>;
+  }
+  const map = new Map<string, Acc>();
+  const seenOrders = new Set<string>();
+
+  for (const r of json) {
+    const date =
+      toDate(r["data_criacao_pedido_associado"]) ??
+      toDate(r["data_faturamento"]) ??
+      toDate(r["data_apuracao_inicio"]);
+    if (!date) continue;
+
+    const valor = toNumber(r["valor"]);
+    const tipo = normalize(String(r["tipo_lancamento"] ?? ""));
+    const fato = normalize(String(r["fato_gerador"] ?? ""));
+    const desc = normalize(String(r["descricao_lancamento"] ?? ""));
+    const orderId = String(r["pedido_associado_ifood"] ?? "").trim();
+
+    let acc = map.get(date);
+    if (!acc) {
+      acc = {
+        sale_date: date,
+        gross_amount: 0,
+        net_amount: 0,
+        orders_count: 0,
+        commission: 0,
+        fees: 0,
+        coupons: 0,
+        cancellations: 0,
+        orderIds: new Set<string>(),
+      };
+      map.set(date, acc);
+    }
+
+    // repasse real do iFood
+    acc.net_amount += valor;
+
+    // pedido distinto + cesta bruta (uma vez por pedido)
+    if (orderId && !seenOrders.has(orderId)) {
+      seenOrders.add(orderId);
+      acc.orderIds.add(orderId);
+      acc.gross_amount += toNumber(r["valor_cesta_final"]);
+    }
+
+    const abs = Math.abs(valor);
+    if (fato.includes("cancelamento")) {
+      acc.cancellations += abs;
+    } else if (tipo.includes("retencao") || desc.includes("comissao") || desc.includes("taxa de servico")) {
+      acc.commission += abs;
+    } else if (fato.includes("frete") || desc.includes("entrega") || desc.includes("pagamento")) {
+      acc.fees += abs;
+    } else if (tipo.includes("subsidio") && valor < 0) {
+      // promoção custeada pela loja é custo; custeada pelo iFood é crédito
+      acc.coupons += abs;
+    }
+  }
+
+  return Array.from(map.values())
+    .map(({ orderIds, ...row }) => ({ ...row, orders_count: orderIds.size }))
+    .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+}
+
 async function parseFile(file: File, source: SourceKey): Promise<{ headers: string[]; rows: ParsedRow[] }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
@@ -470,17 +546,23 @@ async function parseFile(file: File, source: SourceKey): Promise<{ headers: stri
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "", raw: true });
   if (json.length === 0) return { headers: [], rows: [] };
   const headers = Object.keys(json[0]);
+
+  if (isIfoodConciliation(headers)) {
+    return { headers, rows: parseIfoodConciliation(json) };
+  }
+
   const ALIASES = source === "99food" ? FOOD99_ALIASES : IFOOD_ALIASES;
   const idx = {
     sale_date: findColumn(headers, ALIASES.sale_date),
-    gross_amount: findColumn(headers, ALIASES.gross_amount),
-    net_amount: findColumn(headers, ALIASES.net_amount),
-    orders_count: findColumn(headers, ALIASES.orders_count),
-    commission: findColumn(headers, ALIASES.commission),
-    fees: findColumn(headers, ALIASES.fees),
-    coupons: findColumn(headers, ALIASES.coupons),
-    cancellations: findColumn(headers, ALIASES.cancellations),
+    gross_amount: findColumn(headers, ALIASES.gross_amount, true),
+    net_amount: findColumn(headers, ALIASES.net_amount, true),
+    orders_count: findColumn(headers, ALIASES.orders_count, true),
+    commission: findColumn(headers, ALIASES.commission, true),
+    fees: findColumn(headers, ALIASES.fees, true),
+    coupons: findColumn(headers, ALIASES.coupons, true),
+    cancellations: findColumn(headers, ALIASES.cancellations, true),
   };
+
   if (idx.sale_date < 0) throw new Error("Não encontrei a coluna de data. Verifique se o arquivo tem uma coluna como 'Data'.");
   if (idx.gross_amount < 0 && idx.net_amount < 0) throw new Error("Não encontrei coluna de valor (bruto ou líquido).");
 
