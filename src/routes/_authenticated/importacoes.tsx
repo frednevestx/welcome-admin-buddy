@@ -415,15 +415,21 @@ const FOOD99_ALIASES: Record<keyof ParsedRow, string[]> = {
 function normalize(s: string) {
   return s.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
-function findColumn(headers: string[], aliases: string[]): number {
+function findColumn(headers: string[], aliases: string[], numeric = false): number {
   const norm = headers.map(normalize);
   for (const alias of aliases) {
     const a = normalize(alias);
-    const idx = norm.findIndex((h) => h === a || h.includes(a));
+    const idx = norm.findIndex(
+      (h) =>
+        (h === a || h.includes(a)) &&
+        // colunas de percentual e de data nunca servem como valor monetário
+        (!numeric || (!h.includes("percentual") && !h.includes("data") && !h.includes("date"))),
+    );
     if (idx >= 0) return idx;
   }
   return -1;
 }
+
 const DATE_LIKE = /^\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4})/;
 function toNumber(v: unknown): number {
   if (v == null || v === "") return 0;
