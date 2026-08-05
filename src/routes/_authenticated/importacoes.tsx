@@ -719,10 +719,11 @@ function ImportsSection() {
 
         {rows.length > 0 && (
           <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-4">
               <SummaryTile label="Dias" value={String(rows.length)} />
               <SummaryTile label="Pedidos" value={String(totals.orders)} />
               <SummaryTile label="Total vendido" value={formatBRL(totals.gross)} />
+              <SummaryTile label="Total a receber" value={formatBRL(totals.net)} />
             </div>
             <div className="border border-border rounded-lg overflow-hidden">
               <div className="max-h-80 overflow-auto">
