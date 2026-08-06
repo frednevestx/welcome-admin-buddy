@@ -478,16 +478,20 @@ function StatCard({
   value,
   hint,
   tone,
+  to,
+  search,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   hint?: string;
   tone: "primary" | "success" | "destructive";
+  to?: string;
+  search?: { from: string; to: string };
 }) {
   const toneClass = tone === "primary" ? "text-primary" : tone === "success" ? "text-primary" : "text-destructive";
-  return (
-    <Card className="p-5 relative overflow-hidden">
+  const card = (
+    <Card className={cn("p-5 relative overflow-hidden h-full", to && "transition-colors hover:border-primary/50")}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-muted-foreground">{label}</span>
         <span className={cn("h-8 w-8 rounded-lg grid place-items-center bg-secondary", toneClass)}>{icon}</span>
@@ -496,7 +500,14 @@ function StatCard({
       {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
     </Card>
   );
+  if (!to) return card;
+  return (
+    <Link to={to as any} search={search as any} className="block">
+      {card}
+    </Link>
+  );
 }
+
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
