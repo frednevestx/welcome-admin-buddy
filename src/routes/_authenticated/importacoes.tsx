@@ -669,7 +669,7 @@ async function parseFile(
     }
   }
   const rows = Array.from(map.values()).sort((a, b) => a.sale_date.localeCompare(b.sale_date));
-  return { headers, rows };
+  return { headers, rows, detected: source };
 }
 
 function ImportsSection() {
