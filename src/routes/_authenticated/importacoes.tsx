@@ -539,6 +539,71 @@ function parseIfoodConciliation(json: Record<string, unknown>[]): ParsedRow[] {
     .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
 }
 
+/** Detecta o relatório "Dados da loja" da 99Food (uma linha por dia). */
+function is99FoodDaily(headers: string[]): boolean {
+  const h = headers.map(normalize);
+  const has = (n: string) => h.some((x) => x.includes(n));
+  return has("total de vendas realizadas") && has("receita total de vendas");
+}
+
+/**
+ * Leitor do relatório diário da 99Food: mapeia colunas por nome exato,
+ * evitando confundir contagens/percentuais com valores.
+ */
+function parse99FoodDaily(json: Record<string, unknown>[]): ParsedRow[] {
+  const map = new Map<string, ParsedRow>();
+  const pick = (r: Record<string, unknown>, needle: string): unknown => {
+    const key = Object.keys(r).find((k) => normalize(k) === normalize(needle));
+    return key ? r[key] : "";
+  };
+
+  for (const r of json) {
+    const date = toDate(pick(r, "Data"));
+    if (!date) continue;
+
+    const orders = Math.round(toNumber(pick(r, "Total de vendas realizadas")));
+    const gross = toNumber(pick(r, "Receita total de vendas"));
+    const commission = Math.abs(toNumber(pick(r, "Despesas de comissão da loja")));
+    const paymentFee = Math.abs(toNumber(pick(r, "Taxa de canal de pagamento da loja")));
+    const coupons = Math.abs(toNumber(pick(r, "Despesas de ofertas da loja")));
+    const rewards = Math.abs(toNumber(pick(r, "Recompensas da plataforma")));
+    const cancellations = Math.abs(
+      toNumber(pick(r, "Valor da perda de pedido por cancelamentos por parte da loja")),
+    );
+
+    // repasse = venda - comissão - taxa de pagamento - ofertas custeadas - cancelamentos + recompensas
+    const net = gross - commission - paymentFee - coupons - cancellations + rewards;
+
+    const acc = map.get(date);
+    if (acc) {
+      acc.orders_count += orders;
+      acc.gross_amount += gross;
+      acc.commission += commission;
+      acc.fees += paymentFee;
+      acc.coupons += coupons;
+      acc.cancellations += cancellations;
+      acc.net_amount += net;
+    } else {
+      map.set(date, {
+        sale_date: date,
+        orders_count: orders,
+        gross_amount: gross,
+        commission,
+        fees: paymentFee,
+        coupons,
+        cancellations,
+        net_amount: net,
+      });
+    }
+  }
+
+  return Array.from(map.values())
+    .filter((r) => r.orders_count > 0 || r.gross_amount !== 0)
+    .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+}
+
+
+
 async function parseFile(file: File, source: SourceKey): Promise<{ headers: string[]; rows: ParsedRow[] }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
