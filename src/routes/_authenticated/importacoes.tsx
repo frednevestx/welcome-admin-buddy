@@ -604,17 +604,25 @@ function parse99FoodDaily(json: Record<string, unknown>[]): ParsedRow[] {
 
 
 
-async function parseFile(file: File, source: SourceKey): Promise<{ headers: string[]; rows: ParsedRow[] }> {
+async function parseFile(
+  file: File,
+  source: SourceKey,
+): Promise<{ headers: string[]; rows: ParsedRow[]; detected: SourceKey }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "", raw: true });
-  if (json.length === 0) return { headers: [], rows: [] };
+  if (json.length === 0) return { headers: [], rows: [], detected: source };
   const headers = Object.keys(json[0]);
 
   if (isIfoodConciliation(headers)) {
-    return { headers, rows: parseIfoodConciliation(json) };
+    return { headers, rows: parseIfoodConciliation(json), detected: "ifood" };
   }
+
+  if (is99FoodDaily(headers)) {
+    return { headers, rows: parse99FoodDaily(json), detected: "99food" };
+  }
+
 
   const ALIASES = source === "99food" ? FOOD99_ALIASES : IFOOD_ALIASES;
   const idx = {
