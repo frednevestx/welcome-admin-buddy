@@ -208,8 +208,9 @@ function DashboardPage() {
   });
 
   const data = q.data;
-  const bySourceEntries = data ? Object.entries(data.bySource) : [];
+  const bySourceEntries = (f?.channels ?? []).map((c) => [c.key, c.faturamento] as const);
   const sourceTotal = bySourceEntries.reduce((a, [, v]) => a + v, 0);
+  const searchPeriod = { from: period.from, to: period.to };
 
   const goal = goalQ.data;
   const goalPct = goal && goal.goal.target_amount > 0
@@ -235,40 +236,53 @@ function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={<Wallet className="h-4 w-4" />}
-          label="Total Vendido"
-          value={formatBRL(data?.totalVendido)}
-          hint="Todas as plataformas"
+          label="Faturamento Total"
+          value={formatBRL(f?.faturamento)}
+          hint={`${formatNumber(f?.pedidos)} pedidos · ver por plataforma`}
           tone="primary"
+          to="/lucro-plataforma"
+          search={searchPeriod}
         />
         <StatCard
           icon={<TrendingDown className="h-4 w-4" />}
           label="Total Gasto"
-          value={formatBRL(data?.totalGasto)}
-          hint="Compras + gastos"
+          value={formatBRL(f?.totalGasto)}
+          hint={
+            f
+              ? `Taxas ${formatBRL(f.taxasPlataforma)} + despesas ${formatBRL(f.despesasManuais)}`
+              : "Taxas das plataformas + despesas"
+          }
           tone="destructive"
+          to="/movimentacoes"
+          search={searchPeriod}
         />
         <StatCard
           icon={<PiggyBank className="h-4 w-4" />}
-          label="Quanto Sobrou"
-          value={formatBRL(data?.sobrou)}
-          hint={data && data.totalVendido > 0 ? formatPct((data.sobrou / data.totalVendido) * 100) + " do vendido" : "—"}
-          tone={data && data.sobrou >= 0 ? "success" : "destructive"}
+          label="Lucro Estimado"
+          value={formatBRL(f?.lucro)}
+          hint={f && f.faturamento > 0 ? formatPct(f.margem) + " de margem" : "—"}
+          tone={f && f.lucro >= 0 ? "success" : "destructive"}
+          to="/lucro-plataforma"
+          search={searchPeriod}
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Receipt className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-medium">Lucro médio por pedido</h2>
-          </div>
-          <div className="text-3xl font-semibold tabular-nums tracking-tight">
-            {formatBRL(data?.lucroMedioPedido)}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {formatNumber(data?.totalPedidos)} pedidos · Sobrou {formatBRL(data?.sobrou)}
-          </div>
-        </Card>
+        <Link to="/simulador" search={searchPeriod} className="block">
+          <Card className="p-5 transition-colors hover:border-primary/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Receipt className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-medium">Lucro médio por pedido</h2>
+            </div>
+            <div className="text-3xl font-semibold tabular-nums tracking-tight">
+              {formatBRL(f?.lucroPorPedido)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {formatNumber(f?.pedidos)} pedidos · Lucro {formatBRL(f?.lucro)} · simular
+            </div>
+          </Card>
+        </Link>
+
 
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
