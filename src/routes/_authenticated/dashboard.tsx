@@ -32,6 +32,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { TrialBanner } from "@/components/trial-banner";
+import { useFinanceSummary } from "@/lib/finance";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
