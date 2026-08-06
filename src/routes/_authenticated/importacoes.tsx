@@ -1,5 +1,5 @@
 import { translateAuthError } from "@/lib/auth-errors";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { Card } from "@/components/ui/card";
@@ -675,6 +675,7 @@ async function parseFile(
 function ImportsSection() {
   const { restaurant } = useRestaurant();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<SourceKey>("ifood");
   const [file, setFile] = useState<File | null>(null);
