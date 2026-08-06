@@ -409,7 +409,7 @@ const FOOD99_ALIASES: Record<keyof ParsedRow, string[]> = {
   commission: ["despesas de comissao da loja", "comissao da loja", "comissao"],
   fees: ["taxa de canal de pagamento da loja", "taxa de pagamento", "taxa de canal"],
   coupons: ["despesas de ofertas da loja", "ofertas da loja", "cupons"],
-  cancellations: ["cancelamentos", "cancelados"],
+  cancellations: ["valor da perda de pedido por cancelamentos", "valor de cancelamentos"],
 };
 
 function normalize(s: string) {
