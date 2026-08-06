@@ -460,8 +460,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          fixed_parent_id: string | null
           id: string
           integration_id: string | null
+          is_fixed: boolean
           movement_date: string
           notes: string | null
           origin: Database["public"]["Enums"]["data_origin"]
@@ -477,8 +479,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          fixed_parent_id?: string | null
           id?: string
           integration_id?: string | null
+          is_fixed?: boolean
           movement_date?: string
           notes?: string | null
           origin?: Database["public"]["Enums"]["data_origin"]
@@ -494,8 +498,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          fixed_parent_id?: string | null
           id?: string
           integration_id?: string | null
+          is_fixed?: boolean
           movement_date?: string
           notes?: string | null
           origin?: Database["public"]["Enums"]["data_origin"]
@@ -511,6 +517,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_fixed_parent_id_fkey"
+            columns: ["fixed_parent_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
             referencedColumns: ["id"]
           },
           {

@@ -32,6 +32,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { TrialBanner } from "@/components/trial-banner";
+import { useFinanceSummary } from "@/lib/finance";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -70,48 +72,21 @@ function DashboardPage() {
   const [evoRange, setEvoRange] = useState<"3" | "6" | "12">("6");
   const [rankingRange, setRankingRange] = useState<RankingRange>("30d");
 
+  // Fonte única de verdade financeira (mesma regra em todas as telas)
+  const fin = useFinanceSummary(restaurant?.id, period.from, period.to);
+  const f = fin.data;
+
   const q = useQuery({
     enabled: !!restaurant?.id,
     queryKey: ["dashboard", restaurant?.id, period.from, period.to],
     queryFn: async () => {
       const rid = restaurant!.id;
-      const [salesRes, movRes, recentRes] = await Promise.all([
-        supabase
-          .from("sales")
-          .select("source, sale_date, orders_count, gross_amount, net_amount")
-          .eq("restaurant_id", rid)
-          .gte("sale_date", period.from)
-          .lte("sale_date", period.to),
-        supabase
-          .from("movements")
-          .select("amount, category_id, categories(name)")
-          .eq("restaurant_id", rid)
-          .gte("movement_date", period.from)
-          .lte("movement_date", period.to),
-        supabase
-          .from("movements")
-          .select("id, movement_date, description, amount, type, categories(name)")
-          .eq("restaurant_id", rid)
-          .order("movement_date", { ascending: false })
-          .limit(6),
-      ]);
-
-      const sales = salesRes.data ?? [];
-      const movs = movRes.data ?? [];
-
-      const totalVendido = sales.reduce((a, s) => a + Number(s.gross_amount || 0), 0);
-      const totalPedidos = sales.reduce((a, s) => a + Number(s.orders_count || 0), 0);
-      const totalGasto = movs.reduce((a, m) => a + Number(m.amount || 0), 0);
-      const sobrou = totalVendido - totalGasto;
-      const lucroMedioPedido = totalPedidos > 0 ? sobrou / totalPedidos : 0;
-
-      const bySource: Record<string, number> = {
-        ifood: 0,
-        "99food": 0,
-        loja: 0,
-        whatsapp: 0,
-      };
-      for (const s of sales) bySource[s.source] = (bySource[s.source] || 0) + Number(s.gross_amount || 0);
+      const { data: recent } = await supabase
+        .from("movements")
+        .select("id, movement_date, description, amount, type, categories(name)")
+        .eq("restaurant_id", rid)
+        .order("movement_date", { ascending: false })
+        .limit(6);
 
       const today = periodFromKey("today");
       const p7 = periodFromKey("7d");
@@ -132,17 +107,12 @@ function DashboardPage() {
       ]);
 
       return {
-        totalVendido,
-        totalGasto,
-        sobrou,
-        totalPedidos,
-        lucroMedioPedido,
-        bySource,
         pedidos: { hoje: pHoje, d7: p7d, d30: p30d },
-        recent: recentRes.data ?? [],
+        recent: recent ?? [],
       };
     },
   });
+
 
   // Ranking de gastos com filtro próprio
   const rankQ = useQuery({
@@ -240,8 +210,9 @@ function DashboardPage() {
   });
 
   const data = q.data;
-  const bySourceEntries = data ? Object.entries(data.bySource) : [];
+  const bySourceEntries = (f?.channels ?? []).map((c) => [c.key, c.faturamento] as const);
   const sourceTotal = bySourceEntries.reduce((a, [, v]) => a + v, 0);
+  const searchPeriod = { from: period.from, to: period.to };
 
   const goal = goalQ.data;
   const goalPct = goal && goal.goal.target_amount > 0
@@ -267,40 +238,53 @@ function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <StatCard
           icon={<Wallet className="h-4 w-4" />}
-          label="Total Vendido"
-          value={formatBRL(data?.totalVendido)}
-          hint="Todas as plataformas"
+          label="Faturamento Total"
+          value={formatBRL(f?.faturamento)}
+          hint={`${formatNumber(f?.pedidos)} pedidos · ver por plataforma`}
           tone="primary"
+          to="/lucro-plataforma"
+          search={searchPeriod}
         />
         <StatCard
           icon={<TrendingDown className="h-4 w-4" />}
           label="Total Gasto"
-          value={formatBRL(data?.totalGasto)}
-          hint="Compras + gastos"
+          value={formatBRL(f?.totalGasto)}
+          hint={
+            f
+              ? `Taxas ${formatBRL(f.taxasPlataforma)} + despesas ${formatBRL(f.despesasManuais)}`
+              : "Taxas das plataformas + despesas"
+          }
           tone="destructive"
+          to="/movimentacoes"
+          search={searchPeriod}
         />
         <StatCard
           icon={<PiggyBank className="h-4 w-4" />}
-          label="Quanto Sobrou"
-          value={formatBRL(data?.sobrou)}
-          hint={data && data.totalVendido > 0 ? formatPct((data.sobrou / data.totalVendido) * 100) + " do vendido" : "—"}
-          tone={data && data.sobrou >= 0 ? "success" : "destructive"}
+          label="Lucro Estimado"
+          value={formatBRL(f?.lucro)}
+          hint={f && f.faturamento > 0 ? formatPct(f.margem) + " de margem" : "—"}
+          tone={f && f.lucro >= 0 ? "success" : "destructive"}
+          to="/lucro-plataforma"
+          search={searchPeriod}
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Receipt className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-medium">Lucro médio por pedido</h2>
-          </div>
-          <div className="text-3xl font-semibold tabular-nums tracking-tight">
-            {formatBRL(data?.lucroMedioPedido)}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {formatNumber(data?.totalPedidos)} pedidos · Sobrou {formatBRL(data?.sobrou)}
-          </div>
-        </Card>
+        <Link to="/simulador" search={searchPeriod} className="block">
+          <Card className="p-5 transition-colors hover:border-primary/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Receipt className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-medium">Lucro médio por pedido</h2>
+            </div>
+            <div className="text-3xl font-semibold tabular-nums tracking-tight">
+              {formatBRL(f?.lucroPorPedido)}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {formatNumber(f?.pedidos)} pedidos · Lucro {formatBRL(f?.lucro)} · simular
+            </div>
+          </Card>
+        </Link>
+
 
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -494,16 +478,20 @@ function StatCard({
   value,
   hint,
   tone,
+  to,
+  search,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   hint?: string;
   tone: "primary" | "success" | "destructive";
+  to?: string;
+  search?: { from: string; to: string };
 }) {
   const toneClass = tone === "primary" ? "text-primary" : tone === "success" ? "text-primary" : "text-destructive";
-  return (
-    <Card className="p-5 relative overflow-hidden">
+  const card = (
+    <Card className={cn("p-5 relative overflow-hidden h-full", to && "transition-colors hover:border-primary/50")}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-muted-foreground">{label}</span>
         <span className={cn("h-8 w-8 rounded-lg grid place-items-center bg-secondary", toneClass)}>{icon}</span>
@@ -512,7 +500,14 @@ function StatCard({
       {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
     </Card>
   );
+  if (!to) return card;
+  return (
+    <Link to={to as any} search={search as any} className="block">
+      {card}
+    </Link>
+  );
 }
+
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
