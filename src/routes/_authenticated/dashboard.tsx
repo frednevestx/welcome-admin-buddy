@@ -30,7 +30,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrialBanner } from "@/components/trial-banner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
