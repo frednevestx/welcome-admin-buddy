@@ -70,48 +70,21 @@ function DashboardPage() {
   const [evoRange, setEvoRange] = useState<"3" | "6" | "12">("6");
   const [rankingRange, setRankingRange] = useState<RankingRange>("30d");
 
+  // Fonte única de verdade financeira (mesma regra em todas as telas)
+  const fin = useFinanceSummary(restaurant?.id, period.from, period.to);
+  const f = fin.data;
+
   const q = useQuery({
     enabled: !!restaurant?.id,
     queryKey: ["dashboard", restaurant?.id, period.from, period.to],
     queryFn: async () => {
       const rid = restaurant!.id;
-      const [salesRes, movRes, recentRes] = await Promise.all([
-        supabase
-          .from("sales")
-          .select("source, sale_date, orders_count, gross_amount, net_amount")
-          .eq("restaurant_id", rid)
-          .gte("sale_date", period.from)
-          .lte("sale_date", period.to),
-        supabase
-          .from("movements")
-          .select("amount, category_id, categories(name)")
-          .eq("restaurant_id", rid)
-          .gte("movement_date", period.from)
-          .lte("movement_date", period.to),
-        supabase
-          .from("movements")
-          .select("id, movement_date, description, amount, type, categories(name)")
-          .eq("restaurant_id", rid)
-          .order("movement_date", { ascending: false })
-          .limit(6),
-      ]);
-
-      const sales = salesRes.data ?? [];
-      const movs = movRes.data ?? [];
-
-      const totalVendido = sales.reduce((a, s) => a + Number(s.gross_amount || 0), 0);
-      const totalPedidos = sales.reduce((a, s) => a + Number(s.orders_count || 0), 0);
-      const totalGasto = movs.reduce((a, m) => a + Number(m.amount || 0), 0);
-      const sobrou = totalVendido - totalGasto;
-      const lucroMedioPedido = totalPedidos > 0 ? sobrou / totalPedidos : 0;
-
-      const bySource: Record<string, number> = {
-        ifood: 0,
-        "99food": 0,
-        loja: 0,
-        whatsapp: 0,
-      };
-      for (const s of sales) bySource[s.source] = (bySource[s.source] || 0) + Number(s.gross_amount || 0);
+      const { data: recent } = await supabase
+        .from("movements")
+        .select("id, movement_date, description, amount, type, categories(name)")
+        .eq("restaurant_id", rid)
+        .order("movement_date", { ascending: false })
+        .limit(6);
 
       const today = periodFromKey("today");
       const p7 = periodFromKey("7d");
@@ -132,17 +105,12 @@ function DashboardPage() {
       ]);
 
       return {
-        totalVendido,
-        totalGasto,
-        sobrou,
-        totalPedidos,
-        lucroMedioPedido,
-        bySource,
         pedidos: { hoje: pHoje, d7: p7d, d30: p30d },
-        recent: recentRes.data ?? [],
+        recent: recent ?? [],
       };
     },
   });
+
 
   // Ranking de gastos com filtro próprio
   const rankQ = useQuery({
