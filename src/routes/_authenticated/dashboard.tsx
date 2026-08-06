@@ -35,6 +35,10 @@ import { TrialBanner } from "@/components/trial-banner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
+  validateSearch: (search: Record<string, unknown>): { from?: string; to?: string } => ({
+    from: typeof search.from === "string" ? search.from : undefined,
+    to: typeof search.to === "string" ? search.to : undefined,
+  }),
 });
 
 type RankingRange = "today" | "7d" | "30d" | "90d" | "year";
@@ -54,7 +58,15 @@ function rangeToDates(r: RankingRange): { from: string; to: string; label: strin
 
 function DashboardPage() {
   const { restaurant } = useRestaurant();
+  const { from: searchFrom, to: searchTo } = Route.useSearch();
   const { period, setPeriod } = usePeriod("30d");
+
+  // Após importar uma planilha, abrimos o dashboard já no período importado
+  useEffect(() => {
+    if (searchFrom && searchTo) {
+      setPeriod(periodFromKey("custom", { from: searchFrom, to: searchTo }));
+    }
+  }, [searchFrom, searchTo, setPeriod]);
   const [evoRange, setEvoRange] = useState<"3" | "6" | "12">("6");
   const [rankingRange, setRankingRange] = useState<RankingRange>("30d");
 
