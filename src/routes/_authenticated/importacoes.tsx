@@ -1,5 +1,5 @@
 import { translateAuthError } from "@/lib/auth-errors";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { Card } from "@/components/ui/card";
@@ -409,7 +409,7 @@ const FOOD99_ALIASES: Record<keyof ParsedRow, string[]> = {
   commission: ["despesas de comissao da loja", "comissao da loja", "comissao"],
   fees: ["taxa de canal de pagamento da loja", "taxa de pagamento", "taxa de canal"],
   coupons: ["despesas de ofertas da loja", "ofertas da loja", "cupons"],
-  cancellations: ["cancelamentos", "cancelados"],
+  cancellations: ["valor da perda de pedido por cancelamentos", "valor de cancelamentos"],
 };
 
 function normalize(s: string) {
@@ -539,17 +539,90 @@ function parseIfoodConciliation(json: Record<string, unknown>[]): ParsedRow[] {
     .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
 }
 
-async function parseFile(file: File, source: SourceKey): Promise<{ headers: string[]; rows: ParsedRow[] }> {
+/** Detecta o relatório "Dados da loja" da 99Food (uma linha por dia). */
+function is99FoodDaily(headers: string[]): boolean {
+  const h = headers.map(normalize);
+  const has = (n: string) => h.some((x) => x.includes(n));
+  return has("total de vendas realizadas") && has("receita total de vendas");
+}
+
+/**
+ * Leitor do relatório diário da 99Food: mapeia colunas por nome exato,
+ * evitando confundir contagens/percentuais com valores.
+ */
+function parse99FoodDaily(json: Record<string, unknown>[]): ParsedRow[] {
+  const map = new Map<string, ParsedRow>();
+  const pick = (r: Record<string, unknown>, needle: string): unknown => {
+    const key = Object.keys(r).find((k) => normalize(k) === normalize(needle));
+    return key ? r[key] : "";
+  };
+
+  for (const r of json) {
+    const date = toDate(pick(r, "Data"));
+    if (!date) continue;
+
+    const orders = Math.round(toNumber(pick(r, "Total de vendas realizadas")));
+    const gross = toNumber(pick(r, "Receita total de vendas"));
+    const commission = Math.abs(toNumber(pick(r, "Despesas de comissão da loja")));
+    const paymentFee = Math.abs(toNumber(pick(r, "Taxa de canal de pagamento da loja")));
+    const coupons = Math.abs(toNumber(pick(r, "Despesas de ofertas da loja")));
+    const rewards = Math.abs(toNumber(pick(r, "Recompensas da plataforma")));
+    const cancellations = Math.abs(
+      toNumber(pick(r, "Valor da perda de pedido por cancelamentos por parte da loja")),
+    );
+
+    // repasse = venda - comissão - taxa de pagamento - ofertas custeadas - cancelamentos + recompensas
+    const net = gross - commission - paymentFee - coupons - cancellations + rewards;
+
+    const acc = map.get(date);
+    if (acc) {
+      acc.orders_count += orders;
+      acc.gross_amount += gross;
+      acc.commission += commission;
+      acc.fees += paymentFee;
+      acc.coupons += coupons;
+      acc.cancellations += cancellations;
+      acc.net_amount += net;
+    } else {
+      map.set(date, {
+        sale_date: date,
+        orders_count: orders,
+        gross_amount: gross,
+        commission,
+        fees: paymentFee,
+        coupons,
+        cancellations,
+        net_amount: net,
+      });
+    }
+  }
+
+  return Array.from(map.values())
+    .filter((r) => r.orders_count > 0 || r.gross_amount !== 0)
+    .sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+}
+
+
+
+async function parseFile(
+  file: File,
+  source: SourceKey,
+): Promise<{ headers: string[]; rows: ParsedRow[]; detected: SourceKey }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "", raw: true });
-  if (json.length === 0) return { headers: [], rows: [] };
+  if (json.length === 0) return { headers: [], rows: [], detected: source };
   const headers = Object.keys(json[0]);
 
   if (isIfoodConciliation(headers)) {
-    return { headers, rows: parseIfoodConciliation(json) };
+    return { headers, rows: parseIfoodConciliation(json), detected: "ifood" };
   }
+
+  if (is99FoodDaily(headers)) {
+    return { headers, rows: parse99FoodDaily(json), detected: "99food" };
+  }
+
 
   const ALIASES = source === "99food" ? FOOD99_ALIASES : IFOOD_ALIASES;
   const idx = {
@@ -596,12 +669,13 @@ async function parseFile(file: File, source: SourceKey): Promise<{ headers: stri
     }
   }
   const rows = Array.from(map.values()).sort((a, b) => a.sale_date.localeCompare(b.sale_date));
-  return { headers, rows };
+  return { headers, rows, detected: source };
 }
 
 function ImportsSection() {
   const { restaurant } = useRestaurant();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<SourceKey>("ifood");
   const [file, setFile] = useState<File | null>(null);
@@ -632,6 +706,10 @@ function ImportsSection() {
       const res = await parseFile(f, source);
       if (res.rows.length === 0) throw new Error("Nenhuma linha válida encontrada no arquivo.");
       setRows(res.rows);
+      if (res.detected !== source) {
+        setSource(res.detected);
+        toast.info(`Detectamos um relatório do ${res.detected === "ifood" ? "iFood" : "99Food"}.`);
+      }
       toast.success(`${res.rows.length} dia(s) prontos para importar`);
     } catch (e: any) {
       toast.error(translateAuthError(e, "Não foi possível ler o arquivo"));
@@ -652,10 +730,22 @@ function ImportsSection() {
         .single();
       if (impErr) throw impErr;
 
+      const dates = rows.map((r) => r.sale_date);
+      // reimportar o mesmo período substitui os dias, nunca duplica
+      const { error: delErr } = await supabase
+        .from("sales")
+        .delete()
+        .eq("restaurant_id", restaurant.id)
+        .eq("source", source)
+        .in("sale_date", dates);
+      if (delErr) throw delErr;
+
       const salesRows = rows.map((r) => ({
         restaurant_id: restaurant.id,
         import_id: imp.id,
         source,
+        origin: "importado" as const,
+        source_ref: `${source}:planilha`,
         sale_date: r.sale_date,
         gross_amount: r.gross_amount,
         net_amount: r.net_amount,
@@ -668,17 +758,22 @@ function ImportsSection() {
       const { error: salesErr } = await supabase.from("sales").insert(salesRows);
       if (salesErr) throw salesErr;
 
-      toast.success(`Importação concluída: ${rows.length} dia(s) salvos`);
+      const from = dates.reduce((a, b) => (a < b ? a : b));
+      const to = dates.reduce((a, b) => (a > b ? a : b));
+
+      toast.success(`Importação concluída: ${rows.length} dia(s) sincronizados`);
       setFile(null);
       setRows([]);
       if (inputRef.current) inputRef.current.value = "";
-      qc.invalidateQueries();
+      await qc.invalidateQueries();
+      navigate({ to: "/dashboard", search: { from, to } });
     } catch (e: any) {
       toast.error(translateAuthError(e, "Erro ao importar"));
     } finally {
       setImporting(false);
     }
   }
+
 
   return (
     <div className="space-y-6">
