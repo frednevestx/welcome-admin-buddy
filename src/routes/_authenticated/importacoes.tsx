@@ -705,6 +705,10 @@ function ImportsSection() {
       const res = await parseFile(f, source);
       if (res.rows.length === 0) throw new Error("Nenhuma linha válida encontrada no arquivo.");
       setRows(res.rows);
+      if (res.detected !== source) {
+        setSource(res.detected);
+        toast.info(`Detectamos um relatório do ${res.detected === "ifood" ? "iFood" : "99Food"}.`);
+      }
       toast.success(`${res.rows.length} dia(s) prontos para importar`);
     } catch (e: any) {
       toast.error(translateAuthError(e, "Não foi possível ler o arquivo"));
@@ -725,10 +729,22 @@ function ImportsSection() {
         .single();
       if (impErr) throw impErr;
 
+      const dates = rows.map((r) => r.sale_date);
+      // reimportar o mesmo período substitui os dias, nunca duplica
+      const { error: delErr } = await supabase
+        .from("sales")
+        .delete()
+        .eq("restaurant_id", restaurant.id)
+        .eq("source", source)
+        .in("sale_date", dates);
+      if (delErr) throw delErr;
+
       const salesRows = rows.map((r) => ({
         restaurant_id: restaurant.id,
         import_id: imp.id,
         source,
+        origin: "importado" as const,
+        source_ref: `${source}:planilha`,
         sale_date: r.sale_date,
         gross_amount: r.gross_amount,
         net_amount: r.net_amount,
@@ -741,17 +757,22 @@ function ImportsSection() {
       const { error: salesErr } = await supabase.from("sales").insert(salesRows);
       if (salesErr) throw salesErr;
 
-      toast.success(`Importação concluída: ${rows.length} dia(s) salvos`);
+      const from = dates.reduce((a, b) => (a < b ? a : b));
+      const to = dates.reduce((a, b) => (a > b ? a : b));
+
+      toast.success(`Importação concluída: ${rows.length} dia(s) sincronizados`);
       setFile(null);
       setRows([]);
       if (inputRef.current) inputRef.current.value = "";
-      qc.invalidateQueries();
+      await qc.invalidateQueries();
+      navigate({ to: "/dashboard", search: { from, to } });
     } catch (e: any) {
       toast.error(translateAuthError(e, "Erro ao importar"));
     } finally {
       setImporting(false);
     }
   }
+
 
   return (
     <div className="space-y-6">
