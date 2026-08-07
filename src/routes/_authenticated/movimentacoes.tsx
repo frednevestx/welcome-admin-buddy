@@ -40,9 +40,12 @@ type MovementRow = {
   notes: string | null;
   category_id: string | null;
   supplier_id: string | null;
+  is_fixed?: boolean | null;
+  source_ref?: string | null;
   categories?: { id: string; name: string; movement_type: MovementType | null } | null;
   suppliers?: { name: string } | null;
 };
+
 
 function MovementsPage() {
   const { restaurant } = useRestaurant();
