@@ -61,7 +61,7 @@ function MovementsPage() {
     queryFn: async () => {
       const rid = restaurant!.id;
       const { data } = await supabase.from("movements")
-        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, categories(id, name, movement_type), suppliers(name)")
+        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, is_fixed, source_ref, categories(id, name, movement_type), suppliers(name)")
         .eq("restaurant_id", rid)
         .gte("movement_date", period.from).lte("movement_date", period.to)
         .order("movement_date", { ascending: false });
