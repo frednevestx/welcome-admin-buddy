@@ -101,10 +101,20 @@ function SimuladorPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Simulador de Lucro</h1>
-        <p className="text-sm text-muted-foreground mt-1">Ajuste as variáveis e veja como o lucro se comporta.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Simulador de Lucro</h1>
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+            {fin.isLoading ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando seus números do período...</>
+            ) : (
+              "Cenário base carregado com os números reais do período."
+            )}
+          </p>
+        </div>
+        <PeriodSelector period={period} onChange={setPeriod} />
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-5 space-y-5">
