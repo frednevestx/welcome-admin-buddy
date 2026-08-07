@@ -672,6 +672,48 @@ async function parseFile(
   return { headers, rows, detected: source };
 }
 
+/**
+ * Cria/atualiza as movimentações de saída das taxas das plataformas.
+ * source_ref "taxa:{source}:{data}" evita duplicar e é ignorado nas despesas manuais.
+ */
+async function syncPlatformFeeMovements(restaurantId: string, source: SourceKey, rows: ParsedRow[]) {
+  const { data: cat } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("name", PLATFORM_FEE_CATEGORY)
+    .maybeSingle();
+
+  let categoryId = cat?.id ?? null;
+  if (!categoryId) {
+    const { data: created } = await supabase
+      .from("categories")
+      .insert({ restaurant_id: restaurantId, name: PLATFORM_FEE_CATEGORY, is_default: true, movement_type: "saida" })
+      .select("id")
+      .maybeSingle();
+    categoryId = created?.id ?? null;
+  }
+
+  const label = source === "ifood" ? "iFood" : source === "99food" ? "99Food" : "Loja";
+  const refs = rows.map((r) => `${PLATFORM_FEE_REF_PREFIX}${source}:${r.sale_date}`);
+  await supabase.from("movements").delete().eq("restaurant_id", restaurantId).in("source_ref", refs);
+
+  const feeRows = rows
+    .map((r) => ({
+      restaurant_id: restaurantId,
+      type: "saida" as const,
+      category_id: categoryId,
+      description: `Taxas ${label} — ${r.sale_date.split("-").reverse().join("/")}`,
+      amount: Math.max(0, r.gross_amount - r.net_amount),
+      movement_date: r.sale_date,
+      origin: "importado" as const,
+      source_ref: `${PLATFORM_FEE_REF_PREFIX}${source}:${r.sale_date}`,
+    }))
+    .filter((m) => m.amount > 0);
+
+  if (feeRows.length > 0) await supabase.from("movements").insert(feeRows);
+}
+
 function ImportsSection() {
   const { restaurant } = useRestaurant();
   const qc = useQueryClient();
@@ -682,6 +724,8 @@ function ImportsSection() {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
 
   const totals = useMemo(() => rows.reduce(
     (acc, r) => ({ gross: acc.gross + r.gross_amount, net: acc.net + r.net_amount, orders: acc.orders + r.orders_count }),
