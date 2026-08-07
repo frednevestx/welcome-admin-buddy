@@ -972,7 +972,18 @@ function ImportsSection() {
                     {h.source === "ifood" ? "iFood" : h.source === "99food" ? "99Food" : "Loja"} · {h.rows_imported} dia(s)
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground shrink-0">{new Date(h.imported_at).toLocaleDateString("pt-BR")}</div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground">{new Date(h.imported_at).toLocaleDateString("pt-BR")}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Excluir importação"
+                    disabled={deletingId === h.id}
+                    onClick={() => handleDeleteImport(h.id, h.filename)}
+                  >
+                    {deletingId === h.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
