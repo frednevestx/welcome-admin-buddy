@@ -400,6 +400,32 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
           <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
+
+      {type === "saida" && (
+        <div className="rounded-lg border border-border/60 p-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Despesa fixa (recorrente)</Label>
+              <p className="text-xs text-muted-foreground">Repete automaticamente todo mês (aluguel, energia, salários...).</p>
+            </div>
+            <Switch checked={isFixed} onCheckedChange={setIsFixed} />
+          </div>
+          {isFixed && !initial && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Lançar por quantos meses</Label>
+              <Select value={String(meses)} onValueChange={(v) => setMeses(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[3, 6, 12, 24].map((m) => (
+                    <SelectItem key={m} value={String(m)}>{m} meses</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
+
       <Button type="submit" className="w-full" disabled={save.isPending || !amount || !date}>
         {save.isPending ? "Salvando..." : initial ? "Salvar alterações" : "Salvar movimentação"}
       </Button>
