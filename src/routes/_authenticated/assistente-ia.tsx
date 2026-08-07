@@ -119,11 +119,39 @@ const SUGGESTED = [
   "Qual canal me dá mais lucro?",
 ];
 
+const CHAT_STORAGE_KEY = "luud.assistente.chat.v1";
+
+function loadStoredMessages(): AssistantMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m): m is AssistantMessage =>
+        !!m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
 function ChatPanel() {
-  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [messages, setMessages] = useState<AssistantMessage[]>(() => loadStoredMessages());
   const [input, setInput] = useState("");
   const ask = useServerFn(askAssistant);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // memória da conversa: continua de onde parou ao navegar entre páginas
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-40)));
+    } catch {
+      /* storage cheio: segue sem persistir */
+    }
+  }, [messages]);
 
   const mutation = useMutation({
     mutationFn: async (userText: string) => {
@@ -148,9 +176,17 @@ function ChatPanel() {
     mutation.mutate(t);
   }
 
+
   return (
     <Card className="flex flex-col h-[calc(100vh-22rem)] min-h-[420px]">
+      {messages.length > 0 && (
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-2">
+          <span className="text-xs text-muted-foreground">Conversa salva neste dispositivo</span>
+          <Button variant="ghost" size="sm" onClick={() => setMessages([])}>Limpar conversa</Button>
+        </div>
+      )}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+
         {messages.length === 0 && (
           <div className="text-center py-8 space-y-4">
             <div className="mx-auto h-14 w-14 rounded-2xl bg-secondary grid place-items-center">

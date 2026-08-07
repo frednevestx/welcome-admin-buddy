@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -40,9 +42,12 @@ type MovementRow = {
   notes: string | null;
   category_id: string | null;
   supplier_id: string | null;
+  is_fixed?: boolean | null;
+  source_ref?: string | null;
   categories?: { id: string; name: string; movement_type: MovementType | null } | null;
   suppliers?: { name: string } | null;
 };
+
 
 function MovementsPage() {
   const { restaurant } = useRestaurant();
@@ -58,7 +63,7 @@ function MovementsPage() {
     queryFn: async () => {
       const rid = restaurant!.id;
       const { data } = await supabase.from("movements")
-        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, categories(id, name, movement_type), suppliers(name)")
+        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, is_fixed, source_ref, categories(id, name, movement_type), suppliers(name)")
         .eq("restaurant_id", rid)
         .gte("movement_date", period.from).lte("movement_date", period.to)
         .order("movement_date", { ascending: false });
@@ -176,7 +181,13 @@ function MovementsPage() {
             {rows.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="tabular-nums text-muted-foreground">{formatDate(r.movement_date)}</TableCell>
-                <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
+                <TableCell className="max-w-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate">{r.description || "—"}</span>
+                    {r.is_fixed && <Badge variant="secondary" className="shrink-0 text-[10px]">Fixa</Badge>}
+                    {r.source_ref?.startsWith("taxa:") && <Badge variant="outline" className="shrink-0 text-[10px]">Importada</Badge>}
+                  </div>
+                </TableCell>
                 <TableCell>{r.categories?.name || "—"}</TableCell>
                 <TableCell>{r.suppliers?.name || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type]}</TableCell>
@@ -251,6 +262,8 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
   const [date, setDate] = useState(initial?.movement_date ?? isoDate(new Date()));
   const [paymentMethod, setPaymentMethod] = useState(initial?.payment_method ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [isFixed, setIsFixed] = useState(!!initial?.is_fixed);
+  const [meses, setMeses] = useState(12);
 
   const cats = useQuery({
     enabled: !!restaurant?.id,
@@ -294,18 +307,50 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
         movement_date: date,
         payment_method: paymentMethod || null,
         notes: notes || null,
+        is_fixed: isFixed,
       };
       if (initial) {
         const { error } = await supabase.from("movements").update(payload).eq("id", initial.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("movements").insert(payload);
-        if (error) throw error;
+        return 0;
       }
+      const { data: created, error } = await supabase
+        .from("movements")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      // despesa fixa: replica automaticamente nos próximos meses
+      if (isFixed && meses > 1) {
+        const base = new Date(`${date}T12:00:00`);
+        const dia = base.getDate();
+        const futuros = [];
+        for (let i = 1; i < meses; i++) {
+          const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+          const ultimoDia = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+          d.setDate(Math.min(dia, ultimoDia));
+          futuros.push({ ...payload, movement_date: isoDate(d), fixed_parent_id: created.id });
+        }
+        const { error: recErr } = await supabase.from("movements").insert(futuros);
+        if (recErr) throw recErr;
+        return futuros.length;
+      }
+      return 0;
     },
-    onSuccess: () => { toast.success(initial ? "Movimentação atualizada!" : "Movimentação salva!"); onDone(); },
+    onSuccess: (replicas) => {
+      toast.success(
+        initial
+          ? "Movimentação atualizada!"
+          : replicas
+            ? `Despesa fixa criada e lançada nos próximos ${replicas} meses!`
+            : "Movimentação salva!",
+      );
+      onDone();
+    },
     onError: (e: any) => toast.error(translateAuthError(e, "Erro ao salvar")),
   });
+
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4">
@@ -363,6 +408,32 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
           <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
+
+      {type === "saida" && (
+        <div className="rounded-lg border border-border/60 p-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label className="text-sm">Despesa fixa (recorrente)</Label>
+              <p className="text-xs text-muted-foreground">Repete automaticamente todo mês (aluguel, energia, salários...).</p>
+            </div>
+            <Switch checked={isFixed} onCheckedChange={setIsFixed} />
+          </div>
+          {isFixed && !initial && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Lançar por quantos meses</Label>
+              <Select value={String(meses)} onValueChange={(v) => setMeses(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[3, 6, 12, 24].map((m) => (
+                    <SelectItem key={m} value={String(m)}>{m} meses</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
+
       <Button type="submit" className="w-full" disabled={save.isPending || !amount || !date}>
         {save.isPending ? "Salvando..." : initial ? "Salvar alterações" : "Salvar movimentação"}
       </Button>

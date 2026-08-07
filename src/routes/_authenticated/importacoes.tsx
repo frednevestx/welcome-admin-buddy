@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { formatBRL } from "@/lib/format";
 import { processarPedidosManuais } from "@/lib/pedidos-manuais.functions";
+import { PLATFORM_FEE_CATEGORY, PLATFORM_FEE_REF_PREFIX } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/importacoes")({
   component: EntradaVendasPage,
@@ -672,6 +673,48 @@ async function parseFile(
   return { headers, rows, detected: source };
 }
 
+/**
+ * Cria/atualiza as movimentações de saída das taxas das plataformas.
+ * source_ref "taxa:{source}:{data}" evita duplicar e é ignorado nas despesas manuais.
+ */
+async function syncPlatformFeeMovements(restaurantId: string, source: SourceKey, rows: ParsedRow[]) {
+  const { data: cat } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("name", PLATFORM_FEE_CATEGORY)
+    .maybeSingle();
+
+  let categoryId = cat?.id ?? null;
+  if (!categoryId) {
+    const { data: created } = await supabase
+      .from("categories")
+      .insert({ restaurant_id: restaurantId, name: PLATFORM_FEE_CATEGORY, is_default: true, movement_type: "saida" })
+      .select("id")
+      .maybeSingle();
+    categoryId = created?.id ?? null;
+  }
+
+  const label = source === "ifood" ? "iFood" : source === "99food" ? "99Food" : "Loja";
+  const refs = rows.map((r) => `${PLATFORM_FEE_REF_PREFIX}${source}:${r.sale_date}`);
+  await supabase.from("movements").delete().eq("restaurant_id", restaurantId).in("source_ref", refs);
+
+  const feeRows = rows
+    .map((r) => ({
+      restaurant_id: restaurantId,
+      type: "saida" as const,
+      category_id: categoryId,
+      description: `Taxas ${label} — ${r.sale_date.split("-").reverse().join("/")}`,
+      amount: Math.max(0, r.gross_amount - r.net_amount),
+      movement_date: r.sale_date,
+      origin: "importado" as const,
+      source_ref: `${PLATFORM_FEE_REF_PREFIX}${source}:${r.sale_date}`,
+    }))
+    .filter((m) => m.amount > 0);
+
+  if (feeRows.length > 0) await supabase.from("movements").insert(feeRows);
+}
+
 function ImportsSection() {
   const { restaurant } = useRestaurant();
   const qc = useQueryClient();
@@ -682,6 +725,8 @@ function ImportsSection() {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
 
   const totals = useMemo(() => rows.reduce(
     (acc, r) => ({ gross: acc.gross + r.gross_amount, net: acc.net + r.net_amount, orders: acc.orders + r.orders_count }),
@@ -723,6 +768,19 @@ function ImportsSection() {
     if (!restaurant || rows.length === 0 || !file) return;
     setImporting(true);
     try {
+      // impede importar duas vezes o mesmo arquivo
+      const { data: dup } = await supabase
+        .from("imports")
+        .select("id")
+        .eq("restaurant_id", restaurant.id)
+        .eq("filename", file.name)
+        .limit(1);
+      if (dup && dup.length > 0) {
+        toast.error(`O arquivo "${file.name}" já foi importado. Exclua a importação anterior para importar novamente.`);
+        setImporting(false);
+        return;
+      }
+
       const { data: imp, error: impErr } = await supabase
         .from("imports")
         .insert({ restaurant_id: restaurant.id, filename: file.name, source, rows_imported: rows.length })
@@ -758,6 +816,8 @@ function ImportsSection() {
       const { error: salesErr } = await supabase.from("sales").insert(salesRows);
       if (salesErr) throw salesErr;
 
+      await syncPlatformFeeMovements(restaurant.id, source, rows);
+
       const from = dates.reduce((a, b) => (a < b ? a : b));
       const to = dates.reduce((a, b) => (a > b ? a : b));
 
@@ -773,6 +833,35 @@ function ImportsSection() {
       setImporting(false);
     }
   }
+
+  async function handleDeleteImport(importId: string, filename: string) {
+    if (!restaurant) return;
+    setDeletingId(importId);
+    try {
+      const { data: linked } = await supabase
+        .from("sales")
+        .select("sale_date, source")
+        .eq("restaurant_id", restaurant.id)
+        .eq("import_id", importId);
+
+      const refs = (linked ?? []).map((s) => `${PLATFORM_FEE_REF_PREFIX}${s.source}:${s.sale_date}`);
+      if (refs.length > 0) {
+        await supabase.from("movements").delete().eq("restaurant_id", restaurant.id).in("source_ref", refs);
+      }
+      const { error: sErr } = await supabase.from("sales").delete().eq("import_id", importId);
+      if (sErr) throw sErr;
+      const { error: iErr } = await supabase.from("imports").delete().eq("id", importId);
+      if (iErr) throw iErr;
+
+      toast.success(`Importação "${filename}" excluída`);
+      await qc.invalidateQueries();
+    } catch (e: any) {
+      toast.error(translateAuthError(e, "Erro ao excluir importação"));
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
 
 
   return (
@@ -883,7 +972,18 @@ function ImportsSection() {
                     {h.source === "ifood" ? "iFood" : h.source === "99food" ? "99Food" : "Loja"} · {h.rows_imported} dia(s)
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground shrink-0">{new Date(h.imported_at).toLocaleDateString("pt-BR")}</div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground">{new Date(h.imported_at).toLocaleDateString("pt-BR")}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Excluir importação"
+                    disabled={deletingId === h.id}
+                    onClick={() => handleDeleteImport(h.id, h.filename)}
+                  >
+                    {deletingId === h.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
