@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlanGate } from "@/components/plan-gate";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { formatBRL, formatPct } from "@/lib/format";
-import { TrendingUp, TrendingDown, RotateCcw } from "lucide-react";
+import { TrendingUp, TrendingDown, RotateCcw, Loader2 } from "lucide-react";
+import { useRestaurant } from "@/hooks/use-restaurant";
+import { usePeriod } from "@/hooks/use-period";
+import { periodFromKey } from "@/lib/period";
+import { PeriodSelector } from "@/components/period-selector";
+import { useFinanceSummary } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/simulador")({
+  validateSearch: (search: Record<string, unknown>): { from?: string; to?: string } => ({
+    from: typeof search.from === "string" ? search.from : undefined,
+    to: typeof search.to === "string" ? search.to : undefined,
+  }),
   component: () => (
     <PlanGate min="pro" featureName="Simulador de Lucro" description="Simule cenários e descubra o que muda no seu bolso.">
       <SimuladorPage />
@@ -37,8 +46,39 @@ function compute(s: Scenario) {
 }
 
 function SimuladorPage() {
-  const [base] = useState<Scenario>(DEFAULT);
+  const { restaurant } = useRestaurant();
+  const { from: searchFrom, to: searchTo } = Route.useSearch();
+  const { period, setPeriod } = usePeriod("30d");
+  const [base, setBase] = useState<Scenario>(DEFAULT);
   const [sim, setSim] = useState<Scenario>(DEFAULT);
+  const [loadedFrom, setLoadedFrom] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchFrom && searchTo) setPeriod(periodFromKey("custom", { from: searchFrom, to: searchTo }));
+  }, [searchFrom, searchTo, setPeriod]);
+
+  const fin = useFinanceSummary(restaurant?.id, period.from, period.to);
+
+  // Pré-carrega o cenário base com os números reais do período (mesma regra da Dashboard)
+  useEffect(() => {
+    const f = fin.data;
+    const key = `${period.from}:${period.to}`;
+    if (!f || loadedFrom === key) return;
+    if (f.faturamento <= 0 || f.pedidos <= 0) {
+      setLoadedFrom(key);
+      return;
+    }
+    const real: Scenario = {
+      ticket: +(f.faturamento / f.pedidos).toFixed(2),
+      pedidos: Math.round(f.pedidos),
+      cmvPct: 0,
+      taxaPct: +((f.taxasPlataforma / f.faturamento) * 100).toFixed(1),
+      despesasFixas: +f.despesasManuais.toFixed(2),
+    };
+    setBase(real);
+    setSim(real);
+    setLoadedFrom(key);
+  }, [fin.data, period.from, period.to, loadedFrom]);
 
   const baseR = useMemo(() => compute(base), [base]);
   const simR = useMemo(() => compute(sim), [sim]);
@@ -54,6 +94,7 @@ function SimuladorPage() {
     if (kind === "custos") return setSim({ ...sim, cmvPct: +(sim.cmvPct * 0.85).toFixed(1) });
     if (kind === "taxa") return setSim({ ...sim, taxaPct: Math.max(0, +(sim.taxaPct - 5).toFixed(1)) });
   }
+
 
   const delta = simR.lucro - baseR.lucro;
   const deltaPct = baseR.lucro !== 0 ? (delta / Math.abs(baseR.lucro)) * 100 : 0;
