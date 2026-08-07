@@ -723,6 +723,19 @@ function ImportsSection() {
     if (!restaurant || rows.length === 0 || !file) return;
     setImporting(true);
     try {
+      // impede importar duas vezes o mesmo arquivo
+      const { data: dup } = await supabase
+        .from("imports")
+        .select("id")
+        .eq("restaurant_id", restaurant.id)
+        .eq("filename", file.name)
+        .limit(1);
+      if (dup && dup.length > 0) {
+        toast.error(`O arquivo "${file.name}" já foi importado. Exclua a importação anterior para importar novamente.`);
+        setImporting(false);
+        return;
+      }
+
       const { data: imp, error: impErr } = await supabase
         .from("imports")
         .insert({ restaurant_id: restaurant.id, filename: file.name, source, rows_imported: rows.length })
@@ -758,6 +771,8 @@ function ImportsSection() {
       const { error: salesErr } = await supabase.from("sales").insert(salesRows);
       if (salesErr) throw salesErr;
 
+      await syncPlatformFeeMovements(restaurant.id, source, rows);
+
       const from = dates.reduce((a, b) => (a < b ? a : b));
       const to = dates.reduce((a, b) => (a > b ? a : b));
 
@@ -773,6 +788,35 @@ function ImportsSection() {
       setImporting(false);
     }
   }
+
+  async function handleDeleteImport(importId: string, filename: string) {
+    if (!restaurant) return;
+    setDeletingId(importId);
+    try {
+      const { data: linked } = await supabase
+        .from("sales")
+        .select("sale_date, source")
+        .eq("restaurant_id", restaurant.id)
+        .eq("import_id", importId);
+
+      const refs = (linked ?? []).map((s) => `${PLATFORM_FEE_REF_PREFIX}${s.source}:${s.sale_date}`);
+      if (refs.length > 0) {
+        await supabase.from("movements").delete().eq("restaurant_id", restaurant.id).in("source_ref", refs);
+      }
+      const { error: sErr } = await supabase.from("sales").delete().eq("import_id", importId);
+      if (sErr) throw sErr;
+      const { error: iErr } = await supabase.from("imports").delete().eq("id", importId);
+      if (iErr) throw iErr;
+
+      toast.success(`Importação "${filename}" excluída`);
+      await qc.invalidateQueries();
+    } catch (e: any) {
+      toast.error(translateAuthError(e, "Erro ao excluir importação"));
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
 
 
   return (
