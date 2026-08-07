@@ -119,11 +119,39 @@ const SUGGESTED = [
   "Qual canal me dá mais lucro?",
 ];
 
+const CHAT_STORAGE_KEY = "luud.assistente.chat.v1";
+
+function loadStoredMessages(): AssistantMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (m): m is AssistantMessage =>
+        !!m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
 function ChatPanel() {
-  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [messages, setMessages] = useState<AssistantMessage[]>(() => loadStoredMessages());
   const [input, setInput] = useState("");
   const ask = useServerFn(askAssistant);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // memória da conversa: continua de onde parou ao navegar entre páginas
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-40)));
+    } catch {
+      /* storage cheio: segue sem persistir */
+    }
+  }, [messages]);
 
   const mutation = useMutation({
     mutationFn: async (userText: string) => {
@@ -147,6 +175,7 @@ function ChatPanel() {
     setInput("");
     mutation.mutate(t);
   }
+
 
   return (
     <Card className="flex flex-col h-[calc(100vh-22rem)] min-h-[420px]">
