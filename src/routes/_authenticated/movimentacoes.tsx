@@ -181,7 +181,13 @@ function MovementsPage() {
             {rows.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="tabular-nums text-muted-foreground">{formatDate(r.movement_date)}</TableCell>
-                <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
+                <TableCell className="max-w-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate">{r.description || "—"}</span>
+                    {r.is_fixed && <Badge variant="secondary" className="shrink-0 text-[10px]">Fixa</Badge>}
+                    {r.source_ref?.startsWith("taxa:") && <Badge variant="outline" className="shrink-0 text-[10px]">Importada</Badge>}
+                  </div>
+                </TableCell>
                 <TableCell>{r.categories?.name || "—"}</TableCell>
                 <TableCell>{r.suppliers?.name || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type]}</TableCell>
