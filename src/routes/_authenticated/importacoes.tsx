@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { formatBRL } from "@/lib/format";
 import { processarPedidosManuais } from "@/lib/pedidos-manuais.functions";
+import { PLATFORM_FEE_CATEGORY, PLATFORM_FEE_REF_PREFIX } from "@/lib/finance";
 
 export const Route = createFileRoute("/_authenticated/importacoes")({
   component: EntradaVendasPage,
