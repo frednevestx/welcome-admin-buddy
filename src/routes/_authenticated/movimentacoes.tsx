@@ -251,6 +251,8 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
   const [date, setDate] = useState(initial?.movement_date ?? isoDate(new Date()));
   const [paymentMethod, setPaymentMethod] = useState(initial?.payment_method ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [isFixed, setIsFixed] = useState(!!initial?.is_fixed);
+  const [meses, setMeses] = useState(12);
 
   const cats = useQuery({
     enabled: !!restaurant?.id,
@@ -294,18 +296,50 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
         movement_date: date,
         payment_method: paymentMethod || null,
         notes: notes || null,
+        is_fixed: isFixed,
       };
       if (initial) {
         const { error } = await supabase.from("movements").update(payload).eq("id", initial.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("movements").insert(payload);
-        if (error) throw error;
+        return 0;
       }
+      const { data: created, error } = await supabase
+        .from("movements")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      // despesa fixa: replica automaticamente nos próximos meses
+      if (isFixed && meses > 1) {
+        const base = new Date(`${date}T12:00:00`);
+        const dia = base.getDate();
+        const futuros = [];
+        for (let i = 1; i < meses; i++) {
+          const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+          const ultimoDia = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+          d.setDate(Math.min(dia, ultimoDia));
+          futuros.push({ ...payload, movement_date: isoDate(d), fixed_parent_id: created.id });
+        }
+        const { error: recErr } = await supabase.from("movements").insert(futuros);
+        if (recErr) throw recErr;
+        return futuros.length;
+      }
+      return 0;
     },
-    onSuccess: () => { toast.success(initial ? "Movimentação atualizada!" : "Movimentação salva!"); onDone(); },
+    onSuccess: (replicas) => {
+      toast.success(
+        initial
+          ? "Movimentação atualizada!"
+          : replicas
+            ? `Despesa fixa criada e lançada nos próximos ${replicas} meses!`
+            : "Movimentação salva!",
+      );
+      onDone();
+    },
     onError: (e: any) => toast.error(translateAuthError(e, "Erro ao salvar")),
   });
+
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4">
