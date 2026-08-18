@@ -34,6 +34,7 @@ import { Route as AuthenticatedCalculadoraPrecoRouteImport } from './routes/_aut
 import { Route as AuthenticatedAssistenteIaRouteImport } from './routes/_authenticated/assistente-ia'
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
+import { Route as ApiPublicWhatsappTalktomeRouteImport } from './routes/api/public/whatsapp/talktome'
 import { Route as ApiPublicIntegrationsSyncRouteImport } from './routes/api/public/integrations/sync'
 import { Route as ApiPublicIntegrationsProviderWebhookRouteImport } from './routes/api/public/integrations/$provider/webhook'
 
@@ -172,6 +173,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicWhatsappTalktomeRoute =
+  ApiPublicWhatsappTalktomeRouteImport.update({
+    id: '/api/public/whatsapp/talktome',
+    path: '/api/public/whatsapp/talktome',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntegrationsSyncRoute =
   ApiPublicIntegrationsSyncRouteImport.update({
     id: '/api/public/integrations/sync',
@@ -211,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
   '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -239,6 +247,7 @@ export interface FileRoutesByTo {
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
   '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRoutesById {
@@ -269,6 +278,7 @@ export interface FileRoutesById {
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
   '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 export interface FileRouteTypes {
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/suporte'
     | '/admin/usuarios'
     | '/api/public/integrations/sync'
+    | '/api/public/whatsapp/talktome'
     | '/api/public/integrations/$provider/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/suporte'
     | '/admin/usuarios'
     | '/api/public/integrations/sync'
+    | '/api/public/whatsapp/talktome'
     | '/api/public/integrations/$provider/webhook'
   id:
     | '__root__'
@@ -356,6 +368,7 @@ export interface FileRouteTypes {
     | '/_authenticated/suporte'
     | '/_authenticated/admin/usuarios'
     | '/api/public/integrations/sync'
+    | '/api/public/whatsapp/talktome'
     | '/api/public/integrations/$provider/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -365,6 +378,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicIntegrationsSyncRoute: typeof ApiPublicIntegrationsSyncRoute
+  ApiPublicWhatsappTalktomeRoute: typeof ApiPublicWhatsappTalktomeRoute
   ApiPublicIntegrationsProviderWebhookRoute: typeof ApiPublicIntegrationsProviderWebhookRoute
 }
 
@@ -545,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/whatsapp/talktome': {
+      id: '/api/public/whatsapp/talktome'
+      path: '/api/public/whatsapp/talktome'
+      fullPath: '/api/public/whatsapp/talktome'
+      preLoaderRoute: typeof ApiPublicWhatsappTalktomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/integrations/sync': {
       id: '/api/public/integrations/sync'
       path: '/api/public/integrations/sync'
@@ -619,6 +640,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicIntegrationsSyncRoute: ApiPublicIntegrationsSyncRoute,
+  ApiPublicWhatsappTalktomeRoute: ApiPublicWhatsappTalktomeRoute,
   ApiPublicIntegrationsProviderWebhookRoute:
     ApiPublicIntegrationsProviderWebhookRoute,
 }
