@@ -1119,10 +1119,12 @@ export type Database = {
           error_message: string | null
           finished_at: string | null
           id: string
-          integration_id: string
+          integration_id: string | null
           kind: Database["public"]["Enums"]["sync_kind"]
+          payload: Json | null
           records_processed: number
-          restaurant_id: string
+          restaurant_id: string | null
+          source: string
           started_at: string
           status: Database["public"]["Enums"]["sync_status"]
         }
@@ -1131,10 +1133,12 @@ export type Database = {
           error_message?: string | null
           finished_at?: string | null
           id?: string
-          integration_id: string
+          integration_id?: string | null
           kind: Database["public"]["Enums"]["sync_kind"]
+          payload?: Json | null
           records_processed?: number
-          restaurant_id: string
+          restaurant_id?: string | null
+          source?: string
           started_at?: string
           status?: Database["public"]["Enums"]["sync_status"]
         }
@@ -1143,10 +1147,12 @@ export type Database = {
           error_message?: string | null
           finished_at?: string | null
           id?: string
-          integration_id?: string
+          integration_id?: string | null
           kind?: Database["public"]["Enums"]["sync_kind"]
+          payload?: Json | null
           records_processed?: number
-          restaurant_id?: string
+          restaurant_id?: string | null
+          source?: string
           started_at?: string
           status?: Database["public"]["Enums"]["sync_status"]
         }
@@ -1241,6 +1247,44 @@ export type Database = {
           },
           {
             foreignKeyName: "wastages_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_sessions: {
+        Row: {
+          context: Json
+          created_at: string
+          id: string
+          last_interaction_at: string
+          mode: string
+          phone: string
+          restaurant_id: string | null
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          id?: string
+          last_interaction_at?: string
+          mode?: string
+          phone: string
+          restaurant_id?: string | null
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          id?: string
+          last_interaction_at?: string
+          mode?: string
+          phone?: string
+          restaurant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_sessions_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
