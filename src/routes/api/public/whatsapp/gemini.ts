@@ -52,6 +52,9 @@ async function interpretWithGemini(message: string): Promise<Parsed> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
 
+  const today = new Date().toISOString().slice(0, 10);
+  const systemPrompt = `${SYSTEM_PROMPT}\n\nA data de hoje é ${today}. Use esta data quando o usuário não mencionar nenhuma.`;
+
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     {
