@@ -388,6 +388,50 @@ export type Database = {
           },
         ]
       }
+      insights: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          related_movement_ids: string[] | null
+          resolved_at: string | null
+          restaurant_id: string
+          status: string
+          suggestion: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          related_movement_ids?: string[] | null
+          resolved_at?: string | null
+          restaurant_id: string
+          status?: string
+          suggestion?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          related_movement_ids?: string[] | null
+          resolved_at?: string | null
+          restaurant_id?: string
+          status?: string
+          suggestion?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integrations: {
         Row: {
           access_token_ciphertext: string | null
@@ -457,8 +501,10 @@ export type Database = {
         Row: {
           amount: number
           category_id: string | null
+          confirmed_by_user: boolean
           created_at: string
           created_by: string | null
+          created_from_event_id: string | null
           description: string | null
           fixed_parent_id: string | null
           id: string
@@ -470,14 +516,18 @@ export type Database = {
           payment_method: string | null
           restaurant_id: string
           source_ref: string | null
+          status: string
+          superseded_by: string | null
           supplier_id: string | null
           type: Database["public"]["Enums"]["movement_type"]
         }
         Insert: {
           amount: number
           category_id?: string | null
+          confirmed_by_user?: boolean
           created_at?: string
           created_by?: string | null
+          created_from_event_id?: string | null
           description?: string | null
           fixed_parent_id?: string | null
           id?: string
@@ -489,14 +539,18 @@ export type Database = {
           payment_method?: string | null
           restaurant_id: string
           source_ref?: string | null
+          status?: string
+          superseded_by?: string | null
           supplier_id?: string | null
           type: Database["public"]["Enums"]["movement_type"]
         }
         Update: {
           amount?: number
           category_id?: string | null
+          confirmed_by_user?: boolean
           created_at?: string
           created_by?: string | null
+          created_from_event_id?: string | null
           description?: string | null
           fixed_parent_id?: string | null
           id?: string
@@ -508,6 +562,8 @@ export type Database = {
           payment_method?: string | null
           restaurant_id?: string
           source_ref?: string | null
+          status?: string
+          superseded_by?: string | null
           supplier_id?: string | null
           type?: Database["public"]["Enums"]["movement_type"]
         }
@@ -520,10 +576,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movements_created_from_event_id_fkey"
+            columns: ["created_from_event_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_raw_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movements_fixed_parent_id_fkey"
             columns: ["fixed_parent_id"]
             isOneToOne: false
             referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_fixed_parent_id_fkey"
+            columns: ["fixed_parent_id"]
+            isOneToOne: false
+            referencedRelation: "movements_current"
             referencedColumns: ["id"]
           },
           {
@@ -538,6 +608,20 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "movements_current"
             referencedColumns: ["id"]
           },
           {
@@ -712,6 +796,13 @@ export type Database = {
             columns: ["movement_id"]
             isOneToOne: false
             referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_manuais_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements_current"
             referencedColumns: ["id"]
           },
           {
@@ -1254,6 +1345,53 @@ export type Database = {
           },
         ]
       }
+      whatsapp_raw_events: {
+        Row: {
+          channel: string
+          classification: string | null
+          contact_id: string
+          created_at: string
+          id: string
+          interpreted_json: Json | null
+          linked_movement_id: string | null
+          message_type: string
+          raw_message: string | null
+          restaurant_id: string
+        }
+        Insert: {
+          channel?: string
+          classification?: string | null
+          contact_id: string
+          created_at?: string
+          id?: string
+          interpreted_json?: Json | null
+          linked_movement_id?: string | null
+          message_type: string
+          raw_message?: string | null
+          restaurant_id: string
+        }
+        Update: {
+          channel?: string
+          classification?: string | null
+          contact_id?: string
+          created_at?: string
+          id?: string
+          interpreted_json?: Json | null
+          linked_movement_id?: string | null
+          message_type?: string
+          raw_message?: string | null
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_raw_events_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_sessions: {
         Row: {
           context: Json
@@ -1294,7 +1432,142 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      movements_current: {
+        Row: {
+          amount: number | null
+          category_id: string | null
+          confirmed_by_user: boolean | null
+          created_at: string | null
+          created_by: string | null
+          created_from_event_id: string | null
+          description: string | null
+          fixed_parent_id: string | null
+          id: string | null
+          integration_id: string | null
+          is_fixed: boolean | null
+          movement_date: string | null
+          notes: string | null
+          origin: Database["public"]["Enums"]["data_origin"] | null
+          payment_method: string | null
+          restaurant_id: string | null
+          source_ref: string | null
+          status: string | null
+          superseded_by: string | null
+          supplier_id: string | null
+          type: Database["public"]["Enums"]["movement_type"] | null
+        }
+        Insert: {
+          amount?: number | null
+          category_id?: string | null
+          confirmed_by_user?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          created_from_event_id?: string | null
+          description?: string | null
+          fixed_parent_id?: string | null
+          id?: string | null
+          integration_id?: string | null
+          is_fixed?: boolean | null
+          movement_date?: string | null
+          notes?: string | null
+          origin?: Database["public"]["Enums"]["data_origin"] | null
+          payment_method?: string | null
+          restaurant_id?: string | null
+          source_ref?: string | null
+          status?: string | null
+          superseded_by?: string | null
+          supplier_id?: string | null
+          type?: Database["public"]["Enums"]["movement_type"] | null
+        }
+        Update: {
+          amount?: number | null
+          category_id?: string | null
+          confirmed_by_user?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          created_from_event_id?: string | null
+          description?: string | null
+          fixed_parent_id?: string | null
+          id?: string | null
+          integration_id?: string | null
+          is_fixed?: boolean | null
+          movement_date?: string | null
+          notes?: string | null
+          origin?: Database["public"]["Enums"]["data_origin"] | null
+          payment_method?: string | null
+          restaurant_id?: string | null
+          source_ref?: string | null
+          status?: string | null
+          superseded_by?: string | null
+          supplier_id?: string | null
+          type?: Database["public"]["Enums"]["movement_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movements_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_created_from_event_id_fkey"
+            columns: ["created_from_event_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_raw_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_fixed_parent_id_fkey"
+            columns: ["fixed_parent_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_fixed_parent_id_fkey"
+            columns: ["fixed_parent_id"]
+            isOneToOne: false
+            referencedRelation: "movements_current"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "movements_current"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movements_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_extend_plan: {
