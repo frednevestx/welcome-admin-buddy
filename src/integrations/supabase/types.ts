@@ -1349,7 +1349,7 @@ export type Database = {
         Row: {
           channel: string
           classification: string | null
-          contact_id: string
+          contact_id: string | null
           created_at: string
           id: string
           interpreted_json: Json | null
@@ -1361,7 +1361,7 @@ export type Database = {
         Insert: {
           channel?: string
           classification?: string | null
-          contact_id: string
+          contact_id?: string | null
           created_at?: string
           id?: string
           interpreted_json?: Json | null
@@ -1373,7 +1373,7 @@ export type Database = {
         Update: {
           channel?: string
           classification?: string | null
-          contact_id?: string
+          contact_id?: string | null
           created_at?: string
           id?: string
           interpreted_json?: Json | null
