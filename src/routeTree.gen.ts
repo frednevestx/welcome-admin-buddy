@@ -35,6 +35,7 @@ import { Route as AuthenticatedAssistenteIaRouteImport } from './routes/_authent
 import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as ApiPublicWhatsappTalktomeRouteImport } from './routes/api/public/whatsapp/talktome'
+import { Route as ApiPublicWhatsappGeminiRouteImport } from './routes/api/public/whatsapp/gemini'
 import { Route as ApiPublicIntegrationsSyncRouteImport } from './routes/api/public/integrations/sync'
 import { Route as ApiPublicIntegrationsProviderWebhookRouteImport } from './routes/api/public/integrations/$provider/webhook'
 
@@ -179,6 +180,11 @@ const ApiPublicWhatsappTalktomeRoute =
     path: '/api/public/whatsapp/talktome',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWhatsappGeminiRoute = ApiPublicWhatsappGeminiRouteImport.update({
+  id: '/api/public/whatsapp/gemini',
+  path: '/api/public/whatsapp/gemini',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicIntegrationsSyncRoute =
   ApiPublicIntegrationsSyncRouteImport.update({
     id: '/api/public/integrations/sync',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
   '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
   '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
+  '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
   '/api/public/integrations/$provider/webhook': typeof ApiPublicIntegrationsProviderWebhookRoute
 }
@@ -309,6 +318,7 @@ export interface FileRouteTypes {
     | '/suporte'
     | '/admin/usuarios'
     | '/api/public/integrations/sync'
+    | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
     | '/api/public/integrations/$provider/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/suporte'
     | '/admin/usuarios'
     | '/api/public/integrations/sync'
+    | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
     | '/api/public/integrations/$provider/webhook'
   id:
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '/_authenticated/suporte'
     | '/_authenticated/admin/usuarios'
     | '/api/public/integrations/sync'
+    | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
     | '/api/public/integrations/$provider/webhook'
   fileRoutesById: FileRoutesById
@@ -378,6 +390,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicIntegrationsSyncRoute: typeof ApiPublicIntegrationsSyncRoute
+  ApiPublicWhatsappGeminiRoute: typeof ApiPublicWhatsappGeminiRoute
   ApiPublicWhatsappTalktomeRoute: typeof ApiPublicWhatsappTalktomeRoute
   ApiPublicIntegrationsProviderWebhookRoute: typeof ApiPublicIntegrationsProviderWebhookRoute
 }
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappTalktomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/gemini': {
+      id: '/api/public/whatsapp/gemini'
+      path: '/api/public/whatsapp/gemini'
+      fullPath: '/api/public/whatsapp/gemini'
+      preLoaderRoute: typeof ApiPublicWhatsappGeminiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/integrations/sync': {
       id: '/api/public/integrations/sync'
       path: '/api/public/integrations/sync'
@@ -640,6 +660,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicIntegrationsSyncRoute: ApiPublicIntegrationsSyncRoute,
+  ApiPublicWhatsappGeminiRoute: ApiPublicWhatsappGeminiRoute,
   ApiPublicWhatsappTalktomeRoute: ApiPublicWhatsappTalktomeRoute,
   ApiPublicIntegrationsProviderWebhookRoute:
     ApiPublicIntegrationsProviderWebhookRoute,
