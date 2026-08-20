@@ -1,0 +1,1 @@
+ALTER TABLE public.whatsapp_raw_events ALTER COLUMN contact_id DROP NOT NULL;
