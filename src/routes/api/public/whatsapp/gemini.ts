@@ -61,7 +61,7 @@ async function interpretWithGemini(message: string): Promise<Parsed> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: message }] }],
         generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
       }),
