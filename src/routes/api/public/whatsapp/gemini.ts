@@ -193,9 +193,10 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           const db = supabaseAdmin as any;
 
           const restaurantId = await resolveRestaurantId(db, body);
-          const contactId = body?.contact?.id ?? body?.contact_id ?? null;
-          const messageType = body?.message?.type ?? "text";
-          const rawMessage: string = body?.message?.text ?? body?.message?.transcription ?? body?.text ?? "";
+          // Payload do TalkToMe: { text, phone } — phone vira o identificador de contato.
+          const contactId = body?.phone ?? body?.contact?.id ?? body?.contact_id ?? null;
+          const messageType = "text";
+          const rawMessage: string = body?.text ?? body?.message?.text ?? body?.message?.transcription ?? "";
 
           if (!restaurantId) {
             return json({
