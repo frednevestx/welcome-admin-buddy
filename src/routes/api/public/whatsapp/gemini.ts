@@ -162,10 +162,11 @@ async function resolveRestaurantId(db: any, body: any): Promise<string | null> {
   const direct = body?.restaurant_id ?? body?.metadata?.restaurant_id;
   if (direct) return direct;
 
-  const businessPhone =
-    body?.instance?.phone ?? body?.to ?? body?.business_phone ?? body?.recipient?.phone ?? null;
-  if (businessPhone) {
-    const digits = String(businessPhone).replace(/\D/g, "");
+  // Payload real do TalkToMe: { text, phone } — bate o phone recebido contra o
+  // whatsapp cadastrado no restaurante (comparando os últimos 8 dígitos).
+  const incomingPhone = body?.phone ?? null;
+  if (incomingPhone) {
+    const digits = String(incomingPhone).replace(/\D/g, "");
     const { data } = await db
       .from("restaurants")
       .select("id")
@@ -174,6 +175,8 @@ async function resolveRestaurantId(db: any, body: any): Promise<string | null> {
       .maybeSingle();
     if (data) return data.id;
   }
+
+  // Hoje só temos 1 restaurante de teste — DEFAULT_RESTAURANT_ID é o fallback.
   return process.env.DEFAULT_RESTAURANT_ID ?? null;
 }
 
