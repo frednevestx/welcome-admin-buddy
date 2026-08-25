@@ -61,7 +61,7 @@ async function interpretWithGemini(message: string): Promise<Parsed> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: message }] }],
         generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
       }),
@@ -162,10 +162,11 @@ async function resolveRestaurantId(db: any, body: any): Promise<string | null> {
   const direct = body?.restaurant_id ?? body?.metadata?.restaurant_id;
   if (direct) return direct;
 
-  const businessPhone =
-    body?.instance?.phone ?? body?.to ?? body?.business_phone ?? body?.recipient?.phone ?? null;
-  if (businessPhone) {
-    const digits = String(businessPhone).replace(/\D/g, "");
+  // Payload real do TalkToMe: { text, phone } — bate o phone recebido contra o
+  // whatsapp cadastrado no restaurante (comparando os últimos 8 dígitos).
+  const incomingPhone = body?.phone ?? null;
+  if (incomingPhone) {
+    const digits = String(incomingPhone).replace(/\D/g, "");
     const { data } = await db
       .from("restaurants")
       .select("id")
@@ -174,6 +175,8 @@ async function resolveRestaurantId(db: any, body: any): Promise<string | null> {
       .maybeSingle();
     if (data) return data.id;
   }
+
+  // Hoje só temos 1 restaurante de teste — DEFAULT_RESTAURANT_ID é o fallback.
   return process.env.DEFAULT_RESTAURANT_ID ?? null;
 }
 
@@ -190,9 +193,10 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           const db = supabaseAdmin as any;
 
           const restaurantId = await resolveRestaurantId(db, body);
-          const contactId = body?.contact?.id ?? body?.contact_id ?? null;
-          const messageType = body?.message?.type ?? "text";
-          const rawMessage: string = body?.message?.text ?? body?.message?.transcription ?? body?.text ?? "";
+          // Payload do TalkToMe: { text, phone } — phone vira o identificador de contato.
+          const contactId = body?.phone ?? body?.contact?.id ?? body?.contact_id ?? null;
+          const messageType = "text";
+          const rawMessage: string = body?.text ?? body?.message?.text ?? body?.message?.transcription ?? "";
 
           if (!restaurantId) {
             return json({
