@@ -89,11 +89,12 @@ export async function handleSystemCommand(
     if (!reminders.length) return NONE;
 
     const lines = reminders.map((r: any) => `- ${r.description} (${r.due_date}${r.due_time ? ` ${r.due_time}` : ""})`);
-    const reply = await writeMessage(
-      "Escreva um lembrete curto no WhatsApp com os itens abaixo. Não invente itens.",
-      { tipo: "lembretes", itens: reminders.map((r: any) => ({ descricao: r.description, data: r.due_date, hora: r.due_time })) },
-      `Lembrete:\n${lines.join("\n")}`,
-    );
+    // Lembrete não precisa de interpretação: texto determinístico, zero risco de a IA inventar item.
+    const reply =
+      reminders.length === 1
+        ? `Lembrete de hoje: ${reminders[0].description}. Já resolveu isso?`
+        : `Lembretes de hoje:\n${lines.join("\n")}\n\nJá resolveu algum deles?`;
+
     await markRemindersSent(db, reminders.map((r: any) => r.id));
     await recordEvent(
       db,
