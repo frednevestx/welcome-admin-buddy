@@ -14,53 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      ai_insights: {
-        Row: {
-          body: string | null
-          created_at: string
-          id: string
-          impact_amount: number | null
-          kind: string
-          payload: Json | null
-          reference_date: string
-          restaurant_id: string
-          severity: string
-          title: string
-        }
-        Insert: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          impact_amount?: number | null
-          kind: string
-          payload?: Json | null
-          reference_date?: string
-          restaurant_id: string
-          severity?: string
-          title: string
-        }
-        Update: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          impact_amount?: number | null
-          kind?: string
-          payload?: Json | null
-          reference_date?: string
-          restaurant_id?: string
-          severity?: string
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_insights_restaurant_id_fkey"
-            columns: ["restaurant_id"]
-            isOneToOne: false
-            referencedRelation: "restaurants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       categories: {
         Row: {
           created_at: string
@@ -933,6 +886,53 @@ export type Database = {
           },
         ]
       }
+      reminders: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          description: string
+          due_date: string
+          due_time: string | null
+          id: string
+          restaurant_id: string
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          description: string
+          due_date: string
+          due_time?: string | null
+          id?: string
+          restaurant_id: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string
+          due_time?: string | null
+          id?: string
+          restaurant_id?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           accent_color: string | null
@@ -1289,6 +1289,74 @@ export type Database = {
           },
           {
             foreignKeyName: "sync_logs_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_events: {
+        Row: {
+          body: string | null
+          contact_id: string | null
+          created_at: string
+          dedupe_key: string | null
+          group_id: string | null
+          id: string
+          impact_amount: number | null
+          kind: string
+          payload: Json | null
+          reason: string | null
+          reference_date: string
+          reference_value: number | null
+          restaurant_id: string
+          sent_at: string | null
+          severity: string
+          status: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          group_id?: string | null
+          id?: string
+          impact_amount?: number | null
+          kind: string
+          payload?: Json | null
+          reason?: string | null
+          reference_date?: string
+          reference_value?: number | null
+          restaurant_id: string
+          sent_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+        }
+        Update: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          group_id?: string | null
+          id?: string
+          impact_amount?: number | null
+          kind?: string
+          payload?: Json | null
+          reason?: string | null
+          reference_date?: string
+          reference_value?: number | null
+          restaurant_id?: string
+          sent_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
