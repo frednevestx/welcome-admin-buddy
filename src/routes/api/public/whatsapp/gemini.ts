@@ -84,19 +84,36 @@ interface Parsed {
 const FALLBACK_REPLY =
   "Sou a LUUD, sua assistente financeira. Posso registrar vendas e despesas por mensagem e responder sobre o caixa do seu negócio. Exemplos: “vendi 320 no iFood hoje” ou “quanto gastei essa semana?”.";
 
-async function interpretWithGemini(message: string, pendingContext: PendingOperation | null): Promise<Parsed> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+const BUSY_REPLY =
+  "Estou com muitas mensagens no momento e não consegui processar essa agora. Me manda de novo em alguns segundos, por favor.";
 
+function buildSystemPrompt(pendingContext: PendingOperation | null): string {
   const today = new Date().toISOString().slice(0, 10);
   let systemPrompt = `${SYSTEM_PROMPT}\n\nA data de hoje é ${today}. Use esta data quando o usuário não mencionar nenhuma.`;
-
   if (pendingContext) {
     systemPrompt += `\n\nCONTEXTO DA CONVERSA: o usuário já estava registrando uma movimentação: ${JSON.stringify(
       pendingContext,
     )}. Falta "${pendingContext.missing ?? "amount"}". A mensagem atual provavelmente completa essa informação — junte os dados do contexto com a mensagem nova e devolva intent "register_movement" completo. Só ignore o contexto se a mensagem atual for claramente sobre outro assunto.`;
   }
+  return systemPrompt;
+}
 
+function parseModelJson(text: string): Parsed | null {
+  try {
+    const parsed = JSON.parse(text.replace(/^```(?:json)?|```$/g, "").trim()) as Parsed;
+    if (!parsed.user_facing_reply || parsed.user_facing_reply.trim().length < 3) {
+      parsed.user_facing_reply = FALLBACK_REPLY;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** Google AI Studio (GEMINI_API_KEY). */
+async function callGoogleGemini(message: string, systemPrompt: string): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     {
@@ -111,24 +128,50 @@ async function interpretWithGemini(message: string, pendingContext: PendingOpera
   );
   const data = (await res.json()) as any;
   if (!res.ok || data?.error) {
-    // Ex: 429 (quota). Não perdemos o contexto pendente — só pedimos pra repetir.
-    console.error("[whatsapp/gemini] erro na IA", res.status, data?.error?.message);
-    return {
-      intent: "other",
-      user_facing_reply:
-        "Estou com muitas mensagens no momento e não consegui processar essa agora. Me manda de novo em alguns segundos, por favor.",
-    };
+    console.error("[whatsapp/gemini] Google AI indisponível", res.status, data?.error?.message);
+    return null;
   }
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-  try {
-    const parsed = JSON.parse(text) as Parsed;
-    if (!parsed.user_facing_reply || parsed.user_facing_reply.trim().length < 3) {
-      parsed.user_facing_reply = FALLBACK_REPLY;
-    }
-    return parsed;
-  } catch {
-    return { intent: "other", user_facing_reply: FALLBACK_REPLY };
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+}
+
+/** Fallback: IA do Lovable (LOVABLE_API_KEY) — usada quando a cota do Google estoura. */
+async function callLovableAI(message: string, systemPrompt: string): Promise<string | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) return null;
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+    }),
+  });
+  const data = (await res.json()) as any;
+  if (!res.ok || data?.error) {
+    console.error("[whatsapp/gemini] IA Lovable indisponível", res.status, JSON.stringify(data?.error ?? {}));
+    return null;
   }
+  return data?.choices?.[0]?.message?.content ?? null;
+}
+
+async function interpretWithGemini(message: string, pendingContext: PendingOperation | null): Promise<Parsed> {
+  const systemPrompt = buildSystemPrompt(pendingContext);
+
+  const googleText = await callGoogleGemini(message, systemPrompt);
+  const fromGoogle = googleText ? parseModelJson(googleText) : null;
+  if (fromGoogle) return fromGoogle;
+
+  const lovableText = await callLovableAI(message, systemPrompt);
+  const fromLovable = lovableText ? parseModelJson(lovableText) : null;
+  if (fromLovable) return fromLovable;
+
+  // Nenhum provedor respondeu — não perdemos o contexto pendente, só pedimos pra repetir.
+  return { intent: "other", user_facing_reply: BUSY_REPLY };
 }
 
 async function findOrCreateCategory(
