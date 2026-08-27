@@ -381,6 +381,15 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           const messageType = "text";
           const rawMessage: string = body?.text ?? body?.message?.text ?? body?.message?.transcription ?? "";
 
+          // ---- Linha PROATIVA: comandos internos do sistema (scheduler/TalkToMe) ----
+          const { extractSystemCommand, handleSystemCommand } = await import("@/lib/proactive/commands.server");
+          const systemCommand = extractSystemCommand(body);
+          if (systemCommand) {
+            if (!restaurantId) return json({ action: "none" });
+            return json(await handleSystemCommand(db, systemCommand, restaurantId, contactId));
+          }
+
+
           if (!restaurantId) {
             return json({
               reply:
