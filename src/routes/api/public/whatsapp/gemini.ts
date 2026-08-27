@@ -110,6 +110,15 @@ async function interpretWithGemini(message: string, pendingContext: PendingOpera
     },
   );
   const data = (await res.json()) as any;
+  if (!res.ok || data?.error) {
+    // Ex: 429 (quota). Não perdemos o contexto pendente — só pedimos pra repetir.
+    console.error("[whatsapp/gemini] erro na IA", res.status, data?.error?.message);
+    return {
+      intent: "other",
+      user_facing_reply:
+        "Estou com muitas mensagens no momento e não consegui processar essa agora. Me manda de novo em alguns segundos, por favor.",
+    };
+  }
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
   try {
     const parsed = JSON.parse(text) as Parsed;
