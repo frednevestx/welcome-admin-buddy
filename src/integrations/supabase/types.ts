@@ -146,6 +146,38 @@ export type Database = {
           },
         ]
       }
+      conversation_state: {
+        Row: {
+          contact_id: string
+          id: string
+          pending: Json | null
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          id?: string
+          pending?: Json | null
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          id?: string
+          pending?: Json | null
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_state_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_adjustments: {
         Row: {
           adjusted_value: number | null
