@@ -4,38 +4,68 @@ import { createFileRoute } from "@tanstack/react-router";
  * Ponte TalkToMe (WhatsApp) -> Gemini -> LUUD.
  * URL pública: POST /api/public/whatsapp/gemini
  *
- * Neste stack (TanStack Start) a lógica de servidor roda como server route —
- * equivalente a uma Edge Function, mas no mesmo deploy do app.
+ * Toda a inteligência conversacional vive AQUI (no backend do LUUD).
+ * O TalkToMe é apenas o transporte ("o telefone").
  *
  * Secrets usadas: GEMINI_API_KEY, DEFAULT_RESTAURANT_ID (opcional),
  * SUPABASE_SERVICE_ROLE_KEY (já configurada pelo backend).
  */
 
 const SYSTEM_PROMPT = `
-Você é o interpretador de mensagens do LUUD, um sistema financeiro para restaurantes.
-Extraia da mensagem do usuário os dados operacionais mencionados.
+Você é a LUUD, assistente financeira de restaurantes no WhatsApp.
+Você registra vendas e despesas, responde perguntas sobre o caixa e ajuda o dono
+a entender o lucro do negócio.
+
 Responda APENAS com JSON válido, sem markdown, sem texto extra, no formato:
 
 {
-  "intent": "register_movement" | "question" | "other",
+  "intent": "register_movement" | "pending_operation" | "query_summary" | "question" | "other",
   "movement_type": "entrada" | "saida" | null,
   "category_name": string | null,
   "amount": number | null,
   "movement_date": "YYYY-MM-DD" | null,
   "source": string | null,
+  "pending_operation": { "movement_type": ..., "category_name": ..., "amount": ..., "movement_date": ..., "missing": "amount" | "movement_type" | "category_name" | "movement_date" } | null,
+  "query_type": "revenue" | "expense" | "both" | null,
+  "query_period": "today" | "week" | "month" | null,
   "confidence": number,
   "user_facing_reply": string
 }
 
-"movement_type" é "entrada" para qualquer receita/recebimento (venda, repasse de
-iFood/99Food, etc) e "saida" para qualquer despesa/pagamento.
-"category_name" deve ser uma categoria curta em português (ex: "iFood", "Aluguel",
-"Insumos") — não invente categorias muito específicas.
-Se a mensagem não contiver um fato financeiro claro, use intent "question" ou "other"
-e responda normalmente em "user_facing_reply", em português, tom direto e profissional.
-Se faltar alguma informação essencial (valor ou data), pergunte no "user_facing_reply"
-em vez de inventar. Se a data não for mencionada, assuma a data de hoje.
+REGRAS:
+- "movement_type" é "entrada" para qualquer receita/recebimento (venda, repasse de
+  iFood/99Food, etc) e "saida" para qualquer despesa/pagamento.
+- "category_name" deve ser uma categoria curta em português (ex: "iFood", "Aluguel",
+  "Insumos"). Não invente categorias muito específicas.
+- Use intent "register_movement" SOMENTE quando você tiver movement_type, amount e
+  movement_date. Se a data não for mencionada, assuma a data de hoje.
+- Se o usuário claramente está registrando algo mas falta uma informação essencial
+  (normalmente o valor), use intent "pending_operation", preencha "pending_operation"
+  com tudo que já foi coletado e o campo "missing", e pergunte no "user_facing_reply"
+  APENAS o que falta (ex: "Qual foi o valor pago?").
+- Se o usuário está PERGUNTANDO sobre movimentações (ex: "quanto vendi hoje",
+  "quanto gastei essa semana", "qual meu lucro do mês"), use intent "query_summary" e
+  preencha "query_type" e "query_period". NUNCA invente números: o sistema calcula os
+  valores reais. Nesse caso, "user_facing_reply" pode ser um texto curto de espera —
+  ele será substituído pela resposta com os valores reais.
+- Para qualquer outra mensagem (saudação, dúvida sobre o que você faz, conversa
+  genérica), use intent "question" ou "other".
+- OBRIGATÓRIO: "user_facing_reply" NUNCA pode ficar vazio, genérico ou igual a
+  "Recebido.". Sempre escreva uma resposta útil, em português, tom direto e
+  profissional. Se o usuário perguntar o que você faz ou como pode ajudar, explique
+  que você é a assistente financeira do LUUD: registra vendas e despesas por
+  mensagem, organiza as categorias e responde perguntas sobre o caixa, faturamento,
+  gastos e lucro do restaurante — e dê 2 exemplos curtos de mensagens que ele pode
+  mandar (ex: "vendi 320 no iFood hoje" ou "quanto gastei essa semana?").
 `.trim();
+
+interface PendingOperation {
+  movement_type?: "entrada" | "saida" | null;
+  category_name?: string | null;
+  amount?: number | null;
+  movement_date?: string | null;
+  missing?: string | null;
+}
 
 interface Parsed {
   intent?: string;
@@ -44,17 +74,46 @@ interface Parsed {
   amount?: number | null;
   movement_date?: string | null;
   source?: string | null;
+  pending_operation?: PendingOperation | null;
+  query_type?: "revenue" | "expense" | "both" | null;
+  query_period?: "today" | "week" | "month" | null;
   confidence?: number;
   user_facing_reply?: string;
 }
 
-async function interpretWithGemini(message: string): Promise<Parsed> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+const FALLBACK_REPLY =
+  "Sou a LUUD, sua assistente financeira. Posso registrar vendas e despesas por mensagem e responder sobre o caixa do seu negócio. Exemplos: “vendi 320 no iFood hoje” ou “quanto gastei essa semana?”.";
 
+const BUSY_REPLY =
+  "Estou com muitas mensagens no momento e não consegui processar essa agora. Me manda de novo em alguns segundos, por favor.";
+
+function buildSystemPrompt(pendingContext: PendingOperation | null): string {
   const today = new Date().toISOString().slice(0, 10);
-  const systemPrompt = `${SYSTEM_PROMPT}\n\nA data de hoje é ${today}. Use esta data quando o usuário não mencionar nenhuma.`;
+  let systemPrompt = `${SYSTEM_PROMPT}\n\nA data de hoje é ${today}. Use esta data quando o usuário não mencionar nenhuma.`;
+  if (pendingContext) {
+    systemPrompt += `\n\nCONTEXTO DA CONVERSA: o usuário já estava registrando uma movimentação: ${JSON.stringify(
+      pendingContext,
+    )}. Falta "${pendingContext.missing ?? "amount"}". A mensagem atual provavelmente completa essa informação — junte os dados do contexto com a mensagem nova e devolva intent "register_movement" completo. Só ignore o contexto se a mensagem atual for claramente sobre outro assunto.`;
+  }
+  return systemPrompt;
+}
 
+function parseModelJson(text: string): Parsed | null {
+  try {
+    const parsed = JSON.parse(text.replace(/^```(?:json)?|```$/g, "").trim()) as Parsed;
+    if (!parsed.user_facing_reply || parsed.user_facing_reply.trim().length < 3) {
+      parsed.user_facing_reply = FALLBACK_REPLY;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** Google AI Studio (GEMINI_API_KEY). */
+async function callGoogleGemini(message: string, systemPrompt: string): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
     {
@@ -68,12 +127,51 @@ async function interpretWithGemini(message: string): Promise<Parsed> {
     },
   );
   const data = (await res.json()) as any;
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-  try {
-    return JSON.parse(text) as Parsed;
-  } catch {
-    return { intent: "other", user_facing_reply: "Não entendi, pode reformular?" };
+  if (!res.ok || data?.error) {
+    console.error("[whatsapp/gemini] Google AI indisponível", res.status, data?.error?.message);
+    return null;
   }
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+}
+
+/** Fallback: IA do Lovable (LOVABLE_API_KEY) — usada quando a cota do Google estoura. */
+async function callLovableAI(message: string, systemPrompt: string): Promise<string | null> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) return null;
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+    }),
+  });
+  const data = (await res.json()) as any;
+  if (!res.ok || data?.error) {
+    console.error("[whatsapp/gemini] IA Lovable indisponível", res.status, JSON.stringify(data?.error ?? {}));
+    return null;
+  }
+  return data?.choices?.[0]?.message?.content ?? null;
+}
+
+async function interpretWithGemini(message: string, pendingContext: PendingOperation | null): Promise<Parsed> {
+  const systemPrompt = buildSystemPrompt(pendingContext);
+
+  const googleText = await callGoogleGemini(message, systemPrompt);
+  const fromGoogle = googleText ? parseModelJson(googleText) : null;
+  if (fromGoogle) return fromGoogle;
+
+  const lovableText = await callLovableAI(message, systemPrompt);
+  const fromLovable = lovableText ? parseModelJson(lovableText) : null;
+  if (fromLovable) return fromLovable;
+
+  // Nenhum provedor respondeu — não perdemos o contexto pendente, só pedimos pra repetir.
+  return { intent: "other", user_facing_reply: BUSY_REPLY };
 }
 
 async function findOrCreateCategory(
@@ -126,6 +224,91 @@ async function classifyMovement(
   if (candidates.find((m: any) => m.category_id === categoryId)) return "update";
   return "new";
 }
+
+/* ---------- memória de operação pendente (conversation_state) ---------- */
+
+const PENDING_TTL_MS = 30 * 60 * 1000;
+
+async function loadPending(db: any, restaurantId: string, contactId: string | null): Promise<PendingOperation | null> {
+  if (!contactId) return null;
+  const { data } = await db
+    .from("conversation_state")
+    .select("pending, updated_at")
+    .eq("restaurant_id", restaurantId)
+    .eq("contact_id", contactId)
+    .maybeSingle();
+  if (!data?.pending) return null;
+  if (Date.now() - new Date(data.updated_at).getTime() > PENDING_TTL_MS) return null;
+  return data.pending as PendingOperation;
+}
+
+async function savePending(db: any, restaurantId: string, contactId: string | null, pending: PendingOperation) {
+  if (!contactId) return;
+  await db
+    .from("conversation_state")
+    .upsert(
+      { restaurant_id: restaurantId, contact_id: contactId, pending, updated_at: new Date().toISOString() },
+      { onConflict: "restaurant_id,contact_id" },
+    );
+}
+
+async function clearPending(db: any, restaurantId: string, contactId: string | null) {
+  if (!contactId) return;
+  await db
+    .from("conversation_state")
+    .update({ pending: null, updated_at: new Date().toISOString() })
+    .eq("restaurant_id", restaurantId)
+    .eq("contact_id", contactId);
+}
+
+/* ---------- consultas de resumo ---------- */
+
+function periodRange(period: "today" | "week" | "month"): { from: string; to: string; label: string } {
+  const now = new Date();
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const to = iso(now);
+  if (period === "today") return { from: to, to, label: "hoje" };
+  if (period === "week") {
+    const start = new Date(now);
+    start.setDate(start.getDate() - 6);
+    return { from: iso(start), to, label: "nos últimos 7 dias" };
+  }
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { from: iso(start), to, label: "neste mês" };
+}
+
+const brl = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+
+async function answerQuery(db: any, restaurantId: string, parsed: Parsed): Promise<string> {
+  const period = parsed.query_period ?? "today";
+  const type = parsed.query_type ?? "both";
+  const { from, to, label } = periodRange(period);
+
+  const { data, error } = await db
+    .from("movements_current")
+    .select("type, amount")
+    .eq("restaurant_id", restaurantId)
+    .gte("movement_date", from)
+    .lte("movement_date", to);
+  if (error) throw new Error(error.message);
+
+  let revenue = 0;
+  let expense = 0;
+  for (const row of data ?? []) {
+    const amount = Number(row.amount) || 0;
+    if (row.type === "entrada") revenue += amount;
+    else if (row.type === "saida") expense += amount;
+  }
+
+  if (type === "revenue") return `Você recebeu ${brl(revenue)} ${label}.`;
+  if (type === "expense") return `Você gastou ${brl(expense)} ${label}.`;
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}: entradas de ${brl(revenue)}, saídas de ${brl(
+    expense,
+  )} — resultado de ${brl(revenue - expense)}.`;
+}
+
+/* ---------- confirmação de movimentação criada ---------- */
 
 async function findPendingConfirmation(db: any, restaurantId: string, contactId: string | null) {
   if (!contactId) return null;
@@ -206,26 +389,32 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           }
           if (!rawMessage) return json({ error: "payload incompleto" }, 400);
 
-          const pending = await findPendingConfirmation(db, restaurantId, contactId);
-          if (pending) {
+          const confirmation = await findPendingConfirmation(db, restaurantId, contactId);
+          if (confirmation) {
             const answer = parseYesNo(rawMessage);
             if (answer === "yes") {
-              await db.from("movements").update({ confirmed_by_user: true }).eq("id", pending.id);
-              return json({ reply: `Confirmado: R$${pending.amount} registrado em ${pending.movement_date}.` });
+              await db.from("movements").update({ confirmed_by_user: true }).eq("id", confirmation.id);
+              return json({
+                reply: `Confirmado: R$${confirmation.amount} registrado em ${confirmation.movement_date}.`,
+              });
             }
             if (answer === "no") {
               await db
                 .from("movements")
                 .update({ status: "superseded", notes: "descartado pelo usuário" })
-                .eq("id", pending.id);
+                .eq("id", confirmation.id);
               return json({ reply: "Sem problema, não vou registrar esse valor. Pode me mandar o correto." });
             }
           }
 
-          const parsed = await interpretWithGemini(rawMessage);
+          // Memória: operação incompleta iniciada em mensagens anteriores.
+          const pendingOp = await loadPending(db, restaurantId, contactId);
+
+          const parsed = await interpretWithGemini(rawMessage, pendingOp);
           let classification = "unknown";
           let movementId: string | null = null;
           let categoryId: string | null = null;
+          let replyText = parsed.user_facing_reply ?? FALLBACK_REPLY;
 
           if (parsed.intent === "register_movement" && parsed.amount && parsed.movement_date) {
             categoryId = parsed.category_name
@@ -248,7 +437,23 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
             .maybeSingle();
           if (evErr) throw new Error(evErr.message);
 
-          let replyText = parsed.user_facing_reply ?? "Recebido.";
+          if (parsed.intent === "query_summary") {
+            replyText = await answerQuery(db, restaurantId, parsed);
+          }
+
+          if (parsed.intent === "pending_operation") {
+            const pending: PendingOperation = {
+              movement_type: parsed.pending_operation?.movement_type ?? parsed.movement_type ?? null,
+              category_name: parsed.pending_operation?.category_name ?? parsed.category_name ?? null,
+              amount: parsed.pending_operation?.amount ?? parsed.amount ?? null,
+              movement_date:
+                parsed.pending_operation?.movement_date ??
+                parsed.movement_date ??
+                new Date().toISOString().slice(0, 10),
+              missing: parsed.pending_operation?.missing ?? "amount",
+            };
+            await savePending(db, restaurantId, contactId, pending);
+          }
 
           if (classification === "new") {
             const { data: mv } = await db
@@ -269,14 +474,17 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
               .maybeSingle();
             movementId = mv?.id ?? null;
             replyText = `Entendi: ${parsed.category_name ?? parsed.movement_type} de R$${parsed.amount} em ${parsed.movement_date}. Confirma o registro? (sim/não)`;
+            await clearPending(db, restaurantId, contactId);
           }
 
           if (classification === "update") {
             replyText = `Vi que você já tinha um valor registrado para ${parsed.category_name} em ${parsed.movement_date}. Isso é uma atualização daquele valor, ou uma movimentação nova e separada?`;
+            await clearPending(db, restaurantId, contactId);
           }
 
           if (classification === "duplicate") {
             replyText = "Esse valor já está registrado — não vou duplicar. Se for algo diferente, me dá mais detalhe.";
+            await clearPending(db, restaurantId, contactId);
           }
 
           if (movementId && eventRow?.id) {
