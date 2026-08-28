@@ -605,7 +605,23 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
             await db.from("whatsapp_raw_events").update({ linked_movement_id: movementId }).eq("id", eventRow.id);
           }
 
+          // ---- Insight pendente: no máximo UM, anexado à resposta normal ----
+          // Não anexamos quando há uma pergunta aberta na conversa (confirmação de
+          // registro, dado faltando ou oferta de resumo) — pra não competir com ela.
+          const awaitingUser =
+            offeredSummary ||
+            parsed.intent === "pending_operation" ||
+            classification === "new" ||
+            classification === "update";
+
+          if (!awaitingUser) {
+            const { pickInsightForReply } = await import("@/lib/proactive/insights.server");
+            const insight = await pickInsightForReply(db, restaurantId, contactId);
+            if (insight) replyText = `${replyText}\n\n${insight}`;
+          }
+
           return json({ reply: replyText });
+
         } catch (err) {
           console.error("[whatsapp/gemini]", err);
           return json({ error: String(err) }, 500);
