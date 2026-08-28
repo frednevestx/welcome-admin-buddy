@@ -377,8 +377,54 @@ async function resolveRestaurantId(db: any, body: any): Promise<string | null> {
   return process.env.DEFAULT_RESTAURANT_ID ?? null;
 }
 
+/** Primeira interação desse contato no dia? (usa o log de eventos já existente) */
+async function isFirstInteractionToday(db: any, restaurantId: string, contactId: string | null): Promise<boolean> {
+  if (!contactId) return false;
+  const startOfDay = `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`;
+  const { count } = await db
+    .from("whatsapp_raw_events")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId)
+    .eq("contact_id", contactId)
+    .gte("created_at", startOfDay);
+  return (count ?? 0) === 0;
+}
+
+function isGreeting(message: string): boolean {
+  const m = message
+    .trim()
+    .toLowerCase()
+    .replace(/[!?.,]/g, "");
+  return ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "e aí", "e ai", "opa"].includes(m);
+}
+
+/** Resumo determinístico do dia anterior (ontem), calculado em código. */
+async function yesterdaySummary(db: any, restaurantId: string): Promise<string> {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const day = d.toISOString().slice(0, 10);
+  const { data } = await db
+    .from("movements_current")
+    .select("type, amount")
+    .eq("restaurant_id", restaurantId)
+    .eq("movement_date", day);
+
+  let revenue = 0;
+  let expense = 0;
+  for (const row of data ?? []) {
+    const amount = Number(row.amount) || 0;
+    if (row.type === "entrada") revenue += amount;
+    else if (row.type === "saida") expense += amount;
+  }
+  if (!data || data.length === 0) return `Não encontrei nenhum lançamento registrado em ${day}.`;
+  return `Ontem (${day}): entradas de ${brl(revenue)}, saídas de ${brl(expense)} — resultado de ${brl(
+    revenue - expense,
+  )}.`;
+}
+
 const json = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), { status, headers: { "Content-Type": "application/json" } });
+
 
 export const Route = createFileRoute("/api/public/whatsapp/gemini")({
   server: {
