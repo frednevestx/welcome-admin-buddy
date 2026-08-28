@@ -287,10 +287,11 @@ export async function shouldSend(db: any, restaurantId: string, ev: DetectedEven
     .select("sent_at, reference_value")
     .eq("restaurant_id", restaurantId)
     .eq("dedupe_key", ev.dedupeKey)
-    .eq("status", "sent")
+    .in("status", ["sent", "shown"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
 
   if (!last?.sent_at) return true;
 

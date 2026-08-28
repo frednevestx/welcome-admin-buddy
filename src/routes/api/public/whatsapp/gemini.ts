@@ -12,14 +12,15 @@ import { createFileRoute } from "@tanstack/react-router";
  */
 
 const SYSTEM_PROMPT = `
-Você é a LUUD, assistente financeira de restaurantes no WhatsApp.
-Você registra vendas e despesas, responde perguntas sobre o caixa e ajuda o dono
-a entender o lucro do negócio.
+Você é a LUUD, assistente financeira e de gestão de pequenos negócios, no WhatsApp.
+Você atende QUALQUER tipo de negócio (comércio, serviços, alimentação, etc). NUNCA
+assuma o segmento do usuário: só fale de um contexto específico (delivery, loja,
+oficina...) se os dados ou a própria mensagem do usuário indicarem isso.
 
 Responda APENAS com JSON válido, sem markdown, sem texto extra, no formato:
 
 {
-  "intent": "register_movement" | "pending_operation" | "query_summary" | "question" | "other",
+  "intent": "register_movement" | "pending_operation" | "query_summary" | "compare_periods" | "top_expenses" | "supplier_analysis" | "upcoming_bills" | "greeting" | "question" | "other",
   "movement_type": "entrada" | "saida" | null,
   "category_name": string | null,
   "amount": number | null,
@@ -33,31 +34,41 @@ Responda APENAS com JSON válido, sem markdown, sem texto extra, no formato:
 }
 
 REGRAS:
-- "movement_type" é "entrada" para qualquer receita/recebimento (venda, repasse de
-  iFood/99Food, etc) e "saida" para qualquer despesa/pagamento.
-- "category_name" deve ser uma categoria curta em português (ex: "iFood", "Aluguel",
-  "Insumos"). Não invente categorias muito específicas.
+- "movement_type" é "entrada" para qualquer receita/recebimento e "saida" para
+  qualquer despesa/pagamento.
+- "category_name" deve ser uma categoria curta em português (ex: "Vendas",
+  "Aluguel", "Insumos"). Não invente categorias muito específicas.
 - Use intent "register_movement" SOMENTE quando você tiver movement_type, amount e
   movement_date. Se a data não for mencionada, assuma a data de hoje.
 - Se o usuário claramente está registrando algo mas falta uma informação essencial
   (normalmente o valor), use intent "pending_operation", preencha "pending_operation"
   com tudo que já foi coletado e o campo "missing", e pergunte no "user_facing_reply"
   APENAS o que falta (ex: "Qual foi o valor pago?").
-- Se o usuário está PERGUNTANDO sobre movimentações (ex: "quanto vendi hoje",
-  "quanto gastei essa semana", "qual meu lucro do mês"), use intent "query_summary" e
-  preencha "query_type" e "query_period". NUNCA invente números: o sistema calcula os
-  valores reais. Nesse caso, "user_facing_reply" pode ser um texto curto de espera —
-  ele será substituído pela resposta com os valores reais.
-- Para qualquer outra mensagem (saudação, dúvida sobre o que você faz, conversa
-  genérica), use intent "question" ou "other".
-- OBRIGATÓRIO: "user_facing_reply" NUNCA pode ficar vazio, genérico ou igual a
-  "Recebido.". Sempre escreva uma resposta útil, em português, tom direto e
-  profissional. Se o usuário perguntar o que você faz ou como pode ajudar, explique
-  que você é a assistente financeira do LUUD: registra vendas e despesas por
-  mensagem, organiza as categorias e responde perguntas sobre o caixa, faturamento,
-  gastos e lucro do restaurante — e dê 2 exemplos curtos de mensagens que ele pode
-  mandar (ex: "vendi 320 no iFood hoje" ou "quanto gastei essa semana?").
+- Perguntas sobre totais de um período ("quanto vendi hoje", "quanto gastei essa
+  semana") => "query_summary" com "query_type" e "query_period".
+- Comparação entre períodos ("como foi meu mês comparado ao anterior") => "compare_periods".
+- Maiores gastos / onde estou gastando mais => "top_expenses".
+- Perguntas sobre fornecedores => "supplier_analysis".
+- Perguntas sobre contas a pagar / vencimentos futuros => "upcoming_bills".
+- Saudação simples ("oi", "bom dia", "olá") => "greeting".
+- Qualquer outra coisa => "question" ou "other".
+- Para intents calculadas pelo sistema (query_summary, compare_periods, top_expenses,
+  supplier_analysis, upcoming_bills) NUNCA invente números: o sistema calcula e
+  substitui o texto.
+- RESPOSTA PROPORCIONAL: pergunta simples => resposta curta e simples. Pergunta
+  analítica => resposta com dados reais.
+- NUNCA invente um dado que não existe. Se o usuário perguntar algo que a LUUD não
+  tem na base (ex: estoque, número de clientes atendidos, folha de pagamento
+  detalhada), diga claramente que esse dado não está registrado hoje.
+- OBRIGATÓRIO: "user_facing_reply" NUNCA pode ficar vazio ou igual a "Recebido.".
+  Se o usuário perguntar o que você faz, explique que você é a assistente
+  financeira e de gestão da LUUD: registra entradas e saídas por mensagem, organiza
+  categorias e responde sobre caixa, faturamento, gastos e resultado do negócio —
+  com 2 exemplos curtos (ex: "recebi 320 hoje" ou "quanto gastei essa semana?").
 `.trim();
+
+const GREETING_REPLY =
+  "Olá! 👋 Sou a LUUD, sua assistente financeira e de gestão. Posso ajudar você a acompanhar suas finanças, analisar seus resultados e organizar melhor seu negócio.";
 
 interface PendingOperation {
   movement_type?: "entrada" | "saida" | null;
@@ -65,6 +76,8 @@ interface PendingOperation {
   amount?: number | null;
   movement_date?: string | null;
   missing?: string | null;
+  /** Oferta pendente aguardando sim/não (ex: resumo de ontem). */
+  offer?: "daily_summary" | null;
 }
 
 interface Parsed {
@@ -82,7 +95,7 @@ interface Parsed {
 }
 
 const FALLBACK_REPLY =
-  "Sou a LUUD, sua assistente financeira. Posso registrar vendas e despesas por mensagem e responder sobre o caixa do seu negócio. Exemplos: “vendi 320 no iFood hoje” ou “quanto gastei essa semana?”.";
+  "Sou a LUUD, sua assistente financeira e de gestão. Posso registrar entradas e saídas por mensagem e responder sobre o caixa do seu negócio. Exemplos: “recebi 320 hoje” ou “quanto gastei essa semana?”.";
 
 const BUSY_REPLY =
   "Estou com muitas mensagens no momento e não consegui processar essa agora. Me manda de novo em alguns segundos, por favor.";
@@ -97,6 +110,7 @@ function buildSystemPrompt(pendingContext: PendingOperation | null): string {
   }
   return systemPrompt;
 }
+
 
 function parseModelJson(text: string): Parsed | null {
   try {
@@ -363,8 +377,54 @@ async function resolveRestaurantId(db: any, body: any): Promise<string | null> {
   return process.env.DEFAULT_RESTAURANT_ID ?? null;
 }
 
+/** Primeira interação desse contato no dia? (usa o log de eventos já existente) */
+async function isFirstInteractionToday(db: any, restaurantId: string, contactId: string | null): Promise<boolean> {
+  if (!contactId) return false;
+  const startOfDay = `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`;
+  const { count } = await db
+    .from("whatsapp_raw_events")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", restaurantId)
+    .eq("contact_id", contactId)
+    .gte("created_at", startOfDay);
+  return (count ?? 0) === 0;
+}
+
+function isGreeting(message: string): boolean {
+  const m = message
+    .trim()
+    .toLowerCase()
+    .replace(/[!?.,]/g, "");
+  return ["oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", "e aí", "e ai", "opa"].includes(m);
+}
+
+/** Resumo determinístico do dia anterior (ontem), calculado em código. */
+async function yesterdaySummary(db: any, restaurantId: string): Promise<string> {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const day = d.toISOString().slice(0, 10);
+  const { data } = await db
+    .from("movements_current")
+    .select("type, amount")
+    .eq("restaurant_id", restaurantId)
+    .eq("movement_date", day);
+
+  let revenue = 0;
+  let expense = 0;
+  for (const row of data ?? []) {
+    const amount = Number(row.amount) || 0;
+    if (row.type === "entrada") revenue += amount;
+    else if (row.type === "saida") expense += amount;
+  }
+  if (!data || data.length === 0) return `Não encontrei nenhum lançamento registrado em ${day}.`;
+  return `Ontem (${day}): entradas de ${brl(revenue)}, saídas de ${brl(expense)} — resultado de ${brl(
+    revenue - expense,
+  )}.`;
+}
+
 const json = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), { status, headers: { "Content-Type": "application/json" } });
+
 
 export const Route = createFileRoute("/api/public/whatsapp/gemini")({
   server: {
@@ -419,7 +479,24 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           // Memória: operação incompleta iniciada em mensagens anteriores.
           const pendingOp = await loadPending(db, restaurantId, contactId);
 
+          // Oferta pendente (ex: "quer ver como fechou ontem?") — mesmo mecanismo sim/não.
+          if (pendingOp?.offer === "daily_summary") {
+            const answer = parseYesNo(rawMessage);
+            if (answer === "yes") {
+              await clearPending(db, restaurantId, contactId);
+              return json({ reply: await yesterdaySummary(db, restaurantId) });
+            }
+            if (answer === "no") {
+              await clearPending(db, restaurantId, contactId);
+              return json({ reply: "Sem problema. Se quiser, é só me pedir depois." });
+            }
+          }
+
+          // Precisa ser medido ANTES de gravar o evento desta mensagem.
+          const firstToday = await isFirstInteractionToday(db, restaurantId, contactId);
+
           const parsed = await interpretWithGemini(rawMessage, pendingOp);
+
           let classification = "unknown";
           let movementId: string | null = null;
           let categoryId: string | null = null;
@@ -449,6 +526,34 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           if (parsed.intent === "query_summary") {
             replyText = await answerQuery(db, restaurantId, parsed);
           }
+
+          // ---- Consultas analíticas sob demanda ----
+          if (["compare_periods", "top_expenses", "supplier_analysis"].includes(parsed.intent ?? "")) {
+            const analytics = await import("@/lib/proactive/analytics.server");
+            if (parsed.intent === "compare_periods") replyText = await analytics.comparePeriods(db, restaurantId);
+            if (parsed.intent === "top_expenses") replyText = await analytics.getTopExpenses(db, restaurantId);
+            if (parsed.intent === "supplier_analysis") replyText = await analytics.getSupplierAnalysis(db, restaurantId);
+          }
+
+          // Dado inexistente na base: não simular contas a pagar.
+          if (parsed.intent === "upcoming_bills") {
+            replyText =
+              "Hoje eu não tenho data de vencimento das contas na base — só a data em que o gasto aconteceu. Por isso não consigo listar contas a vencer sem inventar. Posso te mostrar seus maiores gastos ou comparar períodos, se ajudar.";
+          }
+
+          // ---- Saudação / primeira mensagem do dia ----
+          let offeredSummary = false;
+          if (parsed.intent === "greeting" || isGreeting(rawMessage)) {
+            if (firstToday) {
+              await savePending(db, restaurantId, contactId, { offer: "daily_summary" });
+              replyText = `${GREETING_REPLY}\n\nQuer ver como fechou ontem?`;
+              offeredSummary = true;
+            } else {
+              replyText = GREETING_REPLY;
+            }
+          }
+
+
 
           if (parsed.intent === "pending_operation") {
             const pending: PendingOperation = {
@@ -500,7 +605,23 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
             await db.from("whatsapp_raw_events").update({ linked_movement_id: movementId }).eq("id", eventRow.id);
           }
 
+          // ---- Insight pendente: no máximo UM, anexado à resposta normal ----
+          // Não anexamos quando há uma pergunta aberta na conversa (confirmação de
+          // registro, dado faltando ou oferta de resumo) — pra não competir com ela.
+          const awaitingUser =
+            offeredSummary ||
+            parsed.intent === "pending_operation" ||
+            classification === "new" ||
+            classification === "update";
+
+          if (!awaitingUser) {
+            const { pickInsightForReply } = await import("@/lib/proactive/insights.server");
+            const insight = await pickInsightForReply(db, restaurantId, contactId);
+            if (insight) replyText = `${replyText}\n\n${insight}`;
+          }
+
           return json({ reply: replyText });
+
         } catch (err) {
           console.error("[whatsapp/gemini]", err);
           return json({ error: String(err) }, 500);
