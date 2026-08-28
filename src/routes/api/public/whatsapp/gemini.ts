@@ -479,7 +479,24 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           // Memória: operação incompleta iniciada em mensagens anteriores.
           const pendingOp = await loadPending(db, restaurantId, contactId);
 
+          // Oferta pendente (ex: "quer ver como fechou ontem?") — mesmo mecanismo sim/não.
+          if (pendingOp?.offer === "daily_summary") {
+            const answer = parseYesNo(rawMessage);
+            if (answer === "yes") {
+              await clearPending(db, restaurantId, contactId);
+              return json({ reply: await yesterdaySummary(db, restaurantId) });
+            }
+            if (answer === "no") {
+              await clearPending(db, restaurantId, contactId);
+              return json({ reply: "Sem problema. Se quiser, é só me pedir depois." });
+            }
+          }
+
+          // Precisa ser medido ANTES de gravar o evento desta mensagem.
+          const firstToday = await isFirstInteractionToday(db, restaurantId, contactId);
+
           const parsed = await interpretWithGemini(rawMessage, pendingOp);
+
           let classification = "unknown";
           let movementId: string | null = null;
           let categoryId: string | null = null;
