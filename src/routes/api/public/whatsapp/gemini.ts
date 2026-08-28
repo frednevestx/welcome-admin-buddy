@@ -527,6 +527,34 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
             replyText = await answerQuery(db, restaurantId, parsed);
           }
 
+          // ---- Consultas analíticas sob demanda ----
+          if (["compare_periods", "top_expenses", "supplier_analysis"].includes(parsed.intent ?? "")) {
+            const analytics = await import("@/lib/proactive/analytics.server");
+            if (parsed.intent === "compare_periods") replyText = await analytics.comparePeriods(db, restaurantId);
+            if (parsed.intent === "top_expenses") replyText = await analytics.getTopExpenses(db, restaurantId);
+            if (parsed.intent === "supplier_analysis") replyText = await analytics.getSupplierAnalysis(db, restaurantId);
+          }
+
+          // Dado inexistente na base: não simular contas a pagar.
+          if (parsed.intent === "upcoming_bills") {
+            replyText =
+              "Hoje eu não tenho data de vencimento das contas na base — só a data em que o gasto aconteceu. Por isso não consigo listar contas a vencer sem inventar. Posso te mostrar seus maiores gastos ou comparar períodos, se ajudar.";
+          }
+
+          // ---- Saudação / primeira mensagem do dia ----
+          let offeredSummary = false;
+          if (parsed.intent === "greeting" || isGreeting(rawMessage)) {
+            if (firstToday) {
+              await savePending(db, restaurantId, contactId, { offer: "daily_summary" });
+              replyText = `${GREETING_REPLY}\n\nQuer ver como fechou ontem?`;
+              offeredSummary = true;
+            } else {
+              replyText = GREETING_REPLY;
+            }
+          }
+
+
+
           if (parsed.intent === "pending_operation") {
             const pending: PendingOperation = {
               movement_type: parsed.pending_operation?.movement_type ?? parsed.movement_type ?? null,
