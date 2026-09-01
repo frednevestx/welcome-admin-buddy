@@ -31,7 +31,6 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { TrialBanner } from "@/components/trial-banner";
 import { useFinanceSummary } from "@/lib/finance";
 
 
@@ -226,7 +225,6 @@ function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      <TrialBanner />
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight truncate">Dashboard</h1>
