@@ -627,7 +627,101 @@ export async function runOrchestrator(
       break;
     }
 
+    /* ---------- CORREÇÃO de lançamento ---------- */
+    case "update_movement": {
+      const changes: MovementChanges = {
+        amount: parsed.new_amount ?? parsed.amount ?? null,
+        category_name: parsed.new_category_name ?? null,
+        movement_date: parsed.new_movement_date ?? null,
+        movement_type: parsed.new_movement_type ?? null,
+      };
+      const hasChange = Object.values(changes).some((v) => v !== null && v !== undefined);
+      const candidates = await findMovementCandidates(db, restaurantId, parsed.target_hint ?? null);
+
+      if (candidates.length === 0) {
+        reply = "Não achei nenhum lançamento que combine com isso. Pode me dizer o valor ou o que era?";
+        break;
+      }
+      if (!hasChange) {
+        reply = `Encontrei a ${describeMovement(candidates[0]!)}. O que devo corrigir: o valor, a data ou a categoria?`;
+        awaitingUser = true;
+        await saveContext(db, restaurantId, contactId, {
+          ...baseCtx,
+          offer: {
+            kind: "choose_movement",
+            action: "update",
+            ids: [candidates[0]!.id],
+            labels: [describeMovement(candidates[0]!)],
+            changes: null,
+          },
+        });
+        break;
+      }
+      if (candidates.length > 1) {
+        const labels = candidates.map(describeMovement);
+        reply = `Encontrei mais de um lançamento parecido. Qual deles eu corrijo?\n${labels
+          .map((l, i) => `${i + 1}. ${l}`)
+          .join("\n")}`;
+        awaitingUser = true;
+        await saveContext(db, restaurantId, contactId, {
+          ...baseCtx,
+          offer: {
+            kind: "choose_movement",
+            action: "update",
+            ids: candidates.map((c) => c.id),
+            labels,
+            changes,
+          },
+        });
+        break;
+      }
+      const target = candidates[0]!;
+      reply = `Vou ajustar a ${describeMovement(target)} — ${changesLabel(changes)}. Confirma?`;
+      awaitingUser = true;
+      await saveContext(db, restaurantId, contactId, {
+        ...baseCtx,
+        offer: { kind: "confirm_update", movement_id: target.id, label: describeMovement(target), changes },
+      });
+      break;
+    }
+
+    /* ---------- EXCLUSÃO de lançamento ---------- */
+    case "delete_movement": {
+      const candidates = await findMovementCandidates(db, restaurantId, parsed.target_hint ?? null);
+      if (candidates.length === 0) {
+        reply = "Não encontrei esse lançamento. Me diz o valor ou a que ele se refere que eu procuro.";
+        break;
+      }
+      if (candidates.length > 1) {
+        const labels = candidates.map(describeMovement);
+        reply = `Qual desses eu excluo?\n${labels.map((l, i) => `${i + 1}. ${l}`).join("\n")}`;
+        awaitingUser = true;
+        await saveContext(db, restaurantId, contactId, {
+          ...baseCtx,
+          offer: { kind: "choose_movement", action: "delete", ids: candidates.map((c) => c.id), labels },
+        });
+        break;
+      }
+      const target = candidates[0]!;
+      reply = `Confirma excluir a ${describeMovement(target)}? Ela sai dos cálculos, mas continua no histórico.`;
+      awaitingUser = true;
+      await saveContext(db, restaurantId, contactId, {
+        ...baseCtx,
+        offer: { kind: "confirm_delete", movement_id: target.id, label: describeMovement(target) },
+      });
+      break;
+    }
+
+    /* ---------- REINÍCIO total ---------- */
+    case "reset_data": {
+      reply = RESET_CONFIRM_MESSAGE;
+      awaitingUser = true;
+      await saveContext(db, restaurantId, contactId, { ...baseCtx, offer: { kind: "confirm_reset" } });
+      break;
+    }
+
     case "smalltalk":
+
     case "other":
     default:
       if (!parsed.user_facing_reply?.trim()) reply = fallbackReply();
