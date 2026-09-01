@@ -294,12 +294,6 @@ export async function runOrchestrator(
         : null;
       classification = await classifyMovement(
         db,
-        { ...parsed, movement_date: movementDate } as any,
-        categoryId,
-      ).catch(() => "new") as unknown as string;
-      // (assinatura posicional: db, restaurantId, parsed, categoryId)
-      classification = await classifyMovement(
-        db,
         restaurantId,
         { ...parsed, movement_date: movementDate },
         categoryId,
