@@ -16,7 +16,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
 import { Route as AuthenticatedSimuladorRouteImport } from './routes/_authenticated/simulador'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
-import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
 import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
 import { Route as AuthenticatedLucroPlataformaRouteImport } from './routes/_authenticated/lucro-plataforma'
@@ -71,11 +70,6 @@ const AuthenticatedSimuladorRoute = AuthenticatedSimuladorRouteImport.update({
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
-  id: '/planos',
-  path: '/planos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMovimentacoesRoute =
@@ -218,7 +212,6 @@ export interface FileRoutesByFullPath {
   '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
-  '/planos': typeof AuthenticatedPlanosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
@@ -248,7 +241,6 @@ export interface FileRoutesByTo {
   '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
-  '/planos': typeof AuthenticatedPlanosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
@@ -280,7 +272,6 @@ export interface FileRoutesById {
   '/_authenticated/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
   '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/movimentacoes': typeof AuthenticatedMovimentacoesRoute
-  '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
@@ -312,7 +303,6 @@ export interface FileRouteTypes {
     | '/lucro-plataforma'
     | '/metas'
     | '/movimentacoes'
-    | '/planos'
     | '/relatorios'
     | '/simulador'
     | '/suporte'
@@ -342,7 +332,6 @@ export interface FileRouteTypes {
     | '/lucro-plataforma'
     | '/metas'
     | '/movimentacoes'
-    | '/planos'
     | '/relatorios'
     | '/simulador'
     | '/suporte'
@@ -373,7 +362,6 @@ export interface FileRouteTypes {
     | '/_authenticated/lucro-plataforma'
     | '/_authenticated/metas'
     | '/_authenticated/movimentacoes'
-    | '/_authenticated/planos'
     | '/_authenticated/relatorios'
     | '/_authenticated/simulador'
     | '/_authenticated/suporte'
@@ -444,13 +432,6 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/planos': {
-      id: '/_authenticated/planos'
-      path: '/planos'
-      fullPath: '/planos'
-      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/movimentacoes': {
@@ -620,7 +601,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLucroPlataformaRoute: typeof AuthenticatedLucroPlataformaRoute
   AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMovimentacoesRoute: typeof AuthenticatedMovimentacoesRoute
-  AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedSimuladorRoute: typeof AuthenticatedSimuladorRoute
   AuthenticatedSuporteRoute: typeof AuthenticatedSuporteRoute
@@ -644,7 +624,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLucroPlataformaRoute: AuthenticatedLucroPlataformaRoute,
   AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMovimentacoesRoute: AuthenticatedMovimentacoesRoute,
-  AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedSimuladorRoute: AuthenticatedSimuladorRoute,
   AuthenticatedSuporteRoute: AuthenticatedSuporteRoute,
