@@ -103,3 +103,13 @@ export function looksFinancial(message: string): boolean {
   const verbs = /(paguei|gastei|comprei|recebi|vendi|entrou|saiu|pagamento|despesa|receita|faturei)/i;
   return hasMoney && verbs.test(m);
 }
+
+/** "sim/não" tolerante. */
+export function parseYesNo(message: string): "yes" | "no" | null {
+  const m = message.trim().toLowerCase().replace(/[!.]/g, "");
+  const yes = ["sim", "s", "confirmo", "confirma", "isso", "correto", "ok", "pode", "claro", "positivo", "exato", "certo"];
+  const no = ["não", "nao", "n", "errado", "cancela", "cancelar", "negativo", "deixa", "para", "pare"];
+  if (yes.some((w) => m === w || m.startsWith(`${w} `))) return "yes";
+  if (no.some((w) => m === w || m.startsWith(`${w} `))) return "no";
+  return null;
+}
