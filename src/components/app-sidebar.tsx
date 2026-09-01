@@ -13,9 +13,7 @@ import {
   Settings,
   LogOut,
   Target,
-  CreditCard,
   Users,
-  Sparkles,
   Calculator,
   PieChart,
   Package,
@@ -74,7 +72,6 @@ const premium: Item[] = [
 
 const conta: Item[] = [
   { title: "Suporte", url: "/suporte", icon: LifeBuoy, tour: "suporte" },
-  { title: "Planos", url: "/planos", icon: CreditCard },
   { title: "Configurações", url: "/configuracoes", icon: Settings, tour: "configuracoes" },
 ];
 
@@ -99,14 +96,6 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
                   <Link to={item.url} data-tour={item.tour ? `menu-${item.tour}` : undefined}>
                     <item.icon className={cn("h-4 w-4", locked && "opacity-60")} />
                     <span className={cn("flex-1", locked && "opacity-60")}>{item.title}</span>
-                    {item.min && !collapsed && (
-                      <span
-                        className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                          item.min === "premium"
-                            ? "bg-primary/15 text-primary"
-                            : "bg-secondary text-muted-foreground"
-                        )}
                       >
                         {item.min === "premium" ? "IA" : "PRO"}
                       </span>
@@ -160,14 +149,6 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
             </div>
           )}
         </Link>
-        {!collapsed && (
-          <Button asChild variant="outline" size="sm" className="justify-start gap-2 w-full">
-            <Link to="/planos">
-              <Sparkles className="h-4 w-4" />
-              <span>Fazer upgrade</span>
-            </Link>
-          </Button>
-        )}
         <Button variant="ghost" size="sm" onClick={onSignOut} className="justify-start gap-2 w-full">
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sair</span>}
