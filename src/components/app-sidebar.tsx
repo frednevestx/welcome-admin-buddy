@@ -13,9 +13,7 @@ import {
   Settings,
   LogOut,
   Target,
-  CreditCard,
   Users,
-  Sparkles,
   Calculator,
   PieChart,
   Package,
@@ -44,7 +42,7 @@ import { usePlan, type PlanTier } from "@/hooks/use-plan";
 import { cn } from "@/lib/utils";
 import { RestaurantAvatar } from "@/components/restaurant-avatar";
 
-type Item = { title: string; url: string; icon: typeof LayoutDashboard; min?: PlanTier; tour?: string };
+type Item = { title: string; url: string; icon: typeof LayoutDashboard; tour?: string };
 
 const basico: Item[] = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, tour: "dashboard" },
@@ -59,22 +57,21 @@ const basico: Item[] = [
 ];
 
 const pro: Item[] = [
-  { title: "CMV", url: "/cmv", icon: PieChart, min: "pro", tour: "cmv" },
-  { title: "Calculadora de Preço", url: "/calculadora-preco", icon: Calculator, min: "pro", tour: "calculadora-preco" },
-  { title: "Lucro por Plataforma", url: "/lucro-plataforma", icon: BarChart3, min: "pro", tour: "lucro-plataforma" },
-  { title: "Fornecedores", url: "/fornecedores", icon: Package, min: "pro" },
-  { title: "Histórico de Preços", url: "/historico-precos", icon: History, min: "pro" },
-  { title: "Simulador de Lucro", url: "/simulador", icon: Sliders, min: "pro" },
-  { title: "Relatórios", url: "/relatorios", icon: FileText, min: "pro" },
+  { title: "CMV", url: "/cmv", icon: PieChart, tour: "cmv" },
+  { title: "Calculadora de Preço", url: "/calculadora-preco", icon: Calculator, tour: "calculadora-preco" },
+  { title: "Lucro por Plataforma", url: "/lucro-plataforma", icon: BarChart3, tour: "lucro-plataforma" },
+  { title: "Fornecedores", url: "/fornecedores", icon: Package },
+  { title: "Histórico de Preços", url: "/historico-precos", icon: History },
+  { title: "Simulador de Lucro", url: "/simulador", icon: Sliders },
+  { title: "Relatórios", url: "/relatorios", icon: FileText },
 ];
 
 const premium: Item[] = [
-  { title: "Assistente IA", url: "/assistente-ia", icon: Bot, min: "premium", tour: "assistente-ia" },
+  { title: "Assistente IA", url: "/assistente-ia", icon: Bot, tour: "assistente-ia" },
 ];
 
 const conta: Item[] = [
   { title: "Suporte", url: "/suporte", icon: LifeBuoy, tour: "suporte" },
-  { title: "Planos", url: "/planos", icon: CreditCard },
   { title: "Configurações", url: "/configuracoes", icon: Settings, tour: "configuracoes" },
 ];
 
@@ -82,7 +79,7 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { can, isAdmin } = usePlan();
+  const { isAdmin } = usePlan();
   const { restaurant: r } = useRestaurant();
 
   const renderGroup = (label: string, items: Item[]) => (
@@ -92,25 +89,12 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
         <SidebarMenu>
           {items.map((item) => {
             const active = pathname === item.url || pathname.startsWith(item.url + "/");
-            const locked = item.min ? !can(item.min) : false;
             return (
               <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
                   <Link to={item.url} data-tour={item.tour ? `menu-${item.tour}` : undefined}>
-                    <item.icon className={cn("h-4 w-4", locked && "opacity-60")} />
-                    <span className={cn("flex-1", locked && "opacity-60")}>{item.title}</span>
-                    {item.min && !collapsed && (
-                      <span
-                        className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded font-medium",
-                          item.min === "premium"
-                            ? "bg-primary/15 text-primary"
-                            : "bg-secondary text-muted-foreground"
-                        )}
-                      >
-                        {item.min === "premium" ? "IA" : "PRO"}
-                      </span>
-                    )}
+                    <item.icon className="h-4 w-4" />
+                    <span className="flex-1">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -120,6 +104,7 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
       </SidebarGroupContent>
     </SidebarGroup>
   );
+
 
   return (
     <Sidebar collapsible="icon">
@@ -160,14 +145,6 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
             </div>
           )}
         </Link>
-        {!collapsed && (
-          <Button asChild variant="outline" size="sm" className="justify-start gap-2 w-full">
-            <Link to="/planos">
-              <Sparkles className="h-4 w-4" />
-              <span>Fazer upgrade</span>
-            </Link>
-          </Button>
-        )}
         <Button variant="ghost" size="sm" onClick={onSignOut} className="justify-start gap-2 w-full">
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sair</span>}

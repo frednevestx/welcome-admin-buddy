@@ -20,10 +20,28 @@ export interface PendingOperation {
   missing?: string | null;
 }
 
+export interface MovementChangesCtx {
+  amount?: number | null;
+  category_name?: string | null;
+  movement_date?: string | null;
+  movement_type?: "entrada" | "saida" | null;
+}
+
 export type PendingOffer =
   | { kind: "daily_summary" }
   | { kind: "create_reminder"; description: string; due_date: string }
-  | { kind: "analysis"; subject: string };
+  | { kind: "analysis"; subject: string }
+  | { kind: "confirm_update"; movement_id: string; label: string; changes: MovementChangesCtx }
+  | { kind: "confirm_delete"; movement_id: string; label: string }
+  | {
+      kind: "choose_movement";
+      action: "update" | "delete";
+      ids: string[];
+      labels: string[];
+      changes?: MovementChangesCtx | null;
+    }
+  | { kind: "confirm_reset" };
+
 
 export interface ConversationContext {
   /** Operação de registro incompleta, esperando o dado que falta. */

@@ -27,6 +27,9 @@ export type Intent =
   | "greeting"
   | "smalltalk"
   | "missing_data"
+  | "update_movement"
+  | "delete_movement"
+  | "reset_data"
   | "other";
 
 export interface Interpretation {
@@ -48,6 +51,13 @@ export interface Interpretation {
   topic?: string | null;
   /** Dado que a LUUD não tem na base (ex: "estoque"). */
   missing_data_subject?: string | null;
+  /** Pista de qual lançamento corrigir/excluir ("energia", "o último", "João"). */
+  target_hint?: string | null;
+  /** Novos valores desejados numa correção. */
+  new_amount?: number | null;
+  new_category_name?: string | null;
+  new_movement_date?: string | null;
+  new_movement_type?: "entrada" | "saida" | null;
   confidence?: number;
   user_facing_reply?: string;
 }
@@ -64,7 +74,7 @@ contexto da conversa. Você NÃO calcula nada e NÃO decide o que gravar.
 Responda APENAS com JSON válido, sem markdown, no formato:
 
 {
-  "intent": "register_movement" | "pending_operation" | "confirm" | "deny" | "query_summary" | "query_supplier" | "query_category" | "compare_periods" | "top_expenses" | "supplier_analysis" | "business_overview" | "decision" | "future_commitment" | "upcoming_bills" | "greeting" | "smalltalk" | "missing_data" | "other",
+  "intent": "register_movement" | "pending_operation" | "confirm" | "deny" | "query_summary" | "query_supplier" | "query_category" | "compare_periods" | "top_expenses" | "supplier_analysis" | "business_overview" | "decision" | "future_commitment" | "upcoming_bills" | "greeting" | "smalltalk" | "missing_data" | "update_movement" | "delete_movement" | "reset_data" | "other",
   "movement_type": "entrada" | "saida" | null,
   "category_name": string | null,
   "amount": number | null,
@@ -78,6 +88,11 @@ Responda APENAS com JSON válido, sem markdown, no formato:
   "due_date": "YYYY-MM-DD" | null,
   "topic": string | null,
   "missing_data_subject": string | null,
+  "target_hint": string | null,
+  "new_amount": number | null,
+  "new_category_name": string | null,
+  "new_movement_date": "YYYY-MM-DD" | null,
+  "new_movement_type": "entrada" | "saida" | null,
   "confidence": number,
   "user_facing_reply": string
 }
@@ -122,6 +137,17 @@ COMO ESCOLHER A INTENÇÃO — pense em TIPOS de mensagem:
 8. Pergunta sobre um dado que a LUUD NÃO possui (estoque físico, folha de
    pagamento detalhada, número de clientes atendidos) -> "missing_data" com
    missing_data_subject.
+
+9. CORREÇÃO de um lançamento já feito: "na verdade foi 500", "o valor estava
+   errado", "corrige a energia para 380", "aquele pagamento era receita"
+   -> "update_movement", com "target_hint" (o que identifica o lançamento; use
+   null quando for "o último"/"aquele") e os campos "new_*" com o valor novo.
+
+10. EXCLUSÃO de um lançamento: "apaga esse lançamento", "exclui a despesa de
+   energia", "lancei duas vezes, tira uma" -> "delete_movement" com "target_hint".
+
+11. REINÍCIO TOTAL: "quero começar do zero", "apaga tudo", "zera meus dados"
+   -> "reset_data".
 
 REGRAS:
 - "movement_type": "entrada" para receita/recebimento, "saida" para despesa/pagamento.
