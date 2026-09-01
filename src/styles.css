@@ -56,6 +56,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-walnut: var(--walnut);
+  --color-walnut-soft: var(--walnut-soft);
+  --color-ivory: var(--ivory);
+  --color-sand: var(--sand);
+  --color-whatsapp: var(--whatsapp);
+
 }
 
 /* LUUD Design System — Nogueira + Dourado Fosco
@@ -202,6 +208,77 @@
   --shadow-glow: 0 0 40px -8px oklch(0.55 0.11 75 / 0.3);
   --shadow-glow-blue: 0 0 40px -8px oklch(0.45 0.055 55 / 0.3);
 }
+
+/* ── Landing pública: paleta Nogueira + Dourado em fundo creme ──
+ * Escopo isolado: só afeta a landing, não o app autenticado. */
+:root {
+  --walnut: #241B16;
+  --walnut-soft: #33261F;
+  --ivory: #F8F4EA;
+  --sand: #EAE1D2;
+  --whatsapp: #3FAF72;
+}
+
+.landing-warm {
+  color-scheme: light;
+
+  --background: #F5F1E8;
+  --foreground: #292522;
+
+  --card: #FBF8F1;
+  --card-foreground: #292522;
+
+  --popover: #FBF8F1;
+  --popover-foreground: #292522;
+
+  --primary: #B89452;
+  --primary-foreground: #241B16;
+  --primary-glow: #C9A868;
+
+  --secondary: #EAE1D2;
+  --secondary-foreground: #292522;
+
+  --muted: #EAE1D2;
+  --muted-foreground: #6E6156;
+
+  --accent: #241B16;
+  --accent-foreground: #F8F4EA;
+
+  --destructive: #A8452F;
+  --destructive-foreground: #F8F4EA;
+
+  --success: #3FAF72;
+  --success-foreground: #14261C;
+
+  --warning: #B89452;
+  --warning-foreground: #241B16;
+
+  --border: rgba(41, 37, 34, 0.12);
+  --input: rgba(41, 37, 34, 0.16);
+  --ring: #B89452;
+
+  --shadow-card: 0 1px 2px rgba(36, 27, 22, 0.04), 0 18px 40px -28px rgba(36, 27, 22, 0.22);
+  --shadow-soft: 0 1px 2px rgba(36, 27, 22, 0.05), 0 10px 24px -18px rgba(36, 27, 22, 0.18);
+}
+
+/* Blocos escuros dentro da landing creme */
+.landing-warm .on-walnut {
+  --background: #241B16;
+  --foreground: #F8F4EA;
+  --card: #33261F;
+  --card-foreground: #F8F4EA;
+  --secondary: #33261F;
+  --secondary-foreground: #F8F4EA;
+  --muted: #33261F;
+  --muted-foreground: #C4B6A6;
+  --border: rgba(248, 244, 234, 0.12);
+  --primary: #C9A868;
+  --primary-foreground: #241B16;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+
 
 
 @layer base {
