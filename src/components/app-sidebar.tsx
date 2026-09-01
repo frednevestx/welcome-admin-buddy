@@ -103,16 +103,8 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
   );
+
 
   return (
     <Sidebar collapsible="icon">
