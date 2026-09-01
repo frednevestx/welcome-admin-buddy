@@ -252,6 +252,100 @@ export async function runOrchestrator(
     }
   }
 
+  /* 2b. Reinício total: só executa com a frase exata. */
+  if (ctx.offer?.kind === "confirm_reset") {
+    if (isResetPhrase(message)) {
+      const { count } = await resetMovements(db, restaurantId);
+      await clearPending(db, restaurantId, contactId, ctx);
+      return done(
+        count === 0
+          ? "Não havia lançamentos ativos, então seus dados já estão zerados."
+          : `Pronto, começamos do zero: ${count} lançamento(s) saíram dos cálculos e o dashboard foi reiniciado. Seu negócio e seu histórico de auditoria continuam salvos.`,
+        { interpretation: { intent: "reset_data" } },
+      );
+    }
+    await clearPending(db, restaurantId, contactId, ctx);
+    if (quickYesNo !== "yes") {
+      return done("Cancelei o reinício — seus dados continuam como estavam.", {
+        interpretation: { intent: "deny" },
+      });
+    }
+    return done(
+      "Para reiniciar de verdade eu preciso da frase exata. Se quiser seguir, mande novamente o pedido e depois digite: APAGAR TODOS OS DADOS",
+      { interpretation: { intent: "reset_data" } },
+    );
+  }
+
+  /* 2c. Correção confirmada. */
+  if (ctx.offer?.kind === "confirm_update" && quickYesNo) {
+    const offer = ctx.offer;
+    await clearPending(db, restaurantId, contactId, ctx);
+    if (quickYesNo === "no") {
+      return done("Ok, deixei o lançamento como estava.", { interpretation: { intent: "deny" } });
+    }
+    const updated = await applyMovementUpdate(db, restaurantId, offer.movement_id, offer.changes);
+    return done(
+      updated
+        ? `Corrigido: agora está como ${describeMovement(updated)}. O dashboard já reflete o novo valor.`
+        : "Não encontrei mais esse lançamento para corrigir.",
+      { interpretation: { intent: "update_movement" }, movementId: offer.movement_id },
+    );
+  }
+
+  /* 2d. Exclusão confirmada. */
+  if (ctx.offer?.kind === "confirm_delete" && quickYesNo) {
+    const offer = ctx.offer;
+    await clearPending(db, restaurantId, contactId, ctx);
+    if (quickYesNo === "no") {
+      return done("Beleza, mantive o lançamento.", { interpretation: { intent: "deny" } });
+    }
+    const removed = await softDeleteMovement(db, restaurantId, offer.movement_id);
+    return done(
+      removed
+        ? `Excluí a ${describeMovement(removed)}. Ela saiu dos cálculos, mas fica registrada no histórico caso você precise recuperar.`
+        : "Não encontrei mais esse lançamento.",
+      { interpretation: { intent: "delete_movement" }, movementId: offer.movement_id },
+    );
+  }
+
+  /* 2e. Escolha de qual lançamento corrigir/excluir. */
+  if (ctx.offer?.kind === "choose_movement") {
+    const offer = ctx.offer;
+    const index = parseChoice(message, offer.ids.length);
+    if (index !== null) {
+      const movementId = offer.ids[index]!;
+      const label = offer.labels[index] ?? "lançamento";
+      if (offer.action === "delete") {
+        await saveContext(db, restaurantId, contactId, {
+          ...baseCtxEarly(ctx),
+          offer: { kind: "confirm_delete", movement_id: movementId, label },
+        });
+        return done(`Confirma excluir a ${label}? Responda Sim para eu remover dos cálculos.`, {
+          interpretation: { intent: "delete_movement" },
+        });
+      }
+      await saveContext(db, restaurantId, contactId, {
+        ...baseCtxEarly(ctx),
+        offer: {
+          kind: "confirm_update",
+          movement_id: movementId,
+          label,
+          changes: offer.changes ?? {},
+        },
+      });
+      return done(
+        `Vou ajustar a ${label}${offer.changes ? ` (${changesLabel(offer.changes)})` : ""}. Confirma?`,
+        { interpretation: { intent: "update_movement" } },
+      );
+    }
+    if (quickYesNo === "no") {
+      await clearPending(db, restaurantId, contactId, ctx);
+      return done("Sem problema, não mexi em nada.", { interpretation: { intent: "deny" } });
+    }
+  }
+
+
+
   /* 3. Interpretação (com histórico + contexto). */
   const parsed = await interpret(message, ctx, history);
   if (!parsed) {
