@@ -189,7 +189,7 @@ function TopBar() {
       )}
     >
       <div className="max-w-6xl mx-auto flex h-16 items-center justify-between px-5">
-        <Link to="/" aria-label="LUUD — página inicial">
+        <Link to="/" aria-label="LUUD — página inicial" className="rounded-xl bg-walnut px-3 py-2">
           <Logo />
         </Link>
         <nav className="hidden md:flex items-center gap-8" aria-label="Navegação principal">
@@ -813,7 +813,9 @@ function Footer() {
     <footer className="border-t border-border px-5 py-12 pb-28 md:pb-12">
       <div className="max-w-6xl mx-auto flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
         <div>
-          <Logo />
+          <span className="inline-flex rounded-xl bg-walnut px-3 py-2">
+            <Logo />
+          </span>
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
             IA financeira que organiza as finanças do seu negócio por conversas no WhatsApp.
           </p>
