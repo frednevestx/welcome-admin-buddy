@@ -30,6 +30,17 @@ import {
   periodRangeOf,
   type QueryPeriod,
 } from "@/lib/proactive/analytics.server";
+import { isResetPhrase, parseChoice, parseYesNo } from "./phone";
+import {
+  applyMovementUpdate,
+  changesLabel,
+  describeMovement,
+  findMovementCandidates,
+  resetMovements,
+  softDeleteMovement,
+  RESET_CONFIRM_MESSAGE,
+  type MovementChanges,
+} from "./edits.server";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -46,14 +57,10 @@ export interface OrchestratorResult {
 
 /* ----------------------------- helpers ----------------------------- */
 
-function parseYesNo(message: string): "yes" | "no" | null {
-  const m = message.trim().toLowerCase().replace(/[!.]/g, "");
-  if (["sim", "s", "confirmo", "isso", "correto", "ok", "pode", "claro", "positivo", "exato"].some((w) => m === w || m.startsWith(`${w} `)))
-    return "yes";
-  if (["não", "nao", "n", "errado", "cancela", "cancelar", "negativo", "deixa"].some((w) => m === w || m.startsWith(`${w} `)))
-    return "no";
-  return null;
+function baseCtxEarly(ctx: ConversationContext): ConversationContext {
+  return { entities: ctx.entities ?? null, topic: ctx.topic ?? null };
 }
+
 
 async function findPendingConfirmation(db: any, restaurantId: string, contactId: string | null) {
   if (!contactId) return null;
