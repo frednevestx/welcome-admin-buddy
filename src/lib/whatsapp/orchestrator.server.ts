@@ -181,6 +181,10 @@ export async function runOrchestrator(
     contactId: string | null;
     message: string;
     eventId: string | null;
+    /** usuário dono do negócio (para auditoria) */
+    userId?: string | null;
+    /** chave de idempotência da mensagem original */
+    idempotencyKey?: string | null;
   },
 ): Promise<OrchestratorResult> {
   const { restaurantId, contactId, message, eventId } = input;
