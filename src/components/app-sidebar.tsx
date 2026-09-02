@@ -3,26 +3,14 @@ import { useRestaurant } from "@/hooks/use-restaurant";
 import luudLogo from "@/assets/luud-logo.png.asset.json";
 import {
   LayoutDashboard,
-  Upload,
   ArrowRightLeft,
-  Tag,
-  BarChart3,
-  TrendingUp,
-  Bell,
-  FileText,
+  MessageSquare,
   Settings,
   LogOut,
-  Target,
+  Shield,
   Users,
-  Calculator,
-  PieChart,
-  Package,
-  History,
-  Sliders,
-  Bot,
   LifeBuoy,
   Instagram,
-  Plug,
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,35 +32,15 @@ import { RestaurantAvatar } from "@/components/restaurant-avatar";
 
 type Item = { title: string; url: string; icon: typeof LayoutDashboard; tour?: string };
 
-const basico: Item[] = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, tour: "dashboard" },
-  { title: "Metas", url: "/metas", icon: Target, tour: "metas" },
-  { title: "Movimentações", url: "/movimentacoes", icon: ArrowRightLeft, tour: "movimentacoes" },
-  { title: "Entrada de Vendas", url: "/importacoes", icon: Upload, tour: "importacoes" },
-  { title: "Integrações", url: "/integracoes", icon: Plug, tour: "integracoes" },
-  { title: "Categorias", url: "/categorias", icon: Tag },
-  { title: "Comparativos", url: "/comparativos", icon: BarChart3 },
-  { title: "Evolução", url: "/evolucao", icon: TrendingUp },
-  { title: "Alertas", url: "/alertas", icon: Bell },
-];
-
-const pro: Item[] = [
-  { title: "CMV", url: "/cmv", icon: PieChart, tour: "cmv" },
-  { title: "Calculadora de Preço", url: "/calculadora-preco", icon: Calculator, tour: "calculadora-preco" },
-  { title: "Lucro por Plataforma", url: "/lucro-plataforma", icon: BarChart3, tour: "lucro-plataforma" },
-  { title: "Fornecedores", url: "/fornecedores", icon: Package },
-  { title: "Histórico de Preços", url: "/historico-precos", icon: History },
-  { title: "Simulador de Lucro", url: "/simulador", icon: Sliders },
-  { title: "Relatórios", url: "/relatorios", icon: FileText },
-];
-
-const premium: Item[] = [
-  { title: "Assistente IA", url: "/assistente-ia", icon: Bot, tour: "assistente-ia" },
+const principal: Item[] = [
+  { title: "Visão geral", url: "/dashboard", icon: LayoutDashboard, tour: "dashboard" },
+  { title: "Lançamentos", url: "/movimentacoes", icon: ArrowRightLeft, tour: "movimentacoes" },
+  { title: "Conversas", url: "/conversas", icon: MessageSquare },
 ];
 
 const conta: Item[] = [
-  { title: "Suporte", url: "/suporte", icon: LifeBuoy, tour: "suporte" },
-  { title: "Configurações", url: "/configuracoes", icon: Settings, tour: "configuracoes" },
+  { title: "Negócio", url: "/configuracoes", icon: Settings, tour: "configuracoes" },
+  { title: "Ajuda", url: "/suporte", icon: LifeBuoy, tour: "suporte" },
 ];
 
 export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: string; onSignOut: () => void }) {
@@ -122,11 +90,13 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {renderGroup("Essencial", basico)}
-        {renderGroup("Pro", pro)}
-        {renderGroup("Premium (IA)", premium)}
+        {renderGroup("Painel", principal)}
         {renderGroup("Conta", conta)}
-        {isAdmin && renderGroup("Admin", [{ title: "Usuários", url: "/admin/usuarios", icon: Users }])}
+        {isAdmin &&
+          renderGroup("Admin", [
+            { title: "Operação", url: "/admin", icon: Shield },
+            { title: "Usuários", url: "/admin/usuarios", icon: Users },
+          ])}
       </SidebarContent>
       <SidebarFooter className="p-2 space-y-1">
         <Link

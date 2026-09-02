@@ -11,27 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AcessoRouteImport } from './routes/acesso'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
-import { Route as AuthenticatedSimuladorRouteImport } from './routes/_authenticated/simulador'
-import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
-import { Route as AuthenticatedMetasRouteImport } from './routes/_authenticated/metas'
-import { Route as AuthenticatedLucroPlataformaRouteImport } from './routes/_authenticated/lucro-plataforma'
-import { Route as AuthenticatedIntegracoesRouteImport } from './routes/_authenticated/integracoes'
-import { Route as AuthenticatedImportacoesRouteImport } from './routes/_authenticated/importacoes'
-import { Route as AuthenticatedHistoricoPrecosRouteImport } from './routes/_authenticated/historico-precos'
-import { Route as AuthenticatedFornecedoresRouteImport } from './routes/_authenticated/fornecedores'
-import { Route as AuthenticatedEvolucaoRouteImport } from './routes/_authenticated/evolucao'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConversasRouteImport } from './routes/_authenticated/conversas'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedComparativosRouteImport } from './routes/_authenticated/comparativos'
-import { Route as AuthenticatedCmvRouteImport } from './routes/_authenticated/cmv'
 import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
-import { Route as AuthenticatedCalculadoraPrecoRouteImport } from './routes/_authenticated/calculadora-preco'
-import { Route as AuthenticatedAssistenteIaRouteImport } from './routes/_authenticated/assistente-ia'
-import { Route as AuthenticatedAlertasRouteImport } from './routes/_authenticated/alertas'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as ApiPublicWhatsappTalktomeRouteImport } from './routes/api/public/whatsapp/talktome'
 import { Route as ApiPublicWhatsappGeminiRouteImport } from './routes/api/public/whatsapp/gemini'
@@ -48,6 +37,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcessoRoute = AcessoRouteImport.update({
+  id: '/acesso',
+  path: '/acesso',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -62,65 +56,20 @@ const AuthenticatedSuporteRoute = AuthenticatedSuporteRouteImport.update({
   path: '/suporte',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSimuladorRoute = AuthenticatedSimuladorRouteImport.update({
-  id: '/simulador',
-  path: '/simulador',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedMovimentacoesRoute =
   AuthenticatedMovimentacoesRouteImport.update({
     id: '/movimentacoes',
     path: '/movimentacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedMetasRoute = AuthenticatedMetasRouteImport.update({
-  id: '/metas',
-  path: '/metas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLucroPlataformaRoute =
-  AuthenticatedLucroPlataformaRouteImport.update({
-    id: '/lucro-plataforma',
-    path: '/lucro-plataforma',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedIntegracoesRoute =
-  AuthenticatedIntegracoesRouteImport.update({
-    id: '/integracoes',
-    path: '/integracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedImportacoesRoute =
-  AuthenticatedImportacoesRouteImport.update({
-    id: '/importacoes',
-    path: '/importacoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedHistoricoPrecosRoute =
-  AuthenticatedHistoricoPrecosRouteImport.update({
-    id: '/historico-precos',
-    path: '/historico-precos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedFornecedoresRoute =
-  AuthenticatedFornecedoresRouteImport.update({
-    id: '/fornecedores',
-    path: '/fornecedores',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedEvolucaoRoute = AuthenticatedEvolucaoRouteImport.update({
-  id: '/evolucao',
-  path: '/evolucao',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConversasRoute = AuthenticatedConversasRouteImport.update({
+  id: '/conversas',
+  path: '/conversas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConfiguracoesRoute =
@@ -129,37 +78,14 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedComparativosRoute =
-  AuthenticatedComparativosRouteImport.update({
-    id: '/comparativos',
-    path: '/comparativos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedCmvRoute = AuthenticatedCmvRouteImport.update({
-  id: '/cmv',
-  path: '/cmv',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
   id: '/categorias',
   path: '/categorias',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCalculadoraPrecoRoute =
-  AuthenticatedCalculadoraPrecoRouteImport.update({
-    id: '/calculadora-preco',
-    path: '/calculadora-preco',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAssistenteIaRoute =
-  AuthenticatedAssistenteIaRouteImport.update({
-    id: '/assistente-ia',
-    path: '/assistente-ia',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAlertasRoute = AuthenticatedAlertasRouteImport.update({
-  id: '/alertas',
-  path: '/alertas',
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminUsuariosRoute =
@@ -194,28 +120,17 @@ const ApiPublicIntegrationsProviderWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/alertas': typeof AuthenticatedAlertasRoute
-  '/assistente-ia': typeof AuthenticatedAssistenteIaRoute
-  '/calculadora-preco': typeof AuthenticatedCalculadoraPrecoRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
-  '/cmv': typeof AuthenticatedCmvRoute
-  '/comparativos': typeof AuthenticatedComparativosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/conversas': typeof AuthenticatedConversasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/evolucao': typeof AuthenticatedEvolucaoRoute
-  '/fornecedores': typeof AuthenticatedFornecedoresRoute
-  '/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
-  '/importacoes': typeof AuthenticatedImportacoesRoute
-  '/integracoes': typeof AuthenticatedIntegracoesRoute
-  '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
-  '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
-  '/relatorios': typeof AuthenticatedRelatoriosRoute
-  '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
   '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
@@ -223,28 +138,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/alertas': typeof AuthenticatedAlertasRoute
-  '/assistente-ia': typeof AuthenticatedAssistenteIaRoute
-  '/calculadora-preco': typeof AuthenticatedCalculadoraPrecoRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
-  '/cmv': typeof AuthenticatedCmvRoute
-  '/comparativos': typeof AuthenticatedComparativosRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/conversas': typeof AuthenticatedConversasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/evolucao': typeof AuthenticatedEvolucaoRoute
-  '/fornecedores': typeof AuthenticatedFornecedoresRoute
-  '/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
-  '/importacoes': typeof AuthenticatedImportacoesRoute
-  '/integracoes': typeof AuthenticatedIntegracoesRoute
-  '/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
-  '/metas': typeof AuthenticatedMetasRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
-  '/relatorios': typeof AuthenticatedRelatoriosRoute
-  '/simulador': typeof AuthenticatedSimuladorRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
   '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
@@ -254,28 +158,17 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/alertas': typeof AuthenticatedAlertasRoute
-  '/_authenticated/assistente-ia': typeof AuthenticatedAssistenteIaRoute
-  '/_authenticated/calculadora-preco': typeof AuthenticatedCalculadoraPrecoRoute
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
-  '/_authenticated/cmv': typeof AuthenticatedCmvRoute
-  '/_authenticated/comparativos': typeof AuthenticatedComparativosRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/conversas': typeof AuthenticatedConversasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/evolucao': typeof AuthenticatedEvolucaoRoute
-  '/_authenticated/fornecedores': typeof AuthenticatedFornecedoresRoute
-  '/_authenticated/historico-precos': typeof AuthenticatedHistoricoPrecosRoute
-  '/_authenticated/importacoes': typeof AuthenticatedImportacoesRoute
-  '/_authenticated/integracoes': typeof AuthenticatedIntegracoesRoute
-  '/_authenticated/lucro-plataforma': typeof AuthenticatedLucroPlataformaRoute
-  '/_authenticated/metas': typeof AuthenticatedMetasRoute
   '/_authenticated/movimentacoes': typeof AuthenticatedMovimentacoesRoute
-  '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
-  '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
   '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
@@ -285,28 +178,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/acesso'
     | '/auth'
     | '/reset-password'
-    | '/alertas'
-    | '/assistente-ia'
-    | '/calculadora-preco'
     | '/categorias'
-    | '/cmv'
-    | '/comparativos'
     | '/configuracoes'
+    | '/conversas'
     | '/dashboard'
-    | '/evolucao'
-    | '/fornecedores'
-    | '/historico-precos'
-    | '/importacoes'
-    | '/integracoes'
-    | '/lucro-plataforma'
-    | '/metas'
     | '/movimentacoes'
-    | '/relatorios'
-    | '/simulador'
     | '/suporte'
     | '/admin/usuarios'
+    | '/admin/'
     | '/api/public/integrations/sync'
     | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
@@ -314,28 +196,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/acesso'
     | '/auth'
     | '/reset-password'
-    | '/alertas'
-    | '/assistente-ia'
-    | '/calculadora-preco'
     | '/categorias'
-    | '/cmv'
-    | '/comparativos'
     | '/configuracoes'
+    | '/conversas'
     | '/dashboard'
-    | '/evolucao'
-    | '/fornecedores'
-    | '/historico-precos'
-    | '/importacoes'
-    | '/integracoes'
-    | '/lucro-plataforma'
-    | '/metas'
     | '/movimentacoes'
-    | '/relatorios'
-    | '/simulador'
     | '/suporte'
     | '/admin/usuarios'
+    | '/admin'
     | '/api/public/integrations/sync'
     | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
@@ -344,28 +215,17 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/acesso'
     | '/auth'
     | '/reset-password'
-    | '/_authenticated/alertas'
-    | '/_authenticated/assistente-ia'
-    | '/_authenticated/calculadora-preco'
     | '/_authenticated/categorias'
-    | '/_authenticated/cmv'
-    | '/_authenticated/comparativos'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/conversas'
     | '/_authenticated/dashboard'
-    | '/_authenticated/evolucao'
-    | '/_authenticated/fornecedores'
-    | '/_authenticated/historico-precos'
-    | '/_authenticated/importacoes'
-    | '/_authenticated/integracoes'
-    | '/_authenticated/lucro-plataforma'
-    | '/_authenticated/metas'
     | '/_authenticated/movimentacoes'
-    | '/_authenticated/relatorios'
-    | '/_authenticated/simulador'
     | '/_authenticated/suporte'
     | '/_authenticated/admin/usuarios'
+    | '/_authenticated/admin/'
     | '/api/public/integrations/sync'
     | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
@@ -375,6 +235,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AcessoRoute: typeof AcessoRoute
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicIntegrationsSyncRoute: typeof ApiPublicIntegrationsSyncRoute
@@ -399,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/acesso': {
+      id: '/acesso'
+      path: '/acesso'
+      fullPath: '/acesso'
+      preLoaderRoute: typeof AcessoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -420,74 +288,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuporteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/simulador': {
-      id: '/_authenticated/simulador'
-      path: '/simulador'
-      fullPath: '/simulador'
-      preLoaderRoute: typeof AuthenticatedSimuladorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/relatorios': {
-      id: '/_authenticated/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/movimentacoes': {
       id: '/_authenticated/movimentacoes'
       path: '/movimentacoes'
       fullPath: '/movimentacoes'
       preLoaderRoute: typeof AuthenticatedMovimentacoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/metas': {
-      id: '/_authenticated/metas'
-      path: '/metas'
-      fullPath: '/metas'
-      preLoaderRoute: typeof AuthenticatedMetasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/lucro-plataforma': {
-      id: '/_authenticated/lucro-plataforma'
-      path: '/lucro-plataforma'
-      fullPath: '/lucro-plataforma'
-      preLoaderRoute: typeof AuthenticatedLucroPlataformaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/integracoes': {
-      id: '/_authenticated/integracoes'
-      path: '/integracoes'
-      fullPath: '/integracoes'
-      preLoaderRoute: typeof AuthenticatedIntegracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/importacoes': {
-      id: '/_authenticated/importacoes'
-      path: '/importacoes'
-      fullPath: '/importacoes'
-      preLoaderRoute: typeof AuthenticatedImportacoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/historico-precos': {
-      id: '/_authenticated/historico-precos'
-      path: '/historico-precos'
-      fullPath: '/historico-precos'
-      preLoaderRoute: typeof AuthenticatedHistoricoPrecosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/fornecedores': {
-      id: '/_authenticated/fornecedores'
-      path: '/fornecedores'
-      fullPath: '/fornecedores'
-      preLoaderRoute: typeof AuthenticatedFornecedoresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/evolucao': {
-      id: '/_authenticated/evolucao'
-      path: '/evolucao'
-      fullPath: '/evolucao'
-      preLoaderRoute: typeof AuthenticatedEvolucaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -497,25 +302,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/conversas': {
+      id: '/_authenticated/conversas'
+      path: '/conversas'
+      fullPath: '/conversas'
+      preLoaderRoute: typeof AuthenticatedConversasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/comparativos': {
-      id: '/_authenticated/comparativos'
-      path: '/comparativos'
-      fullPath: '/comparativos'
-      preLoaderRoute: typeof AuthenticatedComparativosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/cmv': {
-      id: '/_authenticated/cmv'
-      path: '/cmv'
-      fullPath: '/cmv'
-      preLoaderRoute: typeof AuthenticatedCmvRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/categorias': {
@@ -525,25 +323,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/calculadora-preco': {
-      id: '/_authenticated/calculadora-preco'
-      path: '/calculadora-preco'
-      fullPath: '/calculadora-preco'
-      preLoaderRoute: typeof AuthenticatedCalculadoraPrecoRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/assistente-ia': {
-      id: '/_authenticated/assistente-ia'
-      path: '/assistente-ia'
-      fullPath: '/assistente-ia'
-      preLoaderRoute: typeof AuthenticatedAssistenteIaRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/alertas': {
-      id: '/_authenticated/alertas'
-      path: '/alertas'
-      fullPath: '/alertas'
-      preLoaderRoute: typeof AuthenticatedAlertasRouteImport
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/usuarios': {
@@ -585,49 +369,25 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAlertasRoute: typeof AuthenticatedAlertasRoute
-  AuthenticatedAssistenteIaRoute: typeof AuthenticatedAssistenteIaRoute
-  AuthenticatedCalculadoraPrecoRoute: typeof AuthenticatedCalculadoraPrecoRoute
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
-  AuthenticatedCmvRoute: typeof AuthenticatedCmvRoute
-  AuthenticatedComparativosRoute: typeof AuthenticatedComparativosRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedConversasRoute: typeof AuthenticatedConversasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedEvolucaoRoute: typeof AuthenticatedEvolucaoRoute
-  AuthenticatedFornecedoresRoute: typeof AuthenticatedFornecedoresRoute
-  AuthenticatedHistoricoPrecosRoute: typeof AuthenticatedHistoricoPrecosRoute
-  AuthenticatedImportacoesRoute: typeof AuthenticatedImportacoesRoute
-  AuthenticatedIntegracoesRoute: typeof AuthenticatedIntegracoesRoute
-  AuthenticatedLucroPlataformaRoute: typeof AuthenticatedLucroPlataformaRoute
-  AuthenticatedMetasRoute: typeof AuthenticatedMetasRoute
   AuthenticatedMovimentacoesRoute: typeof AuthenticatedMovimentacoesRoute
-  AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
-  AuthenticatedSimuladorRoute: typeof AuthenticatedSimuladorRoute
   AuthenticatedSuporteRoute: typeof AuthenticatedSuporteRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAlertasRoute: AuthenticatedAlertasRoute,
-  AuthenticatedAssistenteIaRoute: AuthenticatedAssistenteIaRoute,
-  AuthenticatedCalculadoraPrecoRoute: AuthenticatedCalculadoraPrecoRoute,
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
-  AuthenticatedCmvRoute: AuthenticatedCmvRoute,
-  AuthenticatedComparativosRoute: AuthenticatedComparativosRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedConversasRoute: AuthenticatedConversasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedEvolucaoRoute: AuthenticatedEvolucaoRoute,
-  AuthenticatedFornecedoresRoute: AuthenticatedFornecedoresRoute,
-  AuthenticatedHistoricoPrecosRoute: AuthenticatedHistoricoPrecosRoute,
-  AuthenticatedImportacoesRoute: AuthenticatedImportacoesRoute,
-  AuthenticatedIntegracoesRoute: AuthenticatedIntegracoesRoute,
-  AuthenticatedLucroPlataformaRoute: AuthenticatedLucroPlataformaRoute,
-  AuthenticatedMetasRoute: AuthenticatedMetasRoute,
   AuthenticatedMovimentacoesRoute: AuthenticatedMovimentacoesRoute,
-  AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
-  AuthenticatedSimuladorRoute: AuthenticatedSimuladorRoute,
   AuthenticatedSuporteRoute: AuthenticatedSuporteRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -636,6 +396,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AcessoRoute: AcessoRoute,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicIntegrationsSyncRoute: ApiPublicIntegrationsSyncRoute,
