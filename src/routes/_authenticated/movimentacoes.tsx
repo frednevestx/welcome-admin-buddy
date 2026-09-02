@@ -354,59 +354,42 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
     (c) => c.movement_type === type || c.movement_type === null,
   );
 
+  const saveFn = useServerFn(saveMovementWeb);
+
   const save = useMutation({
     mutationFn: async () => {
       if (!restaurant) throw new Error("Sem negócio");
-      let supplierId: string | null = null;
-      if (supplier.trim()) {
-        const { data: existing } = await supabase.from("suppliers")
-          .select("id").eq("restaurant_id", restaurant.id).eq("name", supplier.trim()).maybeSingle();
-        if (existing) supplierId = existing.id;
-        else {
-          const { data: created, error } = await supabase.from("suppliers")
-            .insert({ restaurant_id: restaurant.id, name: supplier.trim() }).select("id").single();
-          if (error) throw error;
-          supplierId = created.id;
-        }
-      }
-      const payload = {
-        restaurant_id: restaurant.id,
+      const base = {
         type,
-        category_id: categoryId || null,
-        supplier_id: supplierId,
-        description: description || null,
         amount: Number(amount.replace(",", ".")),
         movement_date: date,
+        description: description || null,
+        category_id: categoryId || null,
+        supplier_name: supplier.trim() || null,
         payment_method: paymentMethod || null,
         notes: notes || null,
-        is_fixed: isFixed,
       };
+
       if (initial) {
-        const { error } = await supabase.from("movements").update(payload).eq("id", initial.id);
-        if (error) throw error;
+        await saveFn({ data: { ...base, id: initial.id } });
         return 0;
       }
-      const { data: created, error } = await supabase
-        .from("movements")
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) throw error;
+
+      await saveFn({ data: base });
 
       // despesa fixa: replica automaticamente nos próximos meses
       if (isFixed && meses > 1) {
-        const base = new Date(`${date}T12:00:00`);
-        const dia = base.getDate();
-        const futuros = [];
+        const start = new Date(`${date}T12:00:00`);
+        const dia = start.getDate();
+        let criados = 0;
         for (let i = 1; i < meses; i++) {
-          const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+          const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
           const ultimoDia = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
           d.setDate(Math.min(dia, ultimoDia));
-          futuros.push({ ...payload, movement_date: isoDate(d), fixed_parent_id: created.id });
+          await saveFn({ data: { ...base, movement_date: isoDate(d) } });
+          criados++;
         }
-        const { error: recErr } = await supabase.from("movements").insert(futuros);
-        if (recErr) throw recErr;
-        return futuros.length;
+        return criados;
       }
       return 0;
     },
