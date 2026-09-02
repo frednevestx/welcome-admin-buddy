@@ -41,7 +41,7 @@ Um único serviço de domínio para criar, corrigir, arquivar, restaurar e reini
 
 ### 6. Reset e limpeza (sem destruir contatos)
 - **Reset financeiro** (usuário, pela frase exata `APAGAR TODOS OS DADOS`): arquiva os lançamentos do negócio vinculado ao telefone autenticado, preservando usuário, telefone, negócio, contatos e auditoria.
-- **Limpeza administrativa**: tela de pré-visualização com a contagem exata do que será afetado; arquiva os negócios e usuários antigos (os 6 negócios de teste — "joao", "restautannte", "comida arabe", "loja do ze", "restaurante luud" — mais os perfis correspondentes), preservando todos os contatos WhatsApp, histórico de conversas e a conta admin. Nada é executado na migração; só após confirmação explícita na tela.
+- **Limpeza administrativa**: tela de pré-visualização com a contagem exata do que será afetado; arquiva todos os 7 negócios antigos ("joao" x2, "restautannte", "comida arabe", "loja do ze", "restaurante luud" e "Restaurante Fred") e os perfis correspondentes, preservando todos os contatos WhatsApp, histórico de conversas e a conta admin. O seu número volta ao onboarding e cria um negócio novo no próximo contato. Nada é executado na migração; só após confirmação explícita na tela.
 
 ### 7. Painel do usuário simplificado
 Menu reduzido a: Visão geral, Lançamentos, Conversas, Negócio, Ajuda. Visão geral com entradas, saídas, resultado, fluxo de caixa e últimos lançamentos; cada lançamento com valor, data, categoria, origem, status e ações de corrigir/arquivar. Mobile-first.
