@@ -15,10 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ShoppingCart, DollarSign, BarChart2, Pencil, Trash2 } from "lucide-react";
+import { Plus, ShoppingCart, DollarSign, BarChart2, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { formatBRL, formatNumber, formatDate, isoDate } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  saveMovementWeb,
+  archiveMovementWeb,
+  restoreMovementWeb,
+  listArchivedMovements,
+} from "@/lib/movements/movements.functions";
 
 export const Route = createFileRoute("/_authenticated/movimentacoes")({
   component: MovementsPage,
@@ -57,6 +64,10 @@ function MovementsPage() {
   const [confirmDelete, setConfirmDelete] = useState<MovementRow | null>(null);
   const qc = useQueryClient();
 
+  const archiveFn = useServerFn(archiveMovementWeb);
+  const restoreFn = useServerFn(restoreMovementWeb);
+  const listArchivedFn = useServerFn(listArchivedMovements);
+
   const q = useQuery({
     enabled: !!restaurant?.id,
     queryKey: ["movements", restaurant?.id, period.from, period.to],
@@ -65,24 +76,44 @@ function MovementsPage() {
       const { data } = await supabase.from("movements")
         .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, is_fixed, source_ref, categories(id, name, movement_type), suppliers(name)")
         .eq("restaurant_id", rid)
+        .eq("status", "active")
         .gte("movement_date", period.from).lte("movement_date", period.to)
         .order("movement_date", { ascending: false });
       return (data ?? []) as unknown as MovementRow[];
     },
   });
 
+  const archived = useQuery({
+    enabled: !!restaurant?.id,
+    queryKey: ["movements-archived", restaurant?.id],
+    queryFn: async () => (await listArchivedFn({ data: undefined as any })) as any[],
+  });
+
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("movements").delete().eq("id", id);
-      if (error) throw error;
+      await archiveFn({ data: { id, reason: "arquivado pelo painel" } });
     },
     onSuccess: () => {
-      toast.success("Movimentação excluída");
+      toast.success("Lançamento arquivado");
       setConfirmDelete(null);
       qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["movements-archived"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao excluir")),
+    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao arquivar")),
+  });
+
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      await restoreFn({ data: { id } });
+    },
+    onSuccess: () => {
+      toast.success("Lançamento recuperado");
+      qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["movements-archived"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao recuperar")),
   });
 
   const rows = q.data ?? [];
@@ -208,6 +239,47 @@ function MovementsPage() {
         </Table>
       </Card>
 
+      {(archived.data?.length ?? 0) > 0 && (
+        <Card className="p-5">
+          <h2 className="text-sm font-medium mb-1">Arquivados</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Fora dos totais, mas recuperáveis a qualquer momento.
+          </p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="w-[80px] text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(archived.data ?? []).map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell className="tabular-nums text-muted-foreground">{formatDate(r.movement_date)}</TableCell>
+                  <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type as MovementType]}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatBRL(r.amount)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Recuperar"
+                      disabled={restore.isPending}
+                      onClick={() => restore.mutate(r.id)}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
       <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Editar movimentação</DialogTitle></DialogHeader>
@@ -223,15 +295,15 @@ function MovementsPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={(v) => !v && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir movimentação?</AlertDialogTitle>
+            <AlertDialogTitle>Arquivar lançamento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita. O valor será removido dos totais.
+              O valor sai dos totais, mas o lançamento continua recuperável na lista de arquivados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={() => confirmDelete && del.mutate(confirmDelete.id)}>
-              Excluir
+              Arquivar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -282,59 +354,42 @@ function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () =
     (c) => c.movement_type === type || c.movement_type === null,
   );
 
+  const saveFn = useServerFn(saveMovementWeb);
+
   const save = useMutation({
     mutationFn: async () => {
       if (!restaurant) throw new Error("Sem negócio");
-      let supplierId: string | null = null;
-      if (supplier.trim()) {
-        const { data: existing } = await supabase.from("suppliers")
-          .select("id").eq("restaurant_id", restaurant.id).eq("name", supplier.trim()).maybeSingle();
-        if (existing) supplierId = existing.id;
-        else {
-          const { data: created, error } = await supabase.from("suppliers")
-            .insert({ restaurant_id: restaurant.id, name: supplier.trim() }).select("id").single();
-          if (error) throw error;
-          supplierId = created.id;
-        }
-      }
-      const payload = {
-        restaurant_id: restaurant.id,
+      const base = {
         type,
-        category_id: categoryId || null,
-        supplier_id: supplierId,
-        description: description || null,
         amount: Number(amount.replace(",", ".")),
         movement_date: date,
+        description: description || null,
+        category_id: categoryId || null,
+        supplier_name: supplier.trim() || null,
         payment_method: paymentMethod || null,
         notes: notes || null,
-        is_fixed: isFixed,
       };
+
       if (initial) {
-        const { error } = await supabase.from("movements").update(payload).eq("id", initial.id);
-        if (error) throw error;
+        await saveFn({ data: { ...base, id: initial.id } });
         return 0;
       }
-      const { data: created, error } = await supabase
-        .from("movements")
-        .insert(payload)
-        .select("id")
-        .single();
-      if (error) throw error;
+
+      await saveFn({ data: base });
 
       // despesa fixa: replica automaticamente nos próximos meses
       if (isFixed && meses > 1) {
-        const base = new Date(`${date}T12:00:00`);
-        const dia = base.getDate();
-        const futuros = [];
+        const start = new Date(`${date}T12:00:00`);
+        const dia = start.getDate();
+        let criados = 0;
         for (let i = 1; i < meses; i++) {
-          const d = new Date(base.getFullYear(), base.getMonth() + i, 1);
+          const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
           const ultimoDia = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
           d.setDate(Math.min(dia, ultimoDia));
-          futuros.push({ ...payload, movement_date: isoDate(d), fixed_parent_id: created.id });
+          await saveFn({ data: { ...base, movement_date: isoDate(d) } });
+          criados++;
         }
-        const { error: recErr } = await supabase.from("movements").insert(futuros);
-        if (recErr) throw recErr;
-        return futuros.length;
+        return criados;
       }
       return 0;
     },
