@@ -58,7 +58,7 @@ export interface OrchestratorResult {
 /* ----------------------------- helpers ----------------------------- */
 
 function baseCtxEarly(ctx: ConversationContext): ConversationContext {
-  return { entities: ctx.entities ?? null, topic: ctx.topic ?? null };
+  return { entities: ctx.entities ?? null, topic: ctx.topic ?? null, hint_history: ctx.hint_history ?? null };
 }
 
 
@@ -364,7 +364,11 @@ export async function runOrchestrator(
     supplier_name: parsed.supplier_name ?? parsed.target_name ?? ctx.entities?.supplier_name ?? null,
     category_name: parsed.category_name ?? ctx.entities?.category_name ?? null,
   };
-  const baseCtx: ConversationContext = { entities, topic: parsed.topic ?? ctx.topic ?? null };
+  const baseCtx: ConversationContext = {
+    entities,
+    topic: parsed.topic ?? ctx.topic ?? null,
+    hint_history: ctx.hint_history ?? null,
+  };
 
   let classification = "unknown";
   let movementId: string | null = null;

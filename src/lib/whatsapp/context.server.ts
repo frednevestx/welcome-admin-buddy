@@ -112,6 +112,7 @@ export async function clearPending(
   await saveContext(db, restaurantId, contactId, {
     entities: ctx.entities ?? null,
     topic: ctx.topic ?? null,
+    hint_history: ctx.hint_history ?? null,
   });
 }
 
