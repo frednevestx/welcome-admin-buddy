@@ -416,25 +416,31 @@ export async function runOrchestrator(
         const description = parsed.supplier_name
           ? `${parsed.category_name ?? "Pagamento"} — ${parsed.supplier_name}`
           : parsed.category_name ?? "Registrado via WhatsApp";
-        const { data: mv } = await db
-          .from("movements")
-          .insert({
-            restaurant_id: restaurantId,
+        /* Serviço central: mesma regra do painel web, com idempotência e auditoria. */
+        const { createMovement } = await import("@/lib/movements/service.server");
+        const created = await createMovement(
+          db,
+          {
+            restaurantId,
+            userId: input.userId ?? null,
+            phone: contactId,
+            origin: "whatsapp",
+            sourceEventId: eventId,
+            idempotencyKey: input.idempotencyKey ?? (eventId ? `whatsapp:${eventId}` : null),
+          },
+          {
             type: parsed.movement_type,
+            amount: Number(parsed.amount),
+            movement_date: movementDate,
+            description,
             category_id: categoryId,
             supplier_id: supplierId,
             payment_method: parsed.payment_method ?? null,
-            description,
-            amount: parsed.amount,
-            movement_date: movementDate,
-            origin: "manual",
-            source_ref: eventId ? `whatsapp:${eventId}` : null,
-            created_from_event_id: eventId,
             confirmed_by_user: false,
-          })
-          .select()
-          .maybeSingle();
-        movementId = mv?.id ?? null;
+          },
+        );
+        movementId = created.id;
+
 
         const parts = [
           parsed.movement_type === "entrada" ? "entrada" : "saída",
