@@ -90,11 +90,13 @@ export function AppSidebar({ restaurantName, onSignOut }: { restaurantName?: str
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {renderGroup("Essencial", basico)}
-        {renderGroup("Pro", pro)}
-        {renderGroup("Premium (IA)", premium)}
+        {renderGroup("Painel", principal)}
         {renderGroup("Conta", conta)}
-        {isAdmin && renderGroup("Admin", [{ title: "Usuários", url: "/admin/usuarios", icon: Users }])}
+        {isAdmin &&
+          renderGroup("Admin", [
+            { title: "Operação", url: "/admin", icon: Shield },
+            { title: "Usuários", url: "/admin/usuarios", icon: Users },
+          ])}
       </SidebarContent>
       <SidebarFooter className="p-2 space-y-1">
         <Link
