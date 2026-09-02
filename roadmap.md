@@ -10,7 +10,7 @@
 - Painel enxuto: Visão geral, Lançamentos, Conversas, Negócio, Ajuda (páginas legadas removidas)
 - Painel administrativo em `/admin` (identidades, negócios, conversas, auditoria, limpeza com confirmação)
 - Funções web dos lançamentos passando pelo serviço central (`movements.functions.ts`)
+- Tela `/movimentacoes` usando o serviço central (arquivar em vez de excluir, lista de arquivados com recuperação)
 
 ## Pendente
 - Configurar o segredo `TALKTOME_API_KEY` para o envio real do código em `/acesso`
-- Migrar a tela `/movimentacoes` para usar `saveMovementWeb`/`archiveMovementWeb` e listar arquivados
