@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PeriodSelector } from "@/components/period-selector";
 import { usePeriod } from "@/hooks/use-period";
-import { formatCurrency } from "@/lib/format";
+import { formatBRL } from "@/lib/format";
 import { ArrowDownRight, ArrowUpRight, Wallet, MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -37,10 +37,10 @@ interface Row {
 
 function Dashboard() {
   const { restaurant } = useRestaurant();
-  const { period, setPeriod, range } = usePeriod();
+  const { period, setPeriod } = usePeriod();
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["dash-movements", restaurant?.id, range.from, range.to],
+    queryKey: ["dash-movements", restaurant?.id, period.from, period.to],
     enabled: !!restaurant?.id,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -48,8 +48,8 @@ function Dashboard() {
         .select("id, type, amount, movement_date, description, origin, status, categories(name)")
         .eq("restaurant_id", restaurant!.id)
         .eq("status", "active")
-        .gte("movement_date", range.from)
-        .lte("movement_date", range.to)
+        .gte("movement_date", period.from)
+        .lte("movement_date", period.to)
         .order("movement_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Row[];
@@ -75,7 +75,7 @@ function Dashboard() {
             {restaurant?.name ?? "Seu negócio"} — tudo o que a LUUD registrou no período.
           </p>
         </div>
-        <PeriodSelector value={period} onChange={setPeriod} />
+        <PeriodSelector period={period} onChange={setPeriod} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -86,7 +86,7 @@ function Dashboard() {
               <c.icon className={`h-4 w-4 ${c.tone}`} />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-semibold ${c.tone}`}>{formatCurrency(c.value)}</div>
+              <div className={`text-2xl font-semibold ${c.tone}`}>{formatBRL(c.value)}</div>
             </CardContent>
           </Card>
         ))}
@@ -131,7 +131,7 @@ function Dashboard() {
                 }`}
               >
                 {r.type === "entrada" ? "+" : "-"}
-                {formatCurrency(Number(r.amount))}
+                {formatBRL(Number(r.amount))}
               </div>
             </div>
           ))}
