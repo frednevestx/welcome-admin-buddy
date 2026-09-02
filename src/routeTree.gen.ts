@@ -20,7 +20,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedConversasRouteImport } from './routes/_authenticated/conversas'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
 import { Route as ApiPublicWhatsappTalktomeRouteImport } from './routes/api/public/whatsapp/talktome'
 import { Route as ApiPublicWhatsappGeminiRouteImport } from './routes/api/public/whatsapp/gemini'
@@ -83,16 +83,16 @@ const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
   path: '/categorias',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminUsuariosRoute =
   AuthenticatedAdminUsuariosRouteImport.update({
-    id: '/usuarios',
-    path: '/usuarios',
-    getParentRoute: () => AuthenticatedAdminRoute,
+    id: '/admin/usuarios',
+    path: '/admin/usuarios',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicWhatsappTalktomeRoute =
   ApiPublicWhatsappTalktomeRouteImport.update({
@@ -123,7 +123,6 @@ export interface FileRoutesByFullPath {
   '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/conversas': typeof AuthenticatedConversasRoute
@@ -131,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
   '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
@@ -141,7 +141,6 @@ export interface FileRoutesByTo {
   '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/conversas': typeof AuthenticatedConversasRoute
@@ -149,6 +148,7 @@ export interface FileRoutesByTo {
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
   '/suporte': typeof AuthenticatedSuporteRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
   '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
@@ -161,7 +161,6 @@ export interface FileRoutesById {
   '/acesso': typeof AcessoRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/conversas': typeof AuthenticatedConversasRoute
@@ -169,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/movimentacoes': typeof AuthenticatedMovimentacoesRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/integrations/sync': typeof ApiPublicIntegrationsSyncRoute
   '/api/public/whatsapp/gemini': typeof ApiPublicWhatsappGeminiRoute
   '/api/public/whatsapp/talktome': typeof ApiPublicWhatsappTalktomeRoute
@@ -181,7 +181,6 @@ export interface FileRouteTypes {
     | '/acesso'
     | '/auth'
     | '/reset-password'
-    | '/admin'
     | '/categorias'
     | '/configuracoes'
     | '/conversas'
@@ -189,6 +188,7 @@ export interface FileRouteTypes {
     | '/movimentacoes'
     | '/suporte'
     | '/admin/usuarios'
+    | '/admin/'
     | '/api/public/integrations/sync'
     | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
@@ -199,7 +199,6 @@ export interface FileRouteTypes {
     | '/acesso'
     | '/auth'
     | '/reset-password'
-    | '/admin'
     | '/categorias'
     | '/configuracoes'
     | '/conversas'
@@ -207,6 +206,7 @@ export interface FileRouteTypes {
     | '/movimentacoes'
     | '/suporte'
     | '/admin/usuarios'
+    | '/admin'
     | '/api/public/integrations/sync'
     | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
@@ -218,7 +218,6 @@ export interface FileRouteTypes {
     | '/acesso'
     | '/auth'
     | '/reset-password'
-    | '/_authenticated/admin'
     | '/_authenticated/categorias'
     | '/_authenticated/configuracoes'
     | '/_authenticated/conversas'
@@ -226,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/movimentacoes'
     | '/_authenticated/suporte'
     | '/_authenticated/admin/usuarios'
+    | '/_authenticated/admin/'
     | '/api/public/integrations/sync'
     | '/api/public/whatsapp/gemini'
     | '/api/public/whatsapp/talktome'
@@ -323,19 +323,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
       path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/usuarios': {
       id: '/_authenticated/admin/usuarios'
-      path: '/usuarios'
+      path: '/admin/usuarios'
       fullPath: '/admin/usuarios'
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/whatsapp/talktome': {
       id: '/api/public/whatsapp/talktome'
@@ -368,35 +368,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
-}
-
-const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
-}
-
-const AuthenticatedAdminRouteWithChildren =
-  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedConversasRoute: typeof AuthenticatedConversasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMovimentacoesRoute: typeof AuthenticatedMovimentacoesRoute
   AuthenticatedSuporteRoute: typeof AuthenticatedSuporteRoute
+  AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedConversasRoute: AuthenticatedConversasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMovimentacoesRoute: AuthenticatedMovimentacoesRoute,
   AuthenticatedSuporteRoute: AuthenticatedSuporteRoute,
+  AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
