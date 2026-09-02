@@ -64,6 +64,10 @@ function MovementsPage() {
   const [confirmDelete, setConfirmDelete] = useState<MovementRow | null>(null);
   const qc = useQueryClient();
 
+  const archiveFn = useServerFn(archiveMovementWeb);
+  const restoreFn = useServerFn(restoreMovementWeb);
+  const listArchivedFn = useServerFn(listArchivedMovements);
+
   const q = useQuery({
     enabled: !!restaurant?.id,
     queryKey: ["movements", restaurant?.id, period.from, period.to],
@@ -72,24 +76,44 @@ function MovementsPage() {
       const { data } = await supabase.from("movements")
         .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, is_fixed, source_ref, categories(id, name, movement_type), suppliers(name)")
         .eq("restaurant_id", rid)
+        .eq("status", "active")
         .gte("movement_date", period.from).lte("movement_date", period.to)
         .order("movement_date", { ascending: false });
       return (data ?? []) as unknown as MovementRow[];
     },
   });
 
+  const archived = useQuery({
+    enabled: !!restaurant?.id,
+    queryKey: ["movements-archived", restaurant?.id],
+    queryFn: async () => (await listArchivedFn({ data: undefined as any })) as any[],
+  });
+
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("movements").delete().eq("id", id);
-      if (error) throw error;
+      await archiveFn({ data: { id, reason: "arquivado pelo painel" } });
     },
     onSuccess: () => {
-      toast.success("Movimentação excluída");
+      toast.success("Lançamento arquivado");
       setConfirmDelete(null);
       qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["movements-archived"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao excluir")),
+    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao arquivar")),
+  });
+
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      await restoreFn({ data: { id } });
+    },
+    onSuccess: () => {
+      toast.success("Lançamento recuperado");
+      qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["movements-archived"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao recuperar")),
   });
 
   const rows = q.data ?? [];
