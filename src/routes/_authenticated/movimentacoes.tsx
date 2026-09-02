@@ -239,6 +239,47 @@ function MovementsPage() {
         </Table>
       </Card>
 
+      {(archived.data?.length ?? 0) > 0 && (
+        <Card className="p-5">
+          <h2 className="text-sm font-medium mb-1">Arquivados</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Fora dos totais, mas recuperáveis a qualquer momento.
+          </p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="w-[80px] text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(archived.data ?? []).map((r: any) => (
+                <TableRow key={r.id}>
+                  <TableCell className="tabular-nums text-muted-foreground">{formatDate(r.movement_date)}</TableCell>
+                  <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type as MovementType]}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatBRL(r.amount)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Recuperar"
+                      disabled={restore.isPending}
+                      onClick={() => restore.mutate(r.id)}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
       <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Editar movimentação</DialogTitle></DialogHeader>
@@ -254,17 +295,19 @@ function MovementsPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={(v) => !v && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir movimentação?</AlertDialogTitle>
+            <AlertDialogTitle>Arquivar lançamento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita. O valor será removido dos totais.
+              O valor sai dos totais, mas o lançamento continua recuperável na lista de arquivados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={() => confirmDelete && del.mutate(confirmDelete.id)}>
-              Excluir
+              Arquivar
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
         </AlertDialogContent>
       </AlertDialog>
     </div>
