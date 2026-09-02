@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
 import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConversasRouteImport } from './routes/_authenticated/conversas'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
@@ -63,6 +64,11 @@ const AuthenticatedMovimentacoesRoute =
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConversasRoute = AuthenticatedConversasRouteImport.update({
+  id: '/conversas',
+  path: '/conversas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedConfiguracoesRoute =
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/conversas': typeof AuthenticatedConversasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
   '/suporte': typeof AuthenticatedSuporteRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/categorias': typeof AuthenticatedCategoriasRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/conversas': typeof AuthenticatedConversasRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/movimentacoes': typeof AuthenticatedMovimentacoesRoute
   '/suporte': typeof AuthenticatedSuporteRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/categorias': typeof AuthenticatedCategoriasRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/conversas': typeof AuthenticatedConversasRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/movimentacoes': typeof AuthenticatedMovimentacoesRoute
   '/_authenticated/suporte': typeof AuthenticatedSuporteRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/categorias'
     | '/configuracoes'
+    | '/conversas'
     | '/dashboard'
     | '/movimentacoes'
     | '/suporte'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/categorias'
     | '/configuracoes'
+    | '/conversas'
     | '/dashboard'
     | '/movimentacoes'
     | '/suporte'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/categorias'
     | '/_authenticated/configuracoes'
+    | '/_authenticated/conversas'
     | '/_authenticated/dashboard'
     | '/_authenticated/movimentacoes'
     | '/_authenticated/suporte'
@@ -278,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/conversas': {
+      id: '/_authenticated/conversas'
+      path: '/conversas'
+      fullPath: '/conversas'
+      preLoaderRoute: typeof AuthenticatedConversasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/configuracoes': {
       id: '/_authenticated/configuracoes'
       path: '/configuracoes'
@@ -333,6 +352,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCategoriasRoute: typeof AuthenticatedCategoriasRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedConversasRoute: typeof AuthenticatedConversasRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMovimentacoesRoute: typeof AuthenticatedMovimentacoesRoute
   AuthenticatedSuporteRoute: typeof AuthenticatedSuporteRoute
@@ -342,6 +362,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCategoriasRoute: AuthenticatedCategoriasRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedConversasRoute: AuthenticatedConversasRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMovimentacoesRoute: AuthenticatedMovimentacoesRoute,
   AuthenticatedSuporteRoute: AuthenticatedSuporteRoute,
