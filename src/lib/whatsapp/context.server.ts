@@ -54,6 +54,8 @@ export interface ConversationContext {
   entities?: { supplier_name?: string | null; category_name?: string | null } | null;
   /** Movimento gravado e ainda não confirmado + fornecedor a cadastrar. */
   supplier_to_create?: { name: string; movement_id: string | null } | null;
+  /** Sugestões proativas já mostradas há pouco (para não repetir). */
+  hint_history?: string[] | null;
 }
 
 export const CONTEXT_TTL_MS = 30 * 60 * 1000;
@@ -110,6 +112,7 @@ export async function clearPending(
   await saveContext(db, restaurantId, contactId, {
     entities: ctx.entities ?? null,
     topic: ctx.topic ?? null,
+    hint_history: ctx.hint_history ?? null,
   });
 }
 

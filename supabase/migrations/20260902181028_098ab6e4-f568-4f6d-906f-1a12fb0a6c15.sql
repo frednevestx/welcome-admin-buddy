@@ -1,0 +1,12 @@
+REVOKE EXECUTE ON FUNCTION public.bump_ticket_last_message() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.set_updated_at() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user_subscription() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.seed_default_categories(uuid) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.admin_extend_plan(uuid, integer) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.admin_revoke_plan(uuid) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.admin_grant_plan_by_email(text, public.plan_tier, integer) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.effective_plan(uuid) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.has_plan(uuid, public.plan_tier) FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.my_effective_plan() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.normalize_phone(text) FROM anon, PUBLIC;

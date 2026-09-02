@@ -58,7 +58,7 @@ export interface OrchestratorResult {
 /* ----------------------------- helpers ----------------------------- */
 
 function baseCtxEarly(ctx: ConversationContext): ConversationContext {
-  return { entities: ctx.entities ?? null, topic: ctx.topic ?? null };
+  return { entities: ctx.entities ?? null, topic: ctx.topic ?? null, hint_history: ctx.hint_history ?? null };
 }
 
 
@@ -181,6 +181,10 @@ export async function runOrchestrator(
     contactId: string | null;
     message: string;
     eventId: string | null;
+    /** usuário dono do negócio (para auditoria) */
+    userId?: string | null;
+    /** chave de idempotência da mensagem original */
+    idempotencyKey?: string | null;
   },
 ): Promise<OrchestratorResult> {
   const { restaurantId, contactId, message, eventId } = input;
@@ -364,7 +368,11 @@ export async function runOrchestrator(
     supplier_name: parsed.supplier_name ?? parsed.target_name ?? ctx.entities?.supplier_name ?? null,
     category_name: parsed.category_name ?? ctx.entities?.category_name ?? null,
   };
-  const baseCtx: ConversationContext = { entities, topic: parsed.topic ?? ctx.topic ?? null };
+  const baseCtx: ConversationContext = {
+    entities,
+    topic: parsed.topic ?? ctx.topic ?? null,
+    hint_history: ctx.hint_history ?? null,
+  };
 
   let classification = "unknown";
   let movementId: string | null = null;
@@ -412,25 +420,31 @@ export async function runOrchestrator(
         const description = parsed.supplier_name
           ? `${parsed.category_name ?? "Pagamento"} — ${parsed.supplier_name}`
           : parsed.category_name ?? "Registrado via WhatsApp";
-        const { data: mv } = await db
-          .from("movements")
-          .insert({
-            restaurant_id: restaurantId,
+        /* Serviço central: mesma regra do painel web, com idempotência e auditoria. */
+        const { createMovement } = await import("@/lib/movements/service.server");
+        const created = await createMovement(
+          db,
+          {
+            restaurantId,
+            userId: input.userId ?? null,
+            phone: contactId,
+            origin: "whatsapp",
+            sourceEventId: eventId,
+            idempotencyKey: input.idempotencyKey ?? (eventId ? `whatsapp:${eventId}` : null),
+          },
+          {
             type: parsed.movement_type,
+            amount: Number(parsed.amount),
+            movement_date: movementDate,
+            description,
             category_id: categoryId,
             supplier_id: supplierId,
             payment_method: parsed.payment_method ?? null,
-            description,
-            amount: parsed.amount,
-            movement_date: movementDate,
-            origin: "manual",
-            source_ref: eventId ? `whatsapp:${eventId}` : null,
-            created_from_event_id: eventId,
             confirmed_by_user: false,
-          })
-          .select()
-          .maybeSingle();
-        movementId = mv?.id ?? null;
+          },
+        );
+        movementId = created.id;
+
 
         const parts = [
           parsed.movement_type === "entrada" ? "entrada" : "saída",
@@ -739,14 +753,44 @@ export async function runOrchestrator(
   }
 
   /* Insight: no máximo UM, e nunca competindo com uma pergunta aberta. */
+  let hadInsight = false;
   if (!awaitingUser && !["greeting", "smalltalk"].includes(parsed.intent)) {
     try {
       const { pickInsightForReply } = await import("@/lib/proactive/insights.server");
       const insight = await pickInsightForReply(db, restaurantId, contactId);
-      if (insight) reply = `${reply}\n\n${insight}`;
+      if (insight) {
+        reply = `${reply}\n\n${insight}`;
+        hadInsight = true;
+      }
     } catch (err) {
       console.error("[orchestrator] insight falhou", err);
     }
+  }
+
+  /*
+   * PROATIVIDADE: no máximo UMA sugestão curta, contextual, com rotação.
+   * Nunca quando existe pergunta em aberto, insight anexado ou pendência.
+   */
+  try {
+    const { appendHint, pickHint, rotateHints } = await import("./proactive-hints.server");
+    const hint = pickHint({
+      intent: parsed.intent,
+      message,
+      recent: ctx.hint_history ?? [],
+      supplierName: entities.supplier_name,
+      categoryName: entities.category_name,
+      suppressed: awaitingUser || hadInsight || classification === "duplicate",
+    });
+    if (hint) {
+      reply = appendHint(reply, hint);
+      const current = await loadContext(db, restaurantId, contactId);
+      await saveContext(db, restaurantId, contactId, {
+        ...current,
+        hint_history: rotateHints(ctx.hint_history, hint.key),
+      });
+    }
+  } catch (err) {
+    console.error("[orchestrator] sugestão falhou", err);
   }
 
   return { reply, classification, movementId, interpretation: parsed };

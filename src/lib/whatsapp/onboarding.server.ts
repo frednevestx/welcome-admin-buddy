@@ -1,18 +1,29 @@
 /**
- * Cadastro automático pelo WhatsApp.
+ * Cadastro automático pelo WhatsApp, sobre a IDENTIDADE persistente.
  *
- * Ninguém precisa criar conta no site: o primeiro contato pelo número oficial
- * (556291152495, ligado ao webhook TalkToMe) já cria usuário + negócio.
+ *   telefone normalizado -> whatsapp_identities -> user_id -> restaurant_id
  *
- * Estado do onboarding vive em `whatsapp_sessions` (uma linha por telefone):
- *   mode = 'onboarding' | 'active'
- *   context = { step, name, business, buffered_message, last_key, last_reply }
+ * Regras:
+ * - todo número que escreve fica registrado (status `known`) e NUNCA é apagado;
+ * - ninguém precisa criar conta no site: o onboarding acontece na conversa;
+ * - não existe negócio padrão nem DEFAULT_RESTAURANT_ID;
+ * - se o telefone já tem vínculo antigo, ele é reaproveitado — nunca criamos
+ *   uma segunda conta. Mais de um vínculo = conflito, processamento parado.
  *
- * NÃO existe fallback para DEFAULT_RESTAURANT_ID: cada telefone tem o seu
- * próprio negócio, e nenhum dado é compartilhado entre negócios.
+ * O passo do onboarding vive em `whatsapp_sessions.context`:
+ *   { step, name, business, buffered_message, last_key, last_reply }
  */
 
-import { looksFinancial, parseIdentity, parseYesNo, phoneTail } from "./phone";
+import { audit } from "@/lib/audit.server";
+import {
+  findLegacyLinks,
+  flagConflict,
+  linkIdentity,
+  setIdentityStatus,
+  touchIdentity,
+  type WhatsAppIdentity,
+} from "@/lib/identity/identity.server";
+import { looksFinancial, parseIdentity, parseYesNo } from "./phone";
 
 export const WELCOME_MESSAGE = `Olá! Eu sou a IA financeira da LUUD. Vou ajudar você a organizar as finanças do seu negócio pelo WhatsApp, gratuitamente e sem mensalidade.
 
@@ -26,6 +37,12 @@ Pode responder assim: Sou João, da Loja Central.`;
 
 export const CREATED_MESSAGE =
   "Tudo certo! Seu negócio foi criado. Agora você pode me enviar recebimentos, despesas, compras ou perguntar sobre seu fluxo de caixa.";
+
+export const BLOCKED_MESSAGE =
+  "Este número está temporariamente sem acesso à LUUD. Se você acha que é um engano, responda por aqui que a equipe verifica.";
+
+export const CONFLICT_MESSAGE =
+  "Encontrei mais de um cadastro ligado a este número, então preferi não escolher por você. A equipe da LUUD vai revisar e eu te aviso por aqui.";
 
 export interface SessionRow {
   phone: string;
@@ -58,18 +75,6 @@ export async function saveSession(
     },
     { onConflict: "phone" },
   );
-}
-
-/** Negócio já cadastrado com esse WhatsApp? (casa pelos últimos 8 dígitos) */
-export async function findRestaurantByPhone(db: any, phone: string): Promise<string | null> {
-  const { data } = await db
-    .from("restaurants")
-    .select("id, whatsapp")
-    .not("whatsapp", "is", null)
-    .ilike("whatsapp", `%${phoneTail(phone)}%`)
-    .limit(1)
-    .maybeSingle();
-  return data?.id ?? null;
 }
 
 function waEmail(phone: string) {
@@ -117,12 +122,40 @@ export async function createUserAndBusiness(
     .update({ restaurant_id: restaurant.id, full_name: input.name })
     .eq("id", userId);
 
+  await audit(db, {
+    action: "user.created",
+    entity: "user",
+    entityId: userId,
+    restaurantId: restaurant.id,
+    actorPhone: input.phone,
+    origin: "whatsapp",
+    after: { name: input.name, business: input.business },
+    note: "cadastro automático pelo WhatsApp",
+  });
+  await audit(db, {
+    action: "business.created",
+    entity: "restaurant",
+    entityId: restaurant.id,
+    restaurantId: restaurant.id,
+    actorUserId: userId,
+    actorPhone: input.phone,
+    origin: "whatsapp",
+    after: { name: input.business },
+  });
+
   return { restaurantId: restaurant.id, userId };
 }
 
 export type OnboardingOutcome =
-  | { kind: "ready"; restaurantId: string; bufferedMessage: string | null; prefix: string | null }
-  | { kind: "reply"; reply: string };
+  | {
+      kind: "ready";
+      restaurantId: string;
+      userId: string | null;
+      identity: WhatsAppIdentity;
+      bufferedMessage: string | null;
+      prefix: string | null;
+    }
+  | { kind: "reply"; reply: string; identity: WhatsAppIdentity | null };
 
 /**
  * Resolve o negócio do telefone. Se não existir, conduz o onboarding
@@ -130,42 +163,91 @@ export type OnboardingOutcome =
  */
 export async function resolveOrOnboard(
   db: any,
-  input: { phone: string; message: string },
+  input: { phone: string; message: string; contactId?: string | null; displayName?: string | null },
 ): Promise<OnboardingOutcome> {
   const { phone, message } = input;
+
+  /* 1. O contato passa a existir (e nunca é apagado). */
+  const identity = await touchIdentity(db, {
+    phoneRaw: phone,
+    contactId: input.contactId ?? phone,
+    displayName: input.displayName ?? null,
+  });
+  if (!identity) return { kind: "reply", reply: WELCOME_MESSAGE, identity: null };
+
+  if (identity.status === "blocked") return { kind: "reply", reply: BLOCKED_MESSAGE, identity };
+  if (identity.has_conflict) return { kind: "reply", reply: CONFLICT_MESSAGE, identity };
+
   const session = await loadSession(db, phone);
 
-  const existing = session?.restaurant_id ?? (await findRestaurantByPhone(db, phone));
-  if (existing) {
-    if (session?.restaurant_id !== existing || session?.mode !== "active") {
-      await saveSession(db, phone, { restaurant_id: existing, mode: "active" });
+  /* 2. Já verificado: usa usuário e negócio vinculados. */
+  if (identity.restaurant_id && identity.user_id) {
+    if (session?.restaurant_id !== identity.restaurant_id || session?.mode !== "active") {
+      await saveSession(db, phone, { restaurant_id: identity.restaurant_id, mode: "active" });
     }
-    return { kind: "ready", restaurantId: existing, bufferedMessage: null, prefix: null };
+    if (identity.status !== "verified") await setIdentityStatus(db, identity.id, "verified");
+    return {
+      kind: "ready",
+      restaurantId: identity.restaurant_id,
+      userId: identity.user_id,
+      identity,
+      bufferedMessage: null,
+      prefix: null,
+    };
   }
 
+  /* 3. Vínculo antigo (negócio cadastrado com esse WhatsApp). */
+  const legacy = await findLegacyLinks(db, identity.phone_normalized);
+  if (legacy.length > 1) {
+    await flagConflict(db, identity.id, `telefone ligado a ${legacy.length} negócios ativos`);
+    return { kind: "reply", reply: CONFLICT_MESSAGE, identity };
+  }
+  if (legacy.length === 1) {
+    const link = legacy[0]!;
+    await linkIdentity(db, {
+      identityId: identity.id,
+      userId: link.userId,
+      restaurantId: link.restaurantId,
+      displayName: identity.display_name ?? link.name,
+      origin: "whatsapp",
+    });
+    await saveSession(db, phone, { restaurant_id: link.restaurantId, mode: "active" });
+    return {
+      kind: "ready",
+      restaurantId: link.restaurantId,
+      userId: link.userId,
+      identity: { ...identity, restaurant_id: link.restaurantId, user_id: link.userId, status: "verified" },
+      bufferedMessage: null,
+      prefix: null,
+    };
+  }
+
+  /* 4. Onboarding conversacional. */
   const ctx: Record<string, any> = session?.context ?? {};
   const step: string = ctx["step"] ?? "start";
+  if (identity.status === "known") await setIdentityStatus(db, identity.id, "onboarding");
 
   const confirmText = (name: string, business: string) =>
-    `Perfeito, ${name}. Vou criar seu espaço gratuito para ${business}. Está correto? Responda Sim para confirmar ou envie a correção.`;
+    `Perfeito, ${name}. Vou vincular este WhatsApp ao negócio ${business}. Está correto? Responda Sim para confirmar ou envie a correção.`;
 
   // ---- passo 1: primeira mensagem ----
   if (step === "start") {
     const buffered = looksFinancial(message) ? message : null;
-    const identity = parseIdentity(message);
-    if (identity && !buffered) {
+    const parsed = parseIdentity(message);
+    if (parsed && !buffered) {
       await saveSession(db, phone, {
         mode: "onboarding",
-        context: { step: "confirm", name: identity.name, business: identity.business, buffered_message: null },
+        context: { ...ctx, step: "confirm", name: parsed.name, business: parsed.business, buffered_message: null },
       });
-      return { kind: "reply", reply: confirmText(identity.name, identity.business) };
+      return { kind: "reply", reply: confirmText(parsed.name, parsed.business), identity };
     }
     await saveSession(db, phone, {
       mode: "onboarding",
-      context: { step: "ask_identity", buffered_message: buffered },
+      context: { ...ctx, step: "ask_identity", buffered_message: buffered },
     });
     return {
       kind: "reply",
+      identity,
       reply: buffered
         ? `${WELCOME_MESSAGE}\n\nJá guardei o lançamento que você me mandou — registro ele assim que o seu negócio estiver criado.`
         : WELCOME_MESSAGE,
@@ -174,17 +256,20 @@ export async function resolveOrOnboard(
 
   // ---- passo 2: nome da pessoa + nome do negócio ----
   if (step === "ask_identity") {
-    const identity = parseIdentity(message);
-    if (!identity) {
+    const parsed = parseIdentity(message);
+    if (!parsed) {
       const buffered = ctx["buffered_message"] ?? (looksFinancial(message) ? message : null);
-      await saveSession(db, phone, { mode: "onboarding", context: { ...ctx, step: "ask_identity", buffered_message: buffered } });
-      return { kind: "reply", reply: ASK_AGAIN_MESSAGE };
+      await saveSession(db, phone, {
+        mode: "onboarding",
+        context: { ...ctx, step: "ask_identity", buffered_message: buffered },
+      });
+      return { kind: "reply", reply: ASK_AGAIN_MESSAGE, identity };
     }
     await saveSession(db, phone, {
       mode: "onboarding",
-      context: { ...ctx, step: "confirm", name: identity.name, business: identity.business },
+      context: { ...ctx, step: "confirm", name: parsed.name, business: parsed.business },
     });
-    return { kind: "reply", reply: confirmText(identity.name, identity.business) };
+    return { kind: "reply", reply: confirmText(parsed.name, parsed.business), identity };
   }
 
   // ---- passo 3: confirmação e criação ----
@@ -193,47 +278,58 @@ export async function resolveOrOnboard(
     if (yn === "yes") {
       const name = ctx["name"] as string;
       const business = ctx["business"] as string;
-      const result = await createUserAndBusiness(db, { phone, name, business });
+      const result = await createUserAndBusiness(db, { phone: identity.phone_normalized, name, business });
       if ("error" in result) {
         console.error("[whatsapp/onboarding] falha ao criar negócio", result.error);
         return {
           kind: "reply",
+          identity,
           reply: "Tive um problema para criar seu espaço agora. Pode me mandar novamente em alguns minutos?",
         };
       }
+      await linkIdentity(db, {
+        identityId: identity.id,
+        userId: result.userId,
+        restaurantId: result.restaurantId,
+        displayName: name,
+        origin: "whatsapp",
+      });
       const buffered = (ctx["buffered_message"] as string | null) ?? null;
       await saveSession(db, phone, {
         restaurant_id: result.restaurantId,
         mode: "active",
-        context: { step: "done", name, business },
+        context: { ...ctx, step: "done", name, business, buffered_message: null },
       });
       return {
         kind: "ready",
         restaurantId: result.restaurantId,
+        userId: result.userId,
+        identity: { ...identity, restaurant_id: result.restaurantId, user_id: result.userId, status: "verified" },
         bufferedMessage: buffered,
         prefix: CREATED_MESSAGE,
       };
     }
 
     // Correção: se a mensagem já traz os dados certos, reconfirma.
-    const identity = parseIdentity(message);
-    if (identity) {
+    const parsed = parseIdentity(message);
+    if (parsed) {
       await saveSession(db, phone, {
         mode: "onboarding",
-        context: { ...ctx, step: "confirm", name: identity.name, business: identity.business },
+        context: { ...ctx, step: "confirm", name: parsed.name, business: parsed.business },
       });
-      return { kind: "reply", reply: confirmText(identity.name, identity.business) };
+      return { kind: "reply", reply: confirmText(parsed.name, parsed.business), identity };
     }
     if (yn === "no") {
       await saveSession(db, phone, { mode: "onboarding", context: { ...ctx, step: "ask_identity" } });
-      return { kind: "reply", reply: ASK_AGAIN_MESSAGE };
+      return { kind: "reply", reply: ASK_AGAIN_MESSAGE, identity };
     }
     return {
       kind: "reply",
-      reply: `Só para confirmar: ${ctx["name"]}, do negócio ${ctx["business"]}. Responda Sim para eu criar, ou me mande a correção.`,
+      identity,
+      reply: `Só para confirmar: ${ctx["name"]}, do negócio ${ctx["business"]}. Responda Sim para eu vincular, ou me mande a correção.`,
     };
   }
 
-  await saveSession(db, phone, { mode: "onboarding", context: { step: "ask_identity" } });
-  return { kind: "reply", reply: WELCOME_MESSAGE };
+  await saveSession(db, phone, { mode: "onboarding", context: { ...ctx, step: "ask_identity" } });
+  return { kind: "reply", reply: WELCOME_MESSAGE, identity };
 }

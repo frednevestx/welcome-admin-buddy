@@ -2,7 +2,12 @@
  * Helpers PUROS do canal WhatsApp (sem banco, sem IA) — testáveis.
  */
 
-/** Só dígitos, com DDI 55 garantido para números brasileiros. */
+/**
+ * Telefone normalizado: só dígitos, DDI 55 garantido e o nono dígito dos
+ * celulares brasileiros incluído quando o número vem no formato antigo.
+ * Precisa produzir exatamente o mesmo resultado da função `normalize_phone`
+ * do banco — é essa string que identifica a pessoa.
+ */
 export function normalizePhone(raw: unknown): string | null {
   if (raw === null || raw === undefined) return null;
   let digits = String(raw).replace(/\D/g, "");
@@ -10,6 +15,13 @@ export function normalizePhone(raw: unknown): string | null {
   digits = digits.replace(/^0+/, "");
   if (digits.length === 10 || digits.length === 11) digits = `55${digits}`;
   if (digits.length < 10) return null;
+  if (digits.startsWith("55") && digits.length === 12) {
+    const ddd = digits.slice(2, 4);
+    const local = digits.slice(4);
+    if (local.length === 8 && ["6", "7", "8", "9"].includes(local[0]!)) {
+      digits = `55${ddd}9${local}`;
+    }
+  }
   return digits;
 }
 
