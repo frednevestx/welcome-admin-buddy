@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_kind: string
+          actor_phone: string | null
+          actor_user_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          note: string | null
+          origin: string
+          restaurant_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_kind?: string
+          actor_phone?: string | null
+          actor_user_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          note?: string | null
+          origin?: string
+          restaurant_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_kind?: string
+          actor_phone?: string | null
+          actor_user_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          note?: string | null
+          origin?: string
+          restaurant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -853,6 +909,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          archived_at: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -861,6 +918,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -869,6 +927,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -936,6 +995,7 @@ export type Database = {
       restaurants: {
         Row: {
           accent_color: string | null
+          archived_at: string | null
           avatar_url: string | null
           cidade: string | null
           cnpj: string | null
@@ -953,6 +1013,7 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          archived_at?: string | null
           avatar_url?: string | null
           cidade?: string | null
           cnpj?: string | null
@@ -970,6 +1031,7 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          archived_at?: string | null
           avatar_url?: string | null
           cidade?: string | null
           cnpj?: string | null
@@ -1445,6 +1507,104 @@ export type Database = {
           },
         ]
       }
+      whatsapp_access_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invalidated_at: string | null
+          phone_normalized: string
+          request_ip: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          invalidated_at?: string | null
+          phone_normalized: string
+          request_ip?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invalidated_at?: string | null
+          phone_normalized?: string
+          request_ip?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_identities: {
+        Row: {
+          blocked_at: string | null
+          conflict_note: string | null
+          created_at: string
+          display_name: string | null
+          first_message_at: string | null
+          has_conflict: boolean
+          id: string
+          last_message_at: string | null
+          phone_normalized: string
+          restaurant_id: string | null
+          status: string
+          talktome_contact_id: string | null
+          updated_at: string
+          user_id: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          blocked_at?: string | null
+          conflict_note?: string | null
+          created_at?: string
+          display_name?: string | null
+          first_message_at?: string | null
+          has_conflict?: boolean
+          id?: string
+          last_message_at?: string | null
+          phone_normalized: string
+          restaurant_id?: string | null
+          status?: string
+          talktome_contact_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          blocked_at?: string | null
+          conflict_note?: string | null
+          created_at?: string
+          display_name?: string | null
+          first_message_at?: string | null
+          has_conflict?: boolean
+          id?: string
+          last_message_at?: string | null
+          phone_normalized?: string
+          restaurant_id?: string | null
+          status?: string
+          talktome_contact_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_identities_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_raw_events: {
         Row: {
           channel: string
@@ -1706,6 +1866,7 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["plan_tier"]
       }
+      normalize_phone: { Args: { _raw: string }; Returns: string }
       seed_default_categories: {
         Args: { _restaurant_id: string }
         Returns: undefined
