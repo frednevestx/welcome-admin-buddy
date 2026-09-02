@@ -63,10 +63,16 @@ async function resolveRouting(apiKey: string) {
   return routing;
 }
 
+/**
+ * O TalkToMe guarda o telefone como o WhatsApp o entrega, que às vezes vem sem
+ * o nono dígito (5562 8453 2950). Por isso a busca é feita pelos 8 últimos
+ * dígitos e a comparação também.
+ */
 async function resolveContactId(apiKey: string, phone: string, channelId: number): Promise<number | null> {
-  const found = await api(apiKey, `/contacts?where=(platform_id,eq,${encodeURIComponent(phone)})&per_page=5`);
-  const items = found.body?.items ?? [];
-  const match = items.find((c: any) => String(c.platform_id) === phone);
+  const suffix = phone.slice(-8);
+  const found = await api(apiKey, `/contacts?search=${encodeURIComponent(suffix)}&page_size=25`);
+  const items: any[] = found.body?.items ?? [];
+  const match = items.find((c: any) => String(c.platform_id ?? "").slice(-8) === suffix);
   if (match) return match.id;
 
   const created = await api(apiKey, "/contacts", {
