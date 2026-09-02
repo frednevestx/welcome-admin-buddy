@@ -3,26 +3,14 @@ import { useRestaurant } from "@/hooks/use-restaurant";
 import luudLogo from "@/assets/luud-logo.png.asset.json";
 import {
   LayoutDashboard,
-  Upload,
   ArrowRightLeft,
-  Tag,
-  BarChart3,
-  TrendingUp,
-  Bell,
-  FileText,
+  MessageSquare,
   Settings,
   LogOut,
-  Target,
+  Shield,
   Users,
-  Calculator,
-  PieChart,
-  Package,
-  History,
-  Sliders,
-  Bot,
   LifeBuoy,
   Instagram,
-  Plug,
 } from "lucide-react";
 import {
   Sidebar,
