@@ -66,8 +66,8 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
     return { status: 200, body: result as Record<string, unknown> };
   }
 
-  /* ---- negócio do telefone (cria na primeira conversa) ---- */
-  const resolved = await resolveOrOnboard(db, { phone, message: text });
+  /* ---- identidade + negócio do telefone (cria na primeira conversa) ---- */
+  const resolved = await resolveOrOnboard(db, { phone, message: text, contactId: phone });
   if (resolved.kind === "reply") {
     await saveSessionReply(db, phone, key, resolved.reply);
     return { status: 200, body: { reply: resolved.reply, onboarding: true } };
@@ -76,14 +76,7 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   const restaurantId = resolved.restaurantId;
   const messageForAI = resolved.bufferedMessage ?? text;
 
-  const { runOrchestrator } = await import("./orchestrator.server");
-  const result = await runOrchestrator(db, {
-    restaurantId,
-    contactId: phone,
-    message: messageForAI,
-    eventId: null,
-  });
-
+  /* Evento cru primeiro: é ele que dá rastreabilidade e idempotência. */
   const { data: eventRow } = await db
     .from("whatsapp_raw_events")
     .insert({
@@ -91,18 +84,30 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
       contact_id: phone,
       message_type: "text",
       raw_message: text,
-      interpreted_json: result.interpretation,
-      classification: result.classification,
-      linked_movement_id: result.movementId,
     })
     .select("id")
     .maybeSingle();
+  const eventId: string | null = eventRow?.id ?? null;
 
-  if (result.movementId && eventRow?.id) {
+  const { runOrchestrator } = await import("./orchestrator.server");
+  const result = await runOrchestrator(db, {
+    restaurantId,
+    contactId: phone,
+    message: messageForAI,
+    eventId,
+    userId: resolved.userId,
+    idempotencyKey: eventId ? `whatsapp:${eventId}` : `whatsapp:${key}`,
+  });
+
+  if (eventId) {
     await db
-      .from("movements")
-      .update({ created_from_event_id: eventRow.id, source_ref: `whatsapp:${eventRow.id}` })
-      .eq("id", result.movementId);
+      .from("whatsapp_raw_events")
+      .update({
+        interpreted_json: result.interpretation,
+        classification: result.classification,
+        linked_movement_id: result.movementId,
+      })
+      .eq("id", eventId);
   }
 
   const reply = resolved.prefix ? `${resolved.prefix}\n\n${result.reply}` : result.reply;
