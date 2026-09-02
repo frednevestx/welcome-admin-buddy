@@ -5,7 +5,7 @@
 | Contato nos eventos | Mensagens | Situação |
 |---|---|---|
 | `5562993969722` | 32 | mesma pessoa que abaixo, formato com 9 extra |
-| `556293969722` | 29 | vinculada ao negócio "Restaurante Fred" |
+| `556293969722` | 29 | vinculada ao negócio "Restaurante Fred", que será arquivado na limpeza |
 | `5511999999999` | 6 | número de teste |
 | `556283164248` | 1 | sem vínculo |
 | `556284532950` | 1 | sem vínculo |
