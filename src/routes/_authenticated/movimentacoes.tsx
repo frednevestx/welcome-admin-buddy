@@ -15,10 +15,17 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ShoppingCart, DollarSign, BarChart2, Pencil, Trash2 } from "lucide-react";
+import { Plus, ShoppingCart, DollarSign, BarChart2, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { formatBRL, formatNumber, formatDate, isoDate } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  saveMovementWeb,
+  archiveMovementWeb,
+  restoreMovementWeb,
+  listArchivedMovements,
+} from "@/lib/movements/movements.functions";
 
 export const Route = createFileRoute("/_authenticated/movimentacoes")({
   component: MovementsPage,
