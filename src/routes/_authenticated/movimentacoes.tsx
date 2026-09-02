@@ -308,8 +308,6 @@ function MovementsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
