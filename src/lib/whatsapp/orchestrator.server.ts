@@ -739,14 +739,44 @@ export async function runOrchestrator(
   }
 
   /* Insight: no máximo UM, e nunca competindo com uma pergunta aberta. */
+  let hadInsight = false;
   if (!awaitingUser && !["greeting", "smalltalk"].includes(parsed.intent)) {
     try {
       const { pickInsightForReply } = await import("@/lib/proactive/insights.server");
       const insight = await pickInsightForReply(db, restaurantId, contactId);
-      if (insight) reply = `${reply}\n\n${insight}`;
+      if (insight) {
+        reply = `${reply}\n\n${insight}`;
+        hadInsight = true;
+      }
     } catch (err) {
       console.error("[orchestrator] insight falhou", err);
     }
+  }
+
+  /*
+   * PROATIVIDADE: no máximo UMA sugestão curta, contextual, com rotação.
+   * Nunca quando existe pergunta em aberto, insight anexado ou pendência.
+   */
+  try {
+    const { appendHint, pickHint, rotateHints } = await import("./proactive-hints.server");
+    const hint = pickHint({
+      intent: parsed.intent,
+      message,
+      recent: ctx.hint_history ?? [],
+      supplierName: entities.supplier_name,
+      categoryName: entities.category_name,
+      suppressed: awaitingUser || hadInsight || classification === "duplicate",
+    });
+    if (hint) {
+      reply = appendHint(reply, hint);
+      const current = await loadContext(db, restaurantId, contactId);
+      await saveContext(db, restaurantId, contactId, {
+        ...current,
+        hint_history: rotateHints(ctx.hint_history, hint.key),
+      });
+    }
+  } catch (err) {
+    console.error("[orchestrator] sugestão falhou", err);
   }
 
   return { reply, classification, movementId, interpretation: parsed };
