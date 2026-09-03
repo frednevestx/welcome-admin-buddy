@@ -321,11 +321,102 @@ function Hero() {
         </Reveal>
 
         <Reveal delay={120} className="relative">
-          <PhoneChat bubbles={HERO_CHAT} />
-          <DemoTag className="mt-4 mx-auto block w-fit" />
+          <div className="relative lg:pr-16">
+            <PhoneChat bubbles={HERO_CHAT} />
+            <MiniPanel className="mt-6 lg:absolute lg:-right-2 lg:bottom-2 lg:mt-0 lg:w-[16.5rem]" />
+          </div>
+          <div className="mt-6 flex flex-col items-center gap-2 lg:mt-8">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground shadow-[var(--shadow-soft)]">
+              <WhatsAppIcon className="h-4 w-4 text-whatsapp" title="WhatsApp" />
+              Funciona dentro do WhatsApp que você já usa
+            </span>
+            <DemoTag />
+          </div>
         </Reveal>
       </div>
     </section>
+  );
+}
+
+/* Painel financeiro flutuante (HTML/CSS, números demonstrativos) */
+function MiniPanel({ className }: { className?: string }) {
+  const points = [18, 34, 26, 48, 40, 62, 55, 74];
+  const path = points
+    .map((p, i) => `${(i / (points.length - 1)) * 100},${100 - p}`)
+    .join(" ");
+  return (
+    <div
+      className={cn(
+        "mx-auto w-full max-w-[19rem] rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <LineChart className="h-3.5 w-3.5 text-primary" /> Fluxo de caixa
+        </span>
+        <span className="text-[10px] text-muted-foreground">mês atual</span>
+      </div>
+      <dl className="mt-3 grid grid-cols-3 gap-2">
+        {[
+          { label: "Entradas", value: "18.740", icon: ArrowUpRight, tone: "text-whatsapp" },
+          { label: "Saídas", value: "12.190", icon: ArrowDownRight, tone: "text-muted-foreground" },
+          { label: "Resultado", value: "6.550", icon: Wallet, tone: "text-primary" },
+        ].map((k) => (
+          <div key={k.label} className="rounded-xl border border-border bg-secondary/50 px-2.5 py-2">
+            <dt className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              <k.icon className={cn("h-3 w-3", k.tone)} /> {k.label}
+            </dt>
+            <dd className="mt-0.5 font-display text-[0.82rem] font-bold text-foreground">R$ {k.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="mt-3 h-16 w-full" aria-hidden="true">
+        <polyline points={path} fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <polyline points={`0,100 ${path} 100,100`} fill="var(--primary)" opacity="0.10" stroke="none" />
+      </svg>
+      <p className="mt-2 text-[10px] text-muted-foreground">Números demonstrativos.</p>
+    </div>
+  );
+}
+
+/* ───────────────── NARRATIVA DE TRANSFORMAÇÃO ───────────────── */
+
+const TRANSFORM = [
+  { icon: MessageSquareText, title: "Mensagem", body: "Você conta o que aconteceu, do seu jeito." },
+  { icon: Sparkles, title: "Interpretação", body: "A IA identifica valor, tipo, cliente ou fornecedor." },
+  { icon: ShieldCheck, title: "Confirmação", body: "Ela confirma ou pergunta antes de registrar." },
+  { icon: LayoutDashboard, title: "Organização", body: "O lançamento aparece organizado no painel." },
+];
+
+function TransformStrip() {
+  return (
+    <Section className="pt-14 pb-14 md:pt-16 md:pb-16">
+      <div className="relative">
+        <span
+          aria-hidden="true"
+          className="absolute left-0 right-0 top-9 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block"
+        />
+        <ol className="relative grid gap-6 md:grid-cols-4">
+          {TRANSFORM.map((t, i) => (
+            <Reveal key={t.title} delay={i * 90}>
+              <li className="flex gap-4 md:flex-col md:gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
+                  <t.icon className="h-4.5 w-4.5 text-primary" />
+                </span>
+                <div>
+                  <h3 className="font-display text-base font-semibold text-foreground">
+                    <span className="mr-2 text-xs font-bold text-primary">0{i + 1}</span>
+                    {t.title}
+                  </h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.body}</p>
+                </div>
+              </li>
+            </Reveal>
+          ))}
+        </ol>
+      </div>
+    </Section>
   );
 }
 
