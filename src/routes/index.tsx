@@ -8,7 +8,9 @@ import {
   MessageCircle, CheckCircle2, ArrowRight, ArrowUpRight, Check, CheckCheck, Heart,
   Users, Receipt, Wallet, Truck, ShoppingBasket, Percent, Repeat, CalendarClock,
   LineChart, LayoutDashboard, HelpCircle, Instagram, Camera, Send, Pencil,
+  MessageSquareText, Sparkles, ShieldCheck, ArrowDownRight, Bell, AlertTriangle,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/whatsapp-icon";
 
 const WHATSAPP_LINK = "https://wa.me/556291152495?text=Quero%20testar%20a%20IA%20financeira";
 
