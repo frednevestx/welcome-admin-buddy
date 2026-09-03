@@ -279,7 +279,17 @@ const HERO_CHAT: Bubble[] = [
 
 function Hero() {
   return (
-    <section className="relative px-5 pt-28 pb-16 md:pt-36 md:pb-24">
+    <section className="relative overflow-hidden px-5 pt-28 pb-16 md:pt-36 md:pb-24">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(36,27,22,0.10) 1px, transparent 1px), radial-gradient(70% 55% at 70% 10%, rgba(184,148,82,0.16), transparent 70%), radial-gradient(50% 40% at 10% 90%, rgba(63,175,114,0.10), transparent 70%)",
+          backgroundSize: "24px 24px, 100% 100%, 100% 100%",
+          maskImage: "radial-gradient(ellipse 80% 70% at 55% 35%, black 35%, transparent 85%)",
+        }}
+      />
       <div className="max-w-6xl mx-auto grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
         <Reveal>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-medium text-muted-foreground">
