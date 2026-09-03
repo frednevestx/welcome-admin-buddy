@@ -145,7 +145,7 @@ function WhatsAppCTA({ label = "Testar grátis no WhatsApp", className, size = "
             : "border-border bg-transparent hover:bg-secondary",
         )}
       >
-        <MessageCircle className="mr-2 h-4 w-4" />
+        <WhatsAppIcon className="mr-2 h-4.5 w-4.5" />
         {label}
       </Button>
     </a>
