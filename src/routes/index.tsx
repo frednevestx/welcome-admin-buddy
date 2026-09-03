@@ -203,7 +203,7 @@ function TopBar() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link to="/auth" className="hidden sm:inline-flex text-sm text-muted-foreground transition-colors hover:text-foreground px-2">
+          <Link to="/acesso" className="hidden sm:inline-flex text-sm text-muted-foreground transition-colors hover:text-foreground px-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             Entrar
           </Link>
           <WhatsAppCTA label="Testar grátis" size="sm" />
