@@ -53,6 +53,7 @@ function Landing() {
       <main>
         <Hero />
         <ClarityStrip />
+        <TransformStrip />
         <Routine />
         <ConversationFlow />
         <ContextSection />
