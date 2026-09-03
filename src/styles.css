@@ -61,7 +61,8 @@
   --color-ivory: var(--ivory);
   --color-sand: var(--sand);
   --color-whatsapp: var(--whatsapp);
-
+  --color-gold: #B89452;
+  --color-gold-light: #C9A868;
 }
 
 /* LUUD Design System — Nogueira + Dourado Fosco
@@ -209,7 +210,7 @@
   --shadow-glow-blue: 0 0 40px -8px oklch(0.45 0.055 55 / 0.3);
 }
 
-/* ── Landing pública: paleta Nogueira + Dourado em fundo creme ──
+/* ── Landing pública: paleta Nogueira + Dourado em fundo creme (#F5F1E8) ──
  * Escopo isolado: só afeta a landing, não o app autenticado. */
 :root {
   --walnut: #241B16;
@@ -278,8 +279,24 @@
   color: var(--foreground);
 }
 
+/* Utilitários visuais para mockup e chips na landing */
+.gold-badge {
+  background-color: rgba(184, 148, 82, 0.12);
+  color: #B89452;
+  border: 1px solid rgba(184, 148, 82, 0.3);
+}
 
+.green-chip {
+  background-color: rgba(63, 175, 114, 0.15);
+  color: #3FAF72;
+  border: 1px solid rgba(63, 175, 114, 0.3);
+}
 
+.dark-chip {
+  background-color: rgba(36, 27, 22, 0.08);
+  color: #241B16;
+  border: 1px solid rgba(36, 27, 22, 0.15);
+}
 
 @layer base {
   * {
