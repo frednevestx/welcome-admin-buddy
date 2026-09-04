@@ -202,10 +202,58 @@ export async function runOrchestrator(
     ...extra,
   });
 
-  /* 1. Confirmação de movimento gravado e ainda não confirmado. */
-  const confirmation = await findPendingConfirmation(db, restaurantId, contactId);
-  if (confirmation && quickYesNo === "yes") {
-    await db.from("movements").update({ confirmed_by_user: true }).eq("id", confirmation.id);
+  /*
+   * 1. Confirmação de lançamentos JÁ gravados e ainda não confirmados.
+   *    A fonte de verdade é a oferta no contexto (ids explícitos). O caminho
+   *    antigo (último evento com linked_movement_id) fica apenas como reserva
+   *    para conversas que começaram antes desta versão.
+   */
+  const pendingIds =
+    ctx.offer?.kind === "confirm_movements" && ctx.offer.ids.length
+      ? ctx.offer.ids
+      : null;
+
+  if (pendingIds && quickYesNo) {
+    const offer = ctx.offer as Extract<PendingOffer, { kind: "confirm_movements" }>;
+    if (quickYesNo === "no") {
+      await db
+        .from("movements")
+        .update({ status: "superseded", notes: "descartado pelo usuário" })
+        .in("id", pendingIds)
+        .eq("restaurant_id", restaurantId);
+      await clearPending(db, restaurantId, contactId, ctx);
+      return done(
+        pendingIds.length > 1
+          ? "Beleza, descartei esses lançamentos. Se quiser, me manda os valores corretos."
+          : "Beleza, não vou registrar esse valor. Se quiser, me manda o correto.",
+        { interpretation: { intent: "deny" } },
+      );
+    }
+
+    /* Confirmação vaga ("ok", "certo") sobre uma oferta antiga: reafirma antes. */
+    const ageMs = Date.now() - new Date(offer.created_at ?? 0).getTime();
+    const vague = !/^\s*(sim|s|confirmo|isso)\b/i.test(message.trim());
+    if (vague && ageMs > 10 * 60 * 1000) {
+      await saveContext(db, restaurantId, contactId, {
+        ...baseCtxEarly(ctx),
+        supplier_to_create: ctx.supplier_to_create ?? null,
+        offer: { ...offer, created_at: new Date().toISOString() },
+      });
+      return done(
+        `Só para eu não errar, é isto que está esperando confirmação:\n${offer.summary}\n\nResponda "sim" que eu confirmo.`,
+        { interpretation: { intent: "confirm" } },
+      );
+    }
+
+    const outcome = await confirmMovements(db, restaurantId, pendingIds);
+    if (outcome.confirmed.length === 0) {
+      await clearPending(db, restaurantId, contactId, ctx);
+      return done(
+        "Tive um problema para confirmar esse registro no sistema e não quero te dizer que salvei sem ter salvo. Pode me mandar o lançamento de novo?",
+        { interpretation: { intent: "confirm" } },
+      );
+    }
+
     let extra = "";
     if (ctx.supplier_to_create?.name) {
       const { data: sup } = await db
@@ -214,14 +262,45 @@ export async function runOrchestrator(
         .select("id")
         .maybeSingle();
       if (sup?.id) {
-        await db.from("movements").update({ supplier_id: sup.id }).eq("id", confirmation.id);
+        await db.from("movements").update({ supplier_id: sup.id }).in("id", pendingIds);
         extra = ` Também cadastrei ${ctx.supplier_to_create.name} como fornecedor, então já consigo analisar seus gastos com ele.`;
       }
     }
     await clearPending(db, restaurantId, contactId, ctx);
+
+    const lines = outcome.confirmed
+      .map((m: any) => `• ${m.movement_date} — ${brl(Number(m.amount))}`)
+      .join("\n");
+    const head =
+      outcome.confirmed.length > 1
+        ? `Registrado. ${outcome.confirmed.length} lançamentos salvos:\n${lines}`
+        : `Registrado. ${brl(Number(outcome.confirmed[0].amount))} em ${outcome.confirmed[0].movement_date}.`;
+    const failed =
+      outcome.failed.length > 0
+        ? `\n\nAtenção: ${outcome.failed.length} lançamento(s) não conseguiram ser confirmados. Pode me mandar de novo?`
+        : "";
+    const aggregate = await categoryFeedback(db, restaurantId, outcome.confirmed);
+
+    return done(`${head}${extra}${failed}${aggregate ? `\n${aggregate}` : ""}`, {
+      interpretation: { intent: "confirm" },
+      movementId: outcome.confirmed[0]?.id ?? null,
+    });
+  }
+
+  const confirmation = pendingIds ? null : await findPendingConfirmation(db, restaurantId, contactId);
+  if (confirmation && quickYesNo === "yes") {
+    const outcome = await confirmMovements(db, restaurantId, [confirmation.id]);
+    await clearPending(db, restaurantId, contactId, ctx);
+    if (outcome.confirmed.length === 0) {
+      return done(
+        "Tive um problema para confirmar esse registro e não vou dizer que salvei sem ter salvo. Pode me mandar de novo?",
+        { interpretation: { intent: "confirm" } },
+      );
+    }
+    const aggregate = await categoryFeedback(db, restaurantId, outcome.confirmed);
     return done(
-      `Confirmado. ${brl(Number(confirmation.amount))} já ficou registrado em ${confirmation.movement_date}.${extra}`,
-      { interpretation: { intent: "confirm" } },
+      `Registrado. ${brl(Number(confirmation.amount))} em ${confirmation.movement_date}.${aggregate ? `\n${aggregate}` : ""}`,
+      { interpretation: { intent: "confirm" }, movementId: confirmation.id },
     );
   }
   if (confirmation && quickYesNo === "no") {
@@ -234,6 +313,7 @@ export async function runOrchestrator(
       interpretation: { intent: "deny" },
     });
   }
+
 
   /* 2. Ofertas abertas (sim/não). */
   if (ctx.offer && quickYesNo) {
