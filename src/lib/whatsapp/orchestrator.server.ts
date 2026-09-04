@@ -529,7 +529,21 @@ export async function runOrchestrator(
   switch (parsed.intent) {
     /* ---------- DADO: registrar ---------- */
     case "register_movement": {
-      if (!parsed.amount || !parsed.movement_type) {
+      /* Lista de lançamentos: um por item citado. NUNCA somamos valores. */
+      const drafts = (parsed.movements ?? []).filter((d) => Number(d?.amount) > 0);
+      if (drafts.length === 0 && Number(parsed.amount) > 0) {
+        drafts.push({
+          movement_type: parsed.movement_type ?? null,
+          category_name: parsed.category_name ?? null,
+          amount: parsed.amount ?? null,
+          movement_date: parsed.movement_date ?? null,
+          supplier_name: parsed.supplier_name ?? null,
+          payment_method: parsed.payment_method ?? null,
+        });
+      }
+
+      const defaultType = parsed.movement_type ?? drafts.find((d) => d.movement_type)?.movement_type ?? null;
+      if (drafts.length === 0 || !defaultType) {
         const pending: PendingOperation = {
           movement_type: parsed.movement_type ?? null,
           category_name: parsed.category_name ?? null,
@@ -537,38 +551,59 @@ export async function runOrchestrator(
           movement_date: parsed.movement_date ?? iso(new Date()),
           supplier_name: parsed.supplier_name ?? null,
           payment_method: parsed.payment_method ?? null,
-          missing: parsed.amount ? "movement_type" : "amount",
+          missing: drafts.length > 0 ? "movement_type" : "amount",
         };
         await saveContext(db, restaurantId, contactId, { ...baseCtx, pending });
         awaitingUser = true;
         break;
       }
 
-      const movementDate = parsed.movement_date ?? iso(new Date());
-      const categoryId = parsed.category_name
-        ? await findOrCreateCategory(db, restaurantId, parsed.category_name, parsed.movement_type)
-        : null;
-      classification = await classifyMovement(
-        db,
-        restaurantId,
-        { ...parsed, movement_date: movementDate },
-        categoryId,
-      );
-
-      let supplierId: string | null = null;
+      const { createMovement } = await import("@/lib/movements/service.server");
+      const createdRows: { id: string; label: string }[] = [];
+      const skipped: string[] = [];
+      const failures: string[] = [];
       let supplierToCreate: string | null = null;
-      if (parsed.supplier_name) {
-        const supplier = await findSupplier(db, restaurantId, parsed.supplier_name);
-        if (supplier) supplierId = supplier.id;
-        else supplierToCreate = parsed.supplier_name;
-      }
 
-      if (classification === "new") {
-        const description = parsed.supplier_name
-          ? `${parsed.category_name ?? "Pagamento"} — ${parsed.supplier_name}`
-          : parsed.category_name ?? "Registrado via WhatsApp";
-        /* Serviço central: mesma regra do painel web, com idempotência e auditoria. */
-        const { createMovement } = await import("@/lib/movements/service.server");
+      for (let i = 0; i < drafts.length; i++) {
+        const d = drafts[i]!;
+        const type = (d.movement_type ?? defaultType) as "entrada" | "saida";
+        const movementDate = d.movement_date ?? parsed.movement_date ?? iso(new Date());
+        const categoryName = d.category_name ?? parsed.category_name ?? null;
+        const supplierName = d.supplier_name ?? parsed.supplier_name ?? null;
+        const categoryId = categoryName
+          ? await findOrCreateCategory(db, restaurantId, categoryName, type)
+          : null;
+
+        const itemClassification = await classifyMovement(
+          db,
+          restaurantId,
+          { ...parsed, amount: Number(d.amount), movement_type: type, movement_date: movementDate },
+          categoryId,
+        );
+        const label = [
+          `${movementDate} — ${brl(Number(d.amount))}`,
+          categoryName ? `(${categoryName})` : null,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        if (itemClassification === "duplicate") {
+          skipped.push(label);
+          continue;
+        }
+
+        let supplierId: string | null = null;
+        if (supplierName) {
+          const supplier = await findSupplier(db, restaurantId, supplierName);
+          if (supplier) supplierId = supplier.id;
+          else supplierToCreate = supplierName;
+        }
+
+        const description = supplierName
+          ? `${categoryName ?? "Pagamento"} — ${supplierName}`
+          : categoryName ?? "Registrado via WhatsApp";
+
+        const baseKey = input.idempotencyKey ?? (eventId ? `whatsapp:${eventId}` : null);
         const created = await createMovement(
           db,
           {
@@ -577,48 +612,81 @@ export async function runOrchestrator(
             phone: contactId,
             origin: "whatsapp",
             sourceEventId: eventId,
-            idempotencyKey: input.idempotencyKey ?? (eventId ? `whatsapp:${eventId}` : null),
+            idempotencyKey: baseKey ? `${baseKey}#${i}` : null,
           },
           {
-            type: parsed.movement_type,
-            amount: Number(parsed.amount),
+            type,
+            amount: Number(d.amount),
             movement_date: movementDate,
             description,
             category_id: categoryId,
             supplier_id: supplierId,
-            payment_method: parsed.payment_method ?? null,
+            payment_method: d.payment_method ?? parsed.payment_method ?? null,
             confirmed_by_user: false,
           },
         );
-        movementId = created.id;
 
-
-        const parts = [
-          parsed.movement_type === "entrada" ? "entrada" : "saída",
-          `de ${brl(Number(parsed.amount))}`,
-          parsed.category_name ? `em ${parsed.category_name}` : null,
-          parsed.supplier_name ? `para ${parsed.supplier_name}` : null,
-          parsed.payment_method ? `no ${parsed.payment_method}` : null,
-          `em ${movementDate}`,
-        ].filter(Boolean);
-        reply = `Entendi: ${parts.join(" ")}. Confirma?`;
-        if (supplierToCreate) reply += ` (${supplierToCreate} ainda não está nos seus fornecedores — quer que eu cadastre?)`;
-
-        await saveContext(db, restaurantId, contactId, {
-          ...baseCtx,
-          supplier_to_create: supplierToCreate ? { name: supplierToCreate, movement_id: movementId } : null,
-        });
-        awaitingUser = true;
-      } else if (classification === "update") {
-        reply = `Já tem um lançamento de ${parsed.category_name ?? "esse tipo"} em ${movementDate}. Isso é uma atualização daquele valor ou um lançamento novo e separado?`;
-        await clearPending(db, restaurantId, contactId, baseCtx);
-        awaitingUser = true;
-      } else if (classification === "duplicate") {
-        reply = "Esse valor já está registrado, então não vou duplicar. Se for outra coisa, me dá um detalhe a mais.";
-        await clearPending(db, restaurantId, contactId, baseCtx);
+        /* Só entra na lista de "gravados" quem realmente recebeu um id. */
+        if (created.id) createdRows.push({ id: created.id, label });
+        else failures.push(`${label}${created.error ? ` (${created.error})` : ""}`);
       }
+
+      classification = createdRows.length > 0 ? "new" : skipped.length > 0 ? "duplicate" : "unknown";
+      movementId = createdRows[0]?.id ?? null;
+
+      if (createdRows.length === 0) {
+        if (skipped.length > 0 && failures.length === 0) {
+          reply =
+            skipped.length > 1
+              ? `Esses lançamentos já estão registrados, então não vou duplicar:\n${skipped
+                  .map((s) => `• ${s}`)
+                  .join("\n")}`
+              : "Esse valor já está registrado, então não vou duplicar. Se for outra coisa, me dá um detalhe a mais.";
+          await clearPending(db, restaurantId, contactId, baseCtx);
+          break;
+        }
+        /* Honestidade obrigatória: nada foi salvo, então nada de confirmação. */
+        reply =
+          "Tive um problema ao salvar esse lançamento no sistema, então NÃO ficou registrado. Pode me mandar de novo?";
+        await clearPending(db, restaurantId, contactId, baseCtx);
+        break;
+      }
+
+      const summary =
+        createdRows.length > 1
+          ? `Entendi ${createdRows.length} ${defaultType === "entrada" ? "entradas" : "despesas"}:\n${createdRows
+              .map((r) => `• ${r.label}`)
+              .join("\n")}`
+          : `Entendi: ${defaultType === "entrada" ? "entrada" : "saída"} de ${createdRows[0]!.label}`;
+
+      reply =
+        createdRows.length > 1
+          ? `${summary}\n\nConfirma os ${createdRows.length}? (sim/não)`
+          : `${summary}. Confirma? (sim/não)`;
+      if (skipped.length > 0) {
+        reply += `\n\nJá tinha registrado antes (não dupliquei): ${skipped.join("; ")}.`;
+      }
+      if (failures.length > 0) {
+        reply += `\n\nNão consegui preparar: ${failures.join("; ")}. Me manda esse(s) de novo depois.`;
+      }
+      if (supplierToCreate) {
+        reply += `\n\n(${supplierToCreate} ainda não está nos seus fornecedores — se confirmar, eu cadastro.)`;
+      }
+
+      await saveContext(db, restaurantId, contactId, {
+        ...baseCtx,
+        supplier_to_create: supplierToCreate ? { name: supplierToCreate, movement_id: movementId } : null,
+        offer: {
+          kind: "confirm_movements",
+          ids: createdRows.map((r) => r.id),
+          summary,
+          created_at: new Date().toISOString(),
+        },
+      });
+      awaitingUser = true;
       break;
     }
+
 
     /* ---------- DADO incompleto ---------- */
     case "pending_operation": {
