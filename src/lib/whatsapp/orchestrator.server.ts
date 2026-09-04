@@ -87,6 +87,71 @@ async function findPendingConfirmation(db: any, restaurantId: string, contactId:
   return mv ?? null;
 }
 
+/**
+ * Confirma lançamentos e RELÊ do banco para provar que a mudança persistiu.
+ * Nunca devolvemos "registrado" sem esta leitura de volta ter dado certo.
+ */
+async function confirmMovements(
+  db: any,
+  restaurantId: string,
+  ids: string[],
+): Promise<{ confirmed: any[]; failed: string[] }> {
+  if (ids.length === 0) return { confirmed: [], failed: [] };
+  const { error } = await db
+    .from("movements")
+    .update({ confirmed_by_user: true })
+    .in("id", ids)
+    .eq("restaurant_id", restaurantId);
+  if (error) console.error("[orchestrator] falha ao confirmar", error.message);
+
+  const { data } = await db
+    .from("movements")
+    .select("id, amount, movement_date, category_id, type")
+    .in("id", ids)
+    .eq("restaurant_id", restaurantId)
+    .eq("status", "active")
+    .eq("confirmed_by_user", true)
+    .order("movement_date", { ascending: true });
+
+  const confirmed = (data ?? []) as any[];
+  const okIds = new Set(confirmed.map((m) => m.id));
+  return { confirmed, failed: ids.filter((id) => !okIds.has(id)) };
+}
+
+/**
+ * Feedback agregado depois de salvar: total REAL da categoria no mês corrente.
+ * Usa a mesma view de cálculo do resto do sistema (movements_current).
+ */
+async function categoryFeedback(db: any, restaurantId: string, confirmed: any[]): Promise<string | null> {
+  try {
+    const expense = confirmed.find((m) => m.type === "saida" && m.category_id) ?? confirmed.find((m) => m.category_id);
+    if (!expense?.category_id) return null;
+    const { data: cat } = await db
+      .from("categories")
+      .select("name")
+      .eq("id", expense.category_id)
+      .maybeSingle();
+    if (!cat?.name) return null;
+
+    const { from, to } = periodRangeOf("month");
+    const { data } = await db
+      .from("movements_current")
+      .select("amount")
+      .eq("restaurant_id", restaurantId)
+      .eq("category_id", expense.category_id)
+      .gte("movement_date", from)
+      .lte("movement_date", to);
+    const total = (data ?? []).reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+    if (!(total > 0)) return null;
+    return `Total em ${cat.name} este mês: ${brl(total)}.`;
+  } catch (err) {
+    console.error("[orchestrator] feedback agregado falhou", err);
+    return null;
+  }
+}
+
+
+
 async function findOrCreateCategory(
   db: any,
   restaurantId: string,
