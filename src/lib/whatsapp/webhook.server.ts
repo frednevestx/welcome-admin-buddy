@@ -90,14 +90,24 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   const eventId: string | null = eventRow?.id ?? null;
 
   const { runOrchestrator } = await import("./orchestrator.server");
-  const result = await runOrchestrator(db, {
-    restaurantId,
-    contactId: phone,
-    message: messageForAI,
-    eventId,
-    userId: resolved.userId,
-    idempotencyKey: eventId ? `whatsapp:${eventId}` : `whatsapp:${key}`,
-  });
+  let result;
+  try {
+    result = await runOrchestrator(db, {
+      restaurantId,
+      contactId: phone,
+      message: messageForAI,
+      eventId,
+      userId: resolved.userId,
+      idempotencyKey: eventId ? `whatsapp:${eventId}` : `whatsapp:${key}`,
+    });
+  } catch (err) {
+    console.error("[whatsapp/webhook] orquestrador falhou", err);
+    const reply =
+      "Deu um problema aqui do meu lado e não consegui tratar sua mensagem — não registrei nada. Pode me mandar de novo?";
+    await saveSessionReply(db, phone, key, reply, restaurantId);
+    return { status: 200, body: { reply } };
+  }
+
 
   if (eventId) {
     await db

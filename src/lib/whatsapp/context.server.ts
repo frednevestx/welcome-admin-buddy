@@ -34,6 +34,16 @@ export type PendingOffer =
   | { kind: "confirm_update"; movement_id: string; label: string; changes: MovementChangesCtx }
   | { kind: "confirm_delete"; movement_id: string; label: string }
   | {
+      /**
+       * Lançamentos JÁ gravados (status active, confirmed_by_user = false)
+       * aguardando o sim/não do usuário. Um único lançamento também usa isso.
+       */
+      kind: "confirm_movements";
+      ids: string[];
+      summary: string;
+      created_at: string;
+    }
+  | {
       kind: "choose_movement";
       action: "update" | "delete";
       ids: string[];
@@ -41,6 +51,7 @@ export type PendingOffer =
       changes?: MovementChangesCtx | null;
     }
   | { kind: "confirm_reset" };
+
 
 
 export interface ConversationContext {

@@ -32,6 +32,17 @@ export type Intent =
   | "reset_data"
   | "other";
 
+/** Um lançamento isolado dentro de uma mensagem (pode haver vários). */
+export interface MovementDraft {
+  movement_type?: "entrada" | "saida" | null;
+  category_name?: string | null;
+  amount?: number | null;
+  movement_date?: string | null;
+  supplier_name?: string | null;
+  payment_method?: string | null;
+  description?: string | null;
+}
+
 export interface Interpretation {
   intent: Intent;
   movement_type?: "entrada" | "saida" | null;
@@ -40,7 +51,10 @@ export interface Interpretation {
   movement_date?: string | null;
   supplier_name?: string | null;
   payment_method?: string | null;
+  /** LISTA de lançamentos da mensagem. Nunca somar valores de dias diferentes. */
+  movements?: MovementDraft[] | null;
   pending_operation?: PendingOperation | null;
+
   query_period?: "today" | "week" | "month" | "previous_month" | null;
   query_type?: "revenue" | "expense" | "both" | null;
   /** Nome citado numa consulta ("quanto gastei com João/energia"). */
@@ -81,6 +95,8 @@ Responda APENAS com JSON válido, sem markdown, no formato:
   "movement_date": "YYYY-MM-DD" | null,
   "supplier_name": string | null,
   "payment_method": "pix" | "dinheiro" | "cartão" | "boleto" | "transferência" | null,
+  "movements": [ { "movement_type": ..., "category_name": ..., "amount": number, "movement_date": "YYYY-MM-DD", "supplier_name": ..., "payment_method": ... } ] | null,
+
   "pending_operation": { "movement_type": ..., "category_name": ..., "amount": ..., "movement_date": ..., "supplier_name": ..., "payment_method": ..., "missing": "amount" | "movement_type" | "category_name" | "movement_date" } | null,
   "query_period": "today" | "week" | "month" | "previous_month" | null,
   "query_type": "revenue" | "expense" | "both" | null,
@@ -104,6 +120,16 @@ COMO ESCOLHER A INTENÇÃO — pense em TIPOS de mensagem:
    mencionada, use hoje). Se faltar um dado essencial (quase sempre o valor),
    use "pending_operation", preencha tudo que já sabe e o campo "missing", e
    pergunte APENAS o que falta.
+
+   MÚLTIPLOS LANÇAMENTOS NA MESMA MENSAGEM (regra absoluta): se a mensagem cita
+   mais de um valor, ou o mesmo tipo de gasto em datas diferentes (ex: "01/09
+   121,56 / 02/09 350,41 / 03/09 64,25"), devolva "register_movement" com o
+   array "movements" contendo UM objeto por lançamento, cada um com sua própria
+   data e seu próprio valor. NUNCA some valores, NUNCA junte datas diferentes em
+   um único lançamento, NUNCA descarte itens da lista. Quando houver só um
+   lançamento, "movements" pode ter 1 item ou ser null (os campos da raiz valem).
+   Datas escritas como DD/MM sem ano são do ano corrente.
+
 
 2. PERGUNTA / CONSULTA:
    - total de um período ("quanto gastei essa semana") -> "query_summary"
