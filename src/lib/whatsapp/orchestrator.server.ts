@@ -15,7 +15,9 @@ import {
   isFirstInteractionToday,
   saveContext,
   type ConversationContext,
+  type PendingOffer,
   type PendingOperation,
+
 } from "./context.server";
 import { interpret, type Interpretation } from "./interpret.server";
 import { BUSY_REPLY, fallbackReply, greetingReply, narrate } from "./reply.server";
