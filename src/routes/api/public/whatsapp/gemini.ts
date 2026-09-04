@@ -25,8 +25,14 @@ export const Route = createFileRoute("/api/public/whatsapp/gemini")({
           return json(outcome.body, outcome.status);
         } catch (err) {
           console.error("[whatsapp/gemini]", err);
-          return json({ error: String(err) }, 500);
+          /* Nunca deixar o usuário sem resposta, mesmo em falha interna. */
+          return json({
+            reply:
+              "Tive uma falha interna agora e não consegui processar sua mensagem — nada foi registrado. Pode me mandar de novo, por favor?",
+            error: String(err),
+          });
         }
+
       },
     },
   },
