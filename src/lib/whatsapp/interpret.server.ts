@@ -32,6 +32,17 @@ export type Intent =
   | "reset_data"
   | "other";
 
+/** Um lançamento isolado dentro de uma mensagem (pode haver vários). */
+export interface MovementDraft {
+  movement_type?: "entrada" | "saida" | null;
+  category_name?: string | null;
+  amount?: number | null;
+  movement_date?: string | null;
+  supplier_name?: string | null;
+  payment_method?: string | null;
+  description?: string | null;
+}
+
 export interface Interpretation {
   intent: Intent;
   movement_type?: "entrada" | "saida" | null;
@@ -40,7 +51,10 @@ export interface Interpretation {
   movement_date?: string | null;
   supplier_name?: string | null;
   payment_method?: string | null;
+  /** LISTA de lançamentos da mensagem. Nunca somar valores de dias diferentes. */
+  movements?: MovementDraft[] | null;
   pending_operation?: PendingOperation | null;
+
   query_period?: "today" | "week" | "month" | "previous_month" | null;
   query_type?: "revenue" | "expense" | "both" | null;
   /** Nome citado numa consulta ("quanto gastei com João/energia"). */
