@@ -2,22 +2,36 @@
  * Handler compartilhado do webhook de WhatsApp (TalkToMe).
  *
  * Fluxo:
- *   payload -> telefone normalizado -> deduplicação -> negócio (ou onboarding)
+ *   payload -> telefone normalizado -> [imagem/áudio -> texto via Gemini,
+ *   se "text" vier vazio] -> deduplicação -> negócio (ou onboarding)
  *   -> orquestrador -> log em whatsapp_raw_events -> resposta
  *
  * Nenhum dado é compartilhado entre negócios: o restaurant_id sempre vem do
  * telefone que enviou a mensagem.
+ *
+ * Imagem/áudio são só uma PONTE: viram texto e caem no mesmo orquestrador
+ * de sempre (register_movement, query_*, reset, etc.) — nenhuma lógica de
+ * negócio nova foi criada para eles.
  */
 
 import { dedupeKey, normalizePhone } from "./phone";
 import { resolveOrOnboard, loadSession, saveSession } from "./onboarding.server";
+import { describeImageAsMessage, transcribeAudioAsMessage } from "./media.server";
 
 export interface WebhookOutcome {
   status: number;
   body: Record<string, unknown>;
 }
 
-export function extractMessage(body: any): { phone: string | null; text: string; messageId: string | null } {
+export function extractMessage(body: any): {
+  phone: string | null;
+  text: string;
+  messageId: string | null;
+  imageUrl: string | null;
+  mime: string | null;
+  audioUrl: string | null;
+  name: string | null;
+} {
   const phone = normalizePhone(
     body?.phone ?? body?.contact?.phone ?? body?.contact?.number ?? body?.from ?? body?.sender?.phone,
   );
@@ -29,7 +43,24 @@ export function extractMessage(body: any): { phone: string | null; text: string;
     (typeof body?.message === "string" ? body.message : "") ??
     "";
   const messageId = body?.message_id ?? body?.id ?? body?.message?.id ?? null;
-  return { phone, text: typeof rawText === "string" ? rawText.trim() : "", messageId: messageId ? String(messageId) : null };
+
+  // Cenário 2 do payload da TalkToMe: mídia enviada pelo contato.
+  const imageUrl = body?.image_url ?? body?.message?.image_url ?? null;
+  const mime = body?.mime ?? body?.message?.mime ?? null;
+  // audio_url pode vir junto com "text" já transcrito (cenário 1) ou sozinho
+  // se a transcrição da TalkToMe falhar — nesse 2º caso usamos como fallback.
+  const audioUrl = body?.audio_url ?? body?.message?.audio_url ?? null;
+  const name = body?.name ?? body?.contact?.name ?? null;
+
+  return {
+    phone,
+    text: typeof rawText === "string" ? rawText.trim() : "",
+    messageId: messageId ? String(messageId) : null,
+    imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : null,
+    mime: typeof mime === "string" && mime.trim() ? mime.trim() : null,
+    audioUrl: typeof audioUrl === "string" && audioUrl.trim() ? audioUrl.trim() : null,
+    name: typeof name === "string" && name.trim() ? name.trim() : null,
+  };
 }
 
 /** Evita processar a mesma mensagem duas vezes (retry do provedor). */
@@ -41,16 +72,56 @@ async function alreadyHandled(db: any, phone: string, key: string): Promise<bool
 }
 
 export async function handleWhatsAppWebhook(db: any, body: any): Promise<WebhookOutcome> {
-  const { phone, text, messageId } = extractMessage(body);
+  const { phone, text, messageId, imageUrl, mime, audioUrl, name } = extractMessage(body);
 
   if (!phone) {
     return { status: 400, body: { error: "telefone não identificado no payload" } };
   }
-  if (!text) {
+
+  // "text" já é o que a TalkToMe entende como mensagem pronta (texto digitado
+  // ou áudio já transcrito por ela). Só recorremos ao Gemini quando ela NÃO
+  // mandou nada utilizável em "text".
+  let effectiveText = text;
+  let mediaOrigin: "image" | "audio" | null = null;
+
+  if (!effectiveText && imageUrl) {
+    try {
+      const described = await describeImageAsMessage(imageUrl, mime, name);
+      if (described) {
+        effectiveText = described;
+        mediaOrigin = "image";
+      }
+    } catch (err) {
+      console.error("[whatsapp/webhook] falha ao interpretar imagem", err);
+    }
+  }
+
+  if (!effectiveText && audioUrl) {
+    try {
+      const transcribed = await transcribeAudioAsMessage(audioUrl);
+      if (transcribed) {
+        effectiveText = transcribed;
+        mediaOrigin = "audio";
+      }
+    } catch (err) {
+      console.error("[whatsapp/webhook] falha ao transcrever áudio", err);
+    }
+  }
+
+  if (!effectiveText) {
+    // Mídia chegou mas não deu pra entender: nunca 500, resposta amigável.
+    if (imageUrl || audioUrl) {
+      return {
+        status: 200,
+        body: {
+          reply: "Não consegui entender essa imagem ou áudio agora — pode descrever em texto ou mandar de novo?",
+        },
+      };
+    }
     return { status: 400, body: { error: "mensagem vazia" } };
   }
 
-  const key = dedupeKey({ messageId, phone, text });
+  const key = dedupeKey({ messageId, phone, text: effectiveText });
   if (await alreadyHandled(db, phone, key)) {
     const session = await loadSession(db, phone);
     return { status: 200, body: { reply: session?.context?.["last_reply"] ?? "", duplicate: true } };
@@ -67,14 +138,14 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   }
 
   /* ---- identidade + negócio do telefone (cria na primeira conversa) ---- */
-  const resolved = await resolveOrOnboard(db, { phone, message: text, contactId: phone });
+  const resolved = await resolveOrOnboard(db, { phone, message: effectiveText, contactId: phone });
   if (resolved.kind === "reply") {
     await saveSessionReply(db, phone, key, resolved.reply);
     return { status: 200, body: { reply: resolved.reply, onboarding: true } };
   }
 
   const restaurantId = resolved.restaurantId;
-  const messageForAI = resolved.bufferedMessage ?? text;
+  const messageForAI = resolved.bufferedMessage ?? effectiveText;
 
   /* Evento cru primeiro: é ele que dá rastreabilidade e idempotência. */
   const { data: eventRow } = await db
@@ -82,8 +153,8 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
     .insert({
       restaurant_id: restaurantId,
       contact_id: phone,
-      message_type: "text",
-      raw_message: text,
+      message_type: mediaOrigin ?? "text",
+      raw_message: mediaOrigin ? `[${mediaOrigin}] ${effectiveText}` : effectiveText,
     })
     .select("id")
     .maybeSingle();
@@ -107,7 +178,6 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
     await saveSessionReply(db, phone, key, reply, restaurantId);
     return { status: 200, body: { reply } };
   }
-
 
   if (eventId) {
     await db
