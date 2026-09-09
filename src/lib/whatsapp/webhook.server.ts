@@ -23,13 +23,25 @@ export interface WebhookOutcome {
   body: Record<string, unknown>;
 }
 
+/**
+ * Classifica o media_type que a TalkToMe manda (varia por tipo de WhatsApp:
+ * "audio", "ptt" = voice note, "image", "video", "document", etc.).
+ */
+function classifyMediaType(mediaType: string | null): "audio" | "image" | "other" | null {
+  if (!mediaType) return null;
+  const t = mediaType.toLowerCase();
+  if (t.includes("audio") || t.includes("ptt") || t.includes("voice") || t.includes("ogg")) return "audio";
+  if (t.includes("image") || t.includes("jpeg") || t.includes("jpg") || t.includes("png")) return "image";
+  return "other";
+}
+
 export function extractMessage(body: any): {
   phone: string | null;
   text: string;
   messageId: string | null;
-  imageUrl: string | null;
-  mime: string | null;
-  audioUrl: string | null;
+  mediaUrl: string | null;
+  mediaKind: "audio" | "image" | "other" | null;
+  mediaType: string | null;
   name: string | null;
 } {
   const phone = normalizePhone(
@@ -44,21 +56,23 @@ export function extractMessage(body: any): {
     "";
   const messageId = body?.message_id ?? body?.id ?? body?.message?.id ?? null;
 
-  // Cenário 2 do payload da TalkToMe: mídia enviada pelo contato.
-  const imageUrl = body?.image_url ?? body?.message?.image_url ?? null;
-  const mime = body?.mime ?? body?.message?.mime ?? null;
-  // audio_url pode vir junto com "text" já transcrito (cenário 1) ou sozinho
-  // se a transcrição da TalkToMe falhar — nesse 2º caso usamos como fallback.
-  const audioUrl = body?.audio_url ?? body?.message?.audio_url ?? null;
+  // Campo real enviado pela TalkToMe pra QUALQUER mídia (áudio, imagem,
+  // vídeo, documento): media_url + media_type. Quando o contato manda
+  // áudio, a TalkToMe já transcreve e popula "text" com a transcrição —
+  // media_url/media_type só importam quando "text" vem vazio.
+  const mediaUrlRaw = body?.media_url ?? body?.message?.media_url ?? null;
+  const mediaTypeRaw = body?.media_type ?? body?.message?.media_type ?? null;
+  const mediaUrl = typeof mediaUrlRaw === "string" && mediaUrlRaw.trim() ? mediaUrlRaw.trim() : null;
+  const mediaType = typeof mediaTypeRaw === "string" && mediaTypeRaw.trim() ? mediaTypeRaw.trim() : null;
   const name = body?.name ?? body?.contact?.name ?? null;
 
   return {
     phone,
     text: typeof rawText === "string" ? rawText.trim() : "",
     messageId: messageId ? String(messageId) : null,
-    imageUrl: typeof imageUrl === "string" && imageUrl.trim() ? imageUrl.trim() : null,
-    mime: typeof mime === "string" && mime.trim() ? mime.trim() : null,
-    audioUrl: typeof audioUrl === "string" && audioUrl.trim() ? audioUrl.trim() : null,
+    mediaUrl,
+    mediaKind: mediaUrl ? classifyMediaType(mediaType) : null,
+    mediaType,
     name: typeof name === "string" && name.trim() ? name.trim() : null,
   };
 }
@@ -72,7 +86,7 @@ async function alreadyHandled(db: any, phone: string, key: string): Promise<bool
 }
 
 export async function handleWhatsAppWebhook(db: any, body: any): Promise<WebhookOutcome> {
-  const { phone, text, messageId, imageUrl, mime, audioUrl, name } = extractMessage(body);
+  const { phone, text, messageId, mediaUrl, mediaKind, mediaType, name } = extractMessage(body);
 
   if (!phone) {
     return { status: 400, body: { error: "telefone não identificado no payload" } };
@@ -80,13 +94,14 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
 
   // "text" já é o que a TalkToMe entende como mensagem pronta (texto digitado
   // ou áudio já transcrito por ela). Só recorremos ao Gemini quando ela NÃO
-  // mandou nada utilizável em "text".
+  // mandou nada utilizável em "text" — ou porque a transcrição falhou, ou
+  // porque é uma mídia que a TalkToMe não transcreve (imagem).
   let effectiveText = text;
   let mediaOrigin: "image" | "audio" | null = null;
 
-  if (!effectiveText && imageUrl) {
+  if (!effectiveText && mediaUrl && mediaKind === "image") {
     try {
-      const described = await describeImageAsMessage(imageUrl, mime, name);
+      const described = await describeImageAsMessage(mediaUrl, mediaType, name);
       if (described) {
         effectiveText = described;
         mediaOrigin = "image";
@@ -96,9 +111,9 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
     }
   }
 
-  if (!effectiveText && audioUrl) {
+  if (!effectiveText && mediaUrl && mediaKind === "audio") {
     try {
-      const transcribed = await transcribeAudioAsMessage(audioUrl);
+      const transcribed = await transcribeAudioAsMessage(mediaUrl);
       if (transcribed) {
         effectiveText = transcribed;
         mediaOrigin = "audio";
@@ -109,8 +124,9 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   }
 
   if (!effectiveText) {
-    // Mídia chegou mas não deu pra entender: nunca 500, resposta amigável.
-    if (imageUrl || audioUrl) {
+    // Mídia chegou mas não deu pra entender (ou é um tipo não suportado
+    // ainda, ex.: vídeo/documento): nunca 500, resposta amigável.
+    if (mediaUrl) {
       return {
         status: 200,
         body: {
