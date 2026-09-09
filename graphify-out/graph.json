@@ -3597,7 +3597,7 @@
       "file_type": "code",
       "norm_label": "savesessionreply()",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L215"
+      "source_location": "L228"
     },
     {
       "id": "src_components_ui_form_formfield",
@@ -17152,7 +17152,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L104",
+      "source_location": "L110",
       "weight": 1.0
     },
     {
@@ -17164,7 +17164,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L116",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -17176,7 +17176,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L140",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -17188,7 +17188,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L141",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -17200,7 +17200,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L142",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -17212,7 +17212,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L157",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
@@ -17224,7 +17224,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L159",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -17248,7 +17248,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L222",
+      "source_location": "L235",
       "weight": 1.0
     },
     {
@@ -17260,7 +17260,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L223",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -18856,7 +18856,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L147",
+      "source_location": "L160",
       "weight": 1.0
     },
     {
@@ -18869,7 +18869,7 @@
       "context": "import",
       "deferred": true,
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L179",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -38514,7 +38514,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/whatsapp/webhook.server.ts",
-      "source_location": "L215",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -40778,5 +40778,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "0e65c000a114588423bc8b9b21030101677dfa17"
+  "built_at_commit": "90841a85fcc1e4c046a04777455b8a7e4ca61957"
 }
