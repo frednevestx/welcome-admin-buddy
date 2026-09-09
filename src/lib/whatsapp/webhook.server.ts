@@ -105,7 +105,9 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   let effectiveText = text;
   let mediaOrigin: "image" | "audio" | null = null;
 
-  if (!effectiveText && mediaUrl && mediaKind === "image") {
+  // Só imagem vai para o Gemini como mídia, e apenas quando "text" veio
+  // vazio. Áudio NUNCA: a TalkToMe já transcreve e manda em "text".
+  if (!effectiveText && mediaUrl && mediaKind === "image" && (mediaType ?? "").toLowerCase().startsWith("image/")) {
     try {
       const described = await describeImageAsMessage(mediaUrl, mediaType, name);
       if (described) {
@@ -117,27 +119,11 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
     }
   }
 
-  if (!effectiveText && mediaUrl && mediaKind === "audio") {
-    try {
-      const transcribed = await transcribeAudioAsMessage(mediaUrl);
-      if (transcribed) {
-        effectiveText = transcribed;
-        mediaOrigin = "audio";
-      }
-    } catch (err) {
-      console.error("[whatsapp/webhook] falha ao transcrever áudio", err);
-    }
-  }
-
   if (!effectiveText) {
-    // Mídia chegou mas não deu pra entender (ou é um tipo não suportado
-    // ainda, ex.: vídeo/documento): nunca 500, resposta amigável.
     if (mediaUrl) {
       return {
         status: 200,
-        body: {
-          reply: "Não consegui entender essa imagem ou áudio agora — pode descrever em texto ou mandar de novo?",
-        },
+        body: { reply: "Não consegui processar essa mensagem. Pode reenviar em texto?" },
       };
     }
     return {
