@@ -140,7 +140,14 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
         },
       };
     }
-    return { status: 400, body: { error: "mensagem vazia" } };
+    return {
+      status: 400,
+      body: {
+        error: "mensagem vazia",
+        debug_received_body: body,
+        debug_extracted: { phone, text, mediaUrl, mediaKind, mediaType },
+      },
+    };
   }
 
   const key = dedupeKey({ messageId, phone, text: effectiveText });
