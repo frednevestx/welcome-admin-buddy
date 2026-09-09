@@ -89,7 +89,13 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   const { phone, text, messageId, mediaUrl, mediaKind, mediaType, name } = extractMessage(body);
 
   if (!phone) {
-    return { status: 400, body: { error: "telefone não identificado no payload" } };
+    return {
+      status: 400,
+      body: {
+        error: "telefone não identificado no payload",
+        debug_received_body: body,
+      },
+    };
   }
 
   // "text" já é o que a TalkToMe entende como mensagem pronta (texto digitado
