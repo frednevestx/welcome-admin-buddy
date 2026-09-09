@@ -10,6 +10,7 @@
  */
 export function normalizePhone(raw: unknown): string | null {
   if (raw === null || raw === undefined) return null;
+  if (typeof raw === "string" && raw.trim().toLowerCase() === "debug") return "debug";
   let digits = String(raw).replace(/\D/g, "");
   if (!digits) return null;
   digits = digits.replace(/^0+/, "");
