@@ -16,7 +16,7 @@
 
 import { dedupeKey, normalizePhone } from "./phone";
 import { resolveOrOnboard, loadSession, saveSession } from "./onboarding.server";
-import { describeImageAsMessage, transcribeAudioAsMessage } from "./media.server";
+import { describeImageAsMessage } from "./media.server";
 
 export interface WebhookOutcome {
   status: number;
