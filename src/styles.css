@@ -213,8 +213,8 @@
 /* ── Landing pública: paleta Nogueira + Dourado em fundo creme (#F5F1E8) ──
  * Escopo isolado: só afeta a landing, não o app autenticado. */
 :root {
-  --walnut: #241B16;
-  --walnut-soft: #33261F;
+  --walnut: #082A23;
+  --walnut-soft: #123B32;
   --ivory: #F8F4EA;
   --sand: #EAE1D2;
   --whatsapp: #3FAF72;
@@ -223,27 +223,27 @@
 .landing-warm {
   color-scheme: light;
 
-  --background: #F5F1E8;
-  --foreground: #292522;
+  --background: #F7F3EA;
+  --foreground: #333333;
 
-  --card: #FBF8F1;
-  --card-foreground: #292522;
+  --card: #FFFFFF;
+  --card-foreground: #333333;
 
-  --popover: #FBF8F1;
-  --popover-foreground: #292522;
+  --popover: #FFFFFF;
+  --popover-foreground: #333333;
 
-  --primary: #B89452;
-  --primary-foreground: #241B16;
-  --primary-glow: #C9A868;
+  --primary: #0F3D34;
+  --primary-foreground: #F7F3EA;
+  --primary-glow: #16564A;
 
-  --secondary: #EAE1D2;
-  --secondary-foreground: #292522;
+  --secondary: #EDE7D9;
+  --secondary-foreground: #333333;
 
-  --muted: #EAE1D2;
-  --muted-foreground: #6E6156;
+  --muted: #EDE7D9;
+  --muted-foreground: #5C5C5C;
 
-  --accent: #241B16;
-  --accent-foreground: #F8F4EA;
+  --accent: #D4A84E;
+  --accent-foreground: #082A23;
 
   --destructive: #A8452F;
   --destructive-foreground: #F8F4EA;
@@ -254,9 +254,9 @@
   --warning: #B89452;
   --warning-foreground: #241B16;
 
-  --border: rgba(41, 37, 34, 0.12);
-  --input: rgba(41, 37, 34, 0.16);
-  --ring: #B89452;
+  --border: rgba(15, 61, 52, 0.14);
+  --input: rgba(15, 61, 52, 0.18);
+  --ring: #0F3D34;
 
   --shadow-card: 0 1px 2px rgba(36, 27, 22, 0.04), 0 18px 40px -28px rgba(36, 27, 22, 0.22);
   --shadow-soft: 0 1px 2px rgba(36, 27, 22, 0.05), 0 10px 24px -18px rgba(36, 27, 22, 0.18);
@@ -264,26 +264,26 @@
 
 /* Blocos escuros dentro da landing creme */
 .landing-warm .on-walnut {
-  --background: #241B16;
-  --foreground: #F8F4EA;
-  --card: #33261F;
-  --card-foreground: #F8F4EA;
-  --secondary: #33261F;
-  --secondary-foreground: #F8F4EA;
-  --muted: #33261F;
-  --muted-foreground: #C4B6A6;
-  --border: rgba(248, 244, 234, 0.12);
-  --primary: #C9A868;
-  --primary-foreground: #241B16;
+  --background: #082A23;
+  --foreground: #F7F3EA;
+  --card: #0F3D34;
+  --card-foreground: #F7F3EA;
+  --secondary: #0F3D34;
+  --secondary-foreground: #F7F3EA;
+  --muted: #0F3D34;
+  --muted-foreground: #C9C2B4;
+  --border: rgba(247, 243, 234, 0.14);
+  --primary: #D4A84E;
+  --primary-foreground: #082A23;
   background-color: var(--background);
   color: var(--foreground);
 }
 
 /* Utilitários visuais para mockup e chips na landing */
 .gold-badge {
-  background-color: rgba(184, 148, 82, 0.12);
-  color: #B89452;
-  border: 1px solid rgba(184, 148, 82, 0.3);
+  background-color: rgba(212, 168, 78, 0.12);
+  color: #D4A84E;
+  border: 1px solid rgba(212, 168, 78, 0.3);
 }
 
 .green-chip {
