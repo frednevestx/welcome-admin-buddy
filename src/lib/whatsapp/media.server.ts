@@ -106,16 +106,29 @@ Responda APENAS a frase, sem aspas, sem explicação.
  * transcrição dela) vem vazio. Transcreve o áudio como texto simples.
  */
 export async function transcribeAudioAsMessage(audioUrl: string): Promise<string | null> {
-  const file = await fetchAsBase64(audioUrl, "audio/ogg");
-  if (!file) return null;
-
-  const prompt = `
-Transcreva o áudio abaixo, enviado por um usuário no WhatsApp para um assistente financeiro em português do Brasil.
-Responda APENAS com a transcrição em texto corrido, sem comentários, sem aspas.
-Se o áudio estiver inaudível ou vazio, responda exatamente: SEM_AUDIO
-`.trim();
-
-  const result = await callGeminiInline({ mimeType: file.mime, data: file.base64 }, prompt);
-  if (!result || result.includes("SEM_AUDIO")) return null;
-  return result;
+  const apiKey = process.env.DEEPGRAM_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(
+      "https://api.deepgram.com/v1/listen?model=nova-2&language=pt-BR&smart_format=true",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Token ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: audioUrl }),
+      },
+    );
+    const data = (await res.json()) as any;
+    if (!res.ok) {
+      console.error("[whatsapp/media] Deepgram indisponível", res.status, data?.err_msg);
+      return null;
+    }
+    const transcript = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim();
+    return transcript && transcript.length > 0 ? transcript : null;
+  } catch (err) {
+    console.error("[whatsapp/media] falha ao chamar Deepgram", err);
+    return null;
+  }
 }
