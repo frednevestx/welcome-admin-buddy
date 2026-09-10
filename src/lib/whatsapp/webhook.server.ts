@@ -16,7 +16,7 @@
 
 import { dedupeKey, normalizePhone } from "./phone";
 import { resolveOrOnboard, loadSession, saveSession } from "./onboarding.server";
-import { describeImageAsMessage } from "./media.server";
+import { describeImageAsMessage, transcribeAudioAsMessage } from "./media.server";
 
 export interface WebhookOutcome {
   status: number;
@@ -116,6 +116,18 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
       }
     } catch (err) {
       console.error("[whatsapp/webhook] falha ao interpretar imagem", err);
+    }
+  }
+
+  if (!effectiveText && mediaUrl && mediaKind === "audio") {
+    try {
+      const transcribed = await transcribeAudioAsMessage(mediaUrl);
+      if (transcribed) {
+        effectiveText = transcribed;
+        mediaOrigin = "audio";
+      }
+    } catch (err) {
+      console.error("[whatsapp/webhook] falha ao transcrever áudio", err);
     }
   }
 
