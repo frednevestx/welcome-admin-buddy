@@ -9,6 +9,7 @@ import {
   Users, Receipt, Wallet, Truck, ShoppingBasket, Percent, Repeat, CalendarClock,
   LineChart, LayoutDashboard, HelpCircle, Instagram, Camera, Send, Pencil,
   MessageSquareText, Sparkles, ShieldCheck, ArrowDownRight, Bell, AlertTriangle,
+  Mic, Boxes, ListChecks, Building2,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/whatsapp-icon";
 
@@ -22,14 +23,14 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "LUUD — Organize as finanças do seu negócio pelo WhatsApp" },
-      { name: "description", content: "Sem planilhas. Sem lançamentos complicados. Basta conversar: a IA da LUUD entende suas mensagens sobre recebimentos, clientes, despesas e caixa. Grátis para começar." },
-      { property: "og:title", content: "LUUD — Sem planilhas. Sem lançamentos complicados. Basta conversar." },
-      { property: "og:description", content: "Você cuida do seu negócio. A IA cuida dos seus números. Comece grátis pelo WhatsApp, sem mensalidade." },
+      { title: "LUUD — Sua empresa ganhou uma secretária inteligente" },
+      { name: "description", content: "Você conversa. A LUUD organiza. Sua secretária inteligente anota, lembra e responde pelo WhatsApp, 24 horas por dia." },
+      { property: "og:title", content: "LUUD — Sua empresa ganhou uma secretária inteligente" },
+      { property: "og:description", content: "Ela anota, organiza, lembra e responde pelo WhatsApp que você já usa. Você fala. Ela trabalha." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "LUUD — Sem planilhas. Basta conversar." },
-      { name: "twitter:description", content: "Organize recebimentos, clientes, despesas e fluxo de caixa conversando pelo WhatsApp. Grátis para começar." },
+      { name: "twitter:title", content: "LUUD — Sua empresa ganhou uma secretária inteligente" },
+      { name: "twitter:description", content: "Você conversa. A LUUD organiza sua empresa pelo WhatsApp." },
     ],
   }),
   component: Landing,
@@ -54,8 +55,8 @@ function Landing() {
         <Hero />
         <ClarityStrip />
         <TransformStrip />
-        <Routine />
         <ConversationFlow />
+        <Routine />
         <ContextSection />
         <Analyses />
         <DashboardSection />
@@ -172,7 +173,7 @@ function DemoTag({ className }: { className?: string }) {
 
 const NAV = [
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "O que a IA entende", href: "#contexto" },
+  { label: "O que perguntar", href: "#contexto" },
   { label: "Dúvidas", href: "#faq" },
 ];
 
@@ -294,24 +295,24 @@ function Hero() {
         <Reveal>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-whatsapp" />
-            IA financeira que funciona dentro do WhatsApp
+            A nova forma de organizar sua empresa
           </span>
           <h1 className="mt-6 font-display text-[2.1rem] leading-[1.1] font-bold text-balance md:text-[3.4rem]">
-            Sem planilhas. Sem lançamentos complicados. <span className="text-primary">Basta conversar.</span>
+            Sua empresa ganhou uma <span className="text-primary">secretária inteligente.</span>
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Envie uma mensagem pelo WhatsApp sobre uma venda, recebimento, despesa ou compra. A IA entende o contexto,
-            organiza as informações e ajuda você a enxergar melhor o dinheiro do seu negócio.
+            Ela anota, organiza, lembra e responde — 24 horas por dia, direto no WhatsApp que você já usa. E o mais
+            interessante: você nem percebe que está usando um sistema.
           </p>
           <p className="mt-4 font-display text-base font-semibold text-foreground md:text-lg">
-            Você cuida do seu negócio. A IA cuida dos seus números.
+            Você fala. <span className="text-accent">Ela trabalha.</span>
           </p>
           <div className="mt-8 flex flex-col items-start gap-3">
             <WhatsAppCTA />
             <FreeNote />
           </div>
           <ul className="mt-8 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-            {["Nenhum sistema novo para aprender", "Sem formulário longo para começar", "Você confirma antes de registrar", "Correção por mensagem, na hora"].map((t) => (
+            {["Anota o que acontece", "Organiza as informações", "Lembra o que não pode atrasar", "Responde quando você pergunta"].map((t) => (
               <li key={t} className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 {t}
