@@ -119,6 +119,18 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
     }
   }
 
+  if (!effectiveText && mediaUrl && mediaKind === "audio") {
+    try {
+      const transcribed = await transcribeAudioAsMessage(mediaUrl);
+      if (transcribed) {
+        effectiveText = transcribed;
+        mediaOrigin = "audio";
+      }
+    } catch (err) {
+      console.error("[whatsapp/webhook] falha ao transcrever áudio", err);
+    }
+  }
+
   if (!effectiveText) {
     if (mediaUrl) {
       return {
