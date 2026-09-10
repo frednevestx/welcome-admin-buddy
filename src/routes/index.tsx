@@ -9,6 +9,7 @@ import {
   Users, Receipt, Wallet, Truck, ShoppingBasket, Percent, Repeat, CalendarClock,
   LineChart, LayoutDashboard, HelpCircle, Instagram, Camera, Send, Pencil,
   MessageSquareText, Sparkles, ShieldCheck, ArrowDownRight, Bell, AlertTriangle,
+  Mic, Boxes, ListChecks, Building2,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/whatsapp-icon";
 
@@ -22,14 +23,14 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "LUUD — Organize as finanças do seu negócio pelo WhatsApp" },
-      { name: "description", content: "Sem planilhas. Sem lançamentos complicados. Basta conversar: a IA da LUUD entende suas mensagens sobre recebimentos, clientes, despesas e caixa. Grátis para começar." },
-      { property: "og:title", content: "LUUD — Sem planilhas. Sem lançamentos complicados. Basta conversar." },
-      { property: "og:description", content: "Você cuida do seu negócio. A IA cuida dos seus números. Comece grátis pelo WhatsApp, sem mensalidade." },
+      { title: "LUUD — Sua empresa ganhou uma secretária inteligente" },
+      { name: "description", content: "Você conversa. A LUUD organiza. Sua secretária inteligente anota, lembra e responde pelo WhatsApp, 24 horas por dia." },
+      { property: "og:title", content: "LUUD — Sua empresa ganhou uma secretária inteligente" },
+      { property: "og:description", content: "Ela anota, organiza, lembra e responde pelo WhatsApp que você já usa. Você fala. Ela trabalha." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "LUUD — Sem planilhas. Basta conversar." },
-      { name: "twitter:description", content: "Organize recebimentos, clientes, despesas e fluxo de caixa conversando pelo WhatsApp. Grátis para começar." },
+      { name: "twitter:title", content: "LUUD — Sua empresa ganhou uma secretária inteligente" },
+      { name: "twitter:description", content: "Você conversa. A LUUD organiza sua empresa pelo WhatsApp." },
     ],
   }),
   component: Landing,
@@ -54,8 +55,8 @@ function Landing() {
         <Hero />
         <ClarityStrip />
         <TransformStrip />
-        <Routine />
         <ConversationFlow />
+        <Routine />
         <ContextSection />
         <Analyses />
         <DashboardSection />
@@ -172,7 +173,7 @@ function DemoTag({ className }: { className?: string }) {
 
 const NAV = [
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "O que a IA entende", href: "#contexto" },
+  { label: "O que perguntar", href: "#contexto" },
   { label: "Dúvidas", href: "#faq" },
 ];
 
@@ -294,24 +295,24 @@ function Hero() {
         <Reveal>
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-xs font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-whatsapp" />
-            IA financeira que funciona dentro do WhatsApp
+            A nova forma de organizar sua empresa
           </span>
           <h1 className="mt-6 font-display text-[2.1rem] leading-[1.1] font-bold text-balance md:text-[3.4rem]">
-            Sem planilhas. Sem lançamentos complicados. <span className="text-primary">Basta conversar.</span>
+            Sua empresa ganhou uma <span className="text-primary">secretária inteligente.</span>
           </h1>
           <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Envie uma mensagem pelo WhatsApp sobre uma venda, recebimento, despesa ou compra. A IA entende o contexto,
-            organiza as informações e ajuda você a enxergar melhor o dinheiro do seu negócio.
+            Ela anota, organiza, lembra e responde — 24 horas por dia, direto no WhatsApp que você já usa. E o mais
+            interessante: você nem percebe que está usando um sistema.
           </p>
           <p className="mt-4 font-display text-base font-semibold text-foreground md:text-lg">
-            Você cuida do seu negócio. A IA cuida dos seus números.
+            Você fala. <span className="text-accent">Ela trabalha.</span>
           </p>
           <div className="mt-8 flex flex-col items-start gap-3">
             <WhatsAppCTA />
             <FreeNote />
           </div>
           <ul className="mt-8 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-            {["Nenhum sistema novo para aprender", "Sem formulário longo para começar", "Você confirma antes de registrar", "Correção por mensagem, na hora"].map((t) => (
+            {["Anota o que acontece", "Organiza as informações", "Lembra o que não pode atrasar", "Responde quando você pergunta"].map((t) => (
               <li key={t} className="flex items-start gap-2">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 {t}
@@ -383,32 +384,38 @@ function MiniPanel({ className }: { className?: string }) {
 /* ───────────────── NARRATIVA DE TRANSFORMAÇÃO ───────────────── */
 
 const TRANSFORM = [
-  { icon: MessageSquareText, title: "Mensagem", body: "Você conta o que aconteceu, do seu jeito." },
-  { icon: Sparkles, title: "Interpretação", body: "A IA identifica valor, tipo, cliente ou fornecedor." },
-  { icon: ShieldCheck, title: "Confirmação", body: "Ela confirma ou pergunta antes de registrar." },
-  { icon: LayoutDashboard, title: "Organização", body: "O lançamento aparece organizado no painel." },
+  { icon: Wallet, title: "Financeiro", example: "“Recebi 2 mil do cliente Marcos.”", body: "A LUUD registra a entrada e organiza cliente, valor e data." },
+  { icon: Boxes, title: "Estoque", example: "“Entraram 20 caixas do produto A.”", body: "A LUUD anota a movimentação para você consultar depois." },
+  { icon: ListChecks, title: "Tarefas", example: "“Me lembre de ligar para a Ana amanhã.”", body: "A LUUD guarda a tarefa e ajuda você a não perder o prazo." },
+  { icon: ShoppingBasket, title: "Compras", example: "“Comprei material por 380.”", body: "A LUUD organiza a compra e pergunta o que estiver faltando." },
+  { icon: MessageCircle, title: "Perguntas", example: "“Quanto eu gastei esta semana?”", body: "A LUUD busca o que foi registrado e responde com clareza." },
 ];
 
 function TransformStrip() {
   return (
     <Section className="pt-14 pb-14 md:pt-16 md:pb-16">
+      <SectionTitle
+        eyebrow="No dia a dia"
+        title="Como a LUUD ajuda você no dia a dia"
+        sub="Fale como falaria com uma pessoa da sua equipe. A LUUD entende, organiza e responde."
+      />
       <div className="relative">
         <span
           aria-hidden="true"
           className="absolute left-0 right-0 top-9 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block"
         />
-        <ol className="relative grid gap-6 md:grid-cols-4">
+        <ol className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
           {TRANSFORM.map((t, i) => (
             <Reveal key={t.title} delay={i * 90}>
-              <li className="flex gap-4 md:flex-col md:gap-3">
+              <li className="flex h-full gap-4 rounded-2xl border border-border bg-card p-5 md:flex-col md:gap-3">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]">
                   <t.icon className="h-4.5 w-4.5 text-primary" />
                 </span>
                 <div>
                   <h3 className="font-display text-base font-semibold text-foreground">
-                    <span className="mr-2 text-xs font-bold text-primary">0{i + 1}</span>
                     {t.title}
                   </h3>
+                  <p className="mt-2 text-sm font-medium text-foreground">{t.example}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t.body}</p>
                 </div>
               </li>
@@ -424,9 +431,9 @@ function TransformStrip() {
 
 function ClarityStrip() {
   const items = [
-    { icon: MessageCircle, text: "Converse pelo WhatsApp." },
-    { icon: Repeat, text: "Deixe a IA organizar." },
-    { icon: LineChart, text: "Veja o negócio com mais clareza." },
+    { icon: MessageCircle, text: "Você conversa." },
+    { icon: Sparkles, text: "A LUUD organiza." },
+    { icon: CheckCircle2, text: "Sua empresa ganha clareza." },
   ];
   return (
     <div className="on-walnut px-5 py-10 md:py-12">
@@ -447,30 +454,23 @@ function ClarityStrip() {
 /* ───────────────── ROTINA ───────────────── */
 
 const ROUTINE = [
-  { icon: Wallet, title: "Recebimentos", body: "Registre o que entrou e de qual cliente, na hora em que acontece.", result: "O dinheiro que entra deixa de depender da sua memória." },
-  { icon: Users, title: "Clientes", body: "Acompanhe quem comprou, quem pagou e quem ainda precisa pagar.", result: "Você cobra no tempo certo, sem procurar em vários lugares." },
-  { icon: Receipt, title: "Despesas", body: "Registre custos por mensagem, sem preencher formulários.", result: "As saídas ficam visíveis antes de virarem surpresa." },
-  { icon: CalendarClock, title: "Fluxo de caixa", body: "Entenda o que entrou, o que saiu e o que está por vir.", result: "Decisões tomadas com o caixa à vista." },
-];
-
-const ROUTINE_EXTRA = [
-  { icon: Truck, label: "Fornecedores" },
-  { icon: ShoppingBasket, label: "Compras" },
-  { icon: Percent, label: "Margem" },
-  { icon: Receipt, label: "Custos operacionais" },
-  { icon: Wallet, label: "Caixa disponível" },
-  { icon: Repeat, label: "Recorrências" },
+  { icon: Wallet, title: "Financeiro", body: "Registra entradas e saídas, acompanha o caixa e organiza clientes e fornecedores.", result: "Seus números ficam prontos para consultar." },
+  { icon: Boxes, title: "Estoque", body: "Anota entradas, saídas e informações dos produtos que você acompanha.", result: "Menos informação solta durante a operação." },
+  { icon: ListChecks, title: "Tarefas", body: "Guarda compromissos, pendências e coisas que precisam ser feitas.", result: "A rotina deixa de depender só da memória." },
+  { icon: CalendarClock, title: "Pagamentos", body: "Organiza contas e datas importantes que não podem passar despercebidas.", result: "Mais clareza sobre o que vence e quando." },
+  { icon: ShoppingBasket, title: "Compras", body: "Registra materiais, mercadorias, valores e fornecedores por conversa.", result: "Cada compra encontra seu lugar." },
+  { icon: Building2, title: "Informações da empresa", body: "Mantém dados importantes acessíveis quando você precisar perguntar.", result: "A resposta certa fica mais fácil de encontrar." },
 ];
 
 function Routine() {
   return (
     <Section id="rotina">
       <SectionTitle
-        eyebrow="Feita para a rotina do seu negócio"
-        title="O seu dia continua igual. Os seus números ficam organizados."
-        sub="Para lojas, negócios locais e prestadores de serviço que acompanham o dinheiro todos os dias."
+        eyebrow="Uma ajuda que acompanha o negócio"
+        title="Uma secretária para várias áreas da empresa"
+        sub="Da rotina financeira às tarefas do dia, a LUUD reúne informações que antes ficavam espalhadas."
       />
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {ROUTINE.map((r, i) => (
           <Reveal key={r.title} delay={i * 70}>
             <article className="h-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]">
@@ -484,16 +484,6 @@ function Routine() {
           </Reveal>
         ))}
       </div>
-      <Reveal delay={120} className="mt-8 rounded-2xl border border-border bg-secondary/50 p-6">
-        <p className="text-sm font-semibold text-foreground">Também para quem compra para revender ou produzir:</p>
-        <div className="mt-4 flex flex-wrap gap-2.5">
-          {ROUTINE_EXTRA.map((e) => (
-            <span key={e.label} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-sm text-foreground">
-              <e.icon className="h-4 w-4 text-primary" /> {e.label}
-            </span>
-          ))}
-        </div>
-      </Reveal>
     </Section>
   );
 }
