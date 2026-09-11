@@ -334,29 +334,6 @@ export async function recordEvent(
   });
 }
 
-/* ============================ LEMBRETES ============================ */
-
-export async function dueReminders(db: any, restaurantId: string, contactId: string | null) {
-  let q = db
-    .from("reminders")
-    .select("id, description, due_date, due_time, contact_id")
-    .eq("restaurant_id", restaurantId)
-    .eq("status", "pending")
-    .lte("due_date", iso(new Date()))
-    .order("due_date", { ascending: true });
-  if (contactId) q = q.or(`contact_id.eq.${contactId},contact_id.is.null`);
-  const { data } = await q;
-  return data ?? [];
-}
-
-export async function markRemindersSent(db: any, ids: string[]) {
-  if (!ids.length) return;
-  await db
-    .from("reminders")
-    .update({ status: "sent", sent_at: new Date().toISOString() })
-    .in("id", ids);
-}
-
 /* ====================== IA: só escreve o texto ====================== */
 
 const WRITER_SYSTEM = `

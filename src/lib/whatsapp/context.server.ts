@@ -29,7 +29,19 @@ export interface MovementChangesCtx {
 
 export type PendingOffer =
   | { kind: "daily_summary" }
-  | { kind: "create_reminder"; description: string; due_date: string }
+  | {
+      kind: "create_reminder";
+      description: string;
+      due_date: string;
+      reminder_kind: "compromisso" | "tarefa" | "acompanhamento";
+    }
+  | {
+      kind: "create_payable";
+      description: string;
+      amount: number;
+      due_date: string;
+      supplier_id: string | null;
+    }
   | { kind: "analysis"; subject: string }
   | { kind: "confirm_update"; movement_id: string; label: string; changes: MovementChangesCtx }
   | { kind: "confirm_delete"; movement_id: string; label: string }
@@ -70,6 +82,120 @@ export interface ConversationContext {
 }
 
 export const CONTEXT_TTL_MS = 30 * 60 * 1000;
+
+export interface DueConversationItem {
+  id: string;
+  source: "reminder" | "payable";
+  description: string;
+  due_date: string;
+  amount: number | null;
+}
+
+const isoToday = () => new Date().toISOString().slice(0, 10);
+
+/** Itens vencidos que ainda não foram mencionados hoje nesta conversa. */
+export async function loadDueConversationItems(
+  db: any,
+  restaurantId: string,
+  contactId: string | null,
+  limit = 3,
+): Promise<DueConversationItem[]> {
+  const today = isoToday();
+  const dayStart = `${today}T00:00:00.000Z`;
+
+  let remindersQuery = db
+    .from("reminders")
+    .select("id, description, due_date")
+    .eq("restaurant_id", restaurantId)
+    .eq("status", "pending")
+    .lte("due_date", today)
+    .or(`sent_at.is.null,sent_at.lt.${dayStart}`)
+    .order("due_date", { ascending: true });
+  if (contactId) remindersQuery = remindersQuery.or(`contact_id.eq.${contactId},contact_id.is.null`);
+
+  const [{ data: reminders }, { data: payables }] = await Promise.all([
+    remindersQuery,
+    db
+      .from("payables")
+      .select("id, description, amount, due_date")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "pending")
+      .lte("due_date", today)
+      .order("due_date", { ascending: true }),
+  ]);
+
+  const payableRows = payables ?? [];
+  const payableKeys = payableRows.map((row: any) => `payable_due:${row.id}:${today}`);
+  let mentioned = new Set<string>();
+  if (payableKeys.length > 0) {
+    const { data: events } = await db
+      .from("system_events")
+      .select("dedupe_key")
+      .eq("restaurant_id", restaurantId)
+      .in("dedupe_key", payableKeys)
+      .gte("sent_at", dayStart);
+    mentioned = new Set((events ?? []).map((event: any) => event.dedupe_key));
+  }
+
+  return [
+    ...(reminders ?? []).map((row: any) => ({
+      id: row.id,
+      source: "reminder" as const,
+      description: row.description,
+      due_date: row.due_date,
+      amount: null,
+    })),
+    ...payableRows
+      .filter((row: any) => !mentioned.has(`payable_due:${row.id}:${today}`))
+      .map((row: any) => ({
+        id: row.id,
+        source: "payable" as const,
+        description: row.description,
+        due_date: row.due_date,
+        amount: Number(row.amount),
+      })),
+  ]
+    .sort((a, b) => a.due_date.localeCompare(b.due_date))
+    .slice(0, limit);
+}
+
+/** Registra a menção sem concluir nem alterar o status do item. */
+export async function markDueConversationItemsMentioned(
+  db: any,
+  restaurantId: string,
+  contactId: string | null,
+  items: DueConversationItem[],
+) {
+  if (items.length === 0) return;
+  const mentionedAt = new Date().toISOString();
+  const reminderIds = items.filter((item) => item.source === "reminder").map((item) => item.id);
+  if (reminderIds.length > 0) {
+    await db.from("reminders").update({ sent_at: mentionedAt }).in("id", reminderIds).eq("restaurant_id", restaurantId);
+  }
+
+  const today = isoToday();
+  const payableItems = items.filter((item) => item.source === "payable");
+  if (payableItems.length > 0) {
+    await db.from("system_events").insert(
+      payableItems.map((item) => ({
+        restaurant_id: restaurantId,
+        contact_id: contactId,
+        kind: "reminder",
+        title: "Conta vencida mencionada",
+        body: item.description,
+        reason: `conta vencida em ${item.due_date}`,
+        severity: "warning",
+        impact_amount: item.amount,
+        dedupe_key: `payable_due:${item.id}:${today}`,
+        reference_value: item.amount,
+        status: "shown",
+        sent_at: mentionedAt,
+        payload: { payable_id: item.id, due_date: item.due_date },
+        reference_date: today,
+      })),
+    );
+  }
+}
 
 export async function loadContext(
   db: any,

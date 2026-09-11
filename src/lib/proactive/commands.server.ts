@@ -12,8 +12,6 @@ import {
   buildDailySummaryFacts,
   detectFinancialAlerts,
   detectPurchaseSuggestions,
-  dueReminders,
-  markRemindersSent,
   recordEvent,
   shouldSend,
   writeMessage,
@@ -23,7 +21,6 @@ import {
 export const SYSTEM_COMMANDS = [
   "__SYSTEM_DAILY_SUMMARY__",
   "__SYSTEM_CHECK_ALERTS__",
-  "__SYSTEM_CHECK_REMINDERS__",
   "__SYSTEM_CHECK_SUGGESTIONS__",
 ] as const;
 
@@ -81,38 +78,6 @@ export async function handleSystemCommand(
       `Pelo seu histórico, você costuma comprar ${ev.facts["categoria"]} a cada ${ev.facts["intervalo_medio_dias"]} dias. Quer que eu lembre você de verificar?`,
     );
     await recordEvent(db, restaurantId, contactId, ev, reply, null);
-    return { action: "send", type: "suggestion", reply };
-  }
-
-  if (command === "__SYSTEM_CHECK_REMINDERS__") {
-    const reminders = await dueReminders(db, restaurantId, contactId);
-    if (!reminders.length) return NONE;
-
-    const lines = reminders.map((r: any) => `- ${r.description} (${r.due_date}${r.due_time ? ` ${r.due_time}` : ""})`);
-    // Lembrete não precisa de interpretação: texto determinístico, zero risco de a IA inventar item.
-    const reply =
-      reminders.length === 1
-        ? `Lembrete de hoje: ${reminders[0].description}. Já resolveu isso?`
-        : `Lembretes de hoje:\n${lines.join("\n")}\n\nJá resolveu algum deles?`;
-
-    await markRemindersSent(db, reminders.map((r: any) => r.id));
-    await recordEvent(
-      db,
-      restaurantId,
-      contactId,
-      {
-        kind: "reminder",
-        dedupeKey: `reminders:${new Date().toISOString().slice(0, 10)}`,
-        reason: `${reminders.length} lembrete(s) vencendo`,
-        title: "Lembretes",
-        referenceValue: reminders.length,
-        impactAmount: null,
-        severity: "info",
-        facts: { itens: lines },
-      },
-      reply,
-      null,
-    );
     return { action: "send", type: "suggestion", reply };
   }
 
