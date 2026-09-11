@@ -592,35 +592,38 @@ function ContextSection() {
 /* ───────────────── ANÁLISES ───────────────── */
 
 const ANALYSES = [
-  "As despesas com fornecedores aumentaram neste mês.",
-  "Suas vendas cresceram, mas a margem diminuiu.",
-  "O fluxo de caixa previsto exige atenção nas próximas semanas.",
-  "Você pode revisar estes custos recorrentes.",
+  "Recebi dois mil reais do cliente Marcos hoje.",
+  "Comprei material por trezentos e oitenta reais no Pix.",
+  "Me lembre de pagar o aluguel no dia cinco.",
+  "Quanto eu gastei com fornecedores este mês?",
 ];
 
 function Analyses() {
   return (
     <Section className="bg-secondary/40">
       <SectionTitle
-        eyebrow="Análises"
-        title="Mais do que registrar: entenda o que está acontecendo."
-        sub="A IA compara períodos e aponta o que mudou. A decisão continua sendo sua."
+        eyebrow="Texto ou áudio"
+        title="Sem digitar, se preferir"
+        sub="Mande um áudio como se estivesse falando com sua secretária. A LUUD entende a mensagem e continua a conversa."
       />
       <div className="grid gap-4 md:grid-cols-2">
         {ANALYSES.map((a, i) => (
           <Reveal key={a} delay={i * 70}>
             <div className="flex h-full items-start gap-3 rounded-2xl border border-border bg-card p-5">
-              <ArrowUpRight className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
-              <p className="text-[0.95rem] leading-relaxed text-foreground">{a}</p>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Mic className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-[0.95rem] leading-relaxed text-foreground">“{a}”</p>
+                <p className="mt-1 text-xs text-muted-foreground">Mensagem de áudio</p>
+              </div>
             </div>
           </Reveal>
         ))}
       </div>
-      <Reveal delay={120} className="mt-8 rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          A LUUD apoia a sua decisão: ela mostra o que os números indicam, com a fonte do cálculo. Ela não garante lucro,
-          não elimina riscos e não substitui o seu contador.
-        </p>
+      <Reveal delay={120} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <DemoTag />
+        <p className="text-sm text-muted-foreground">Você pode alternar entre texto e áudio na mesma conversa.</p>
       </Reveal>
     </Section>
   );
@@ -870,10 +873,10 @@ function FinalCTA() {
     <div className="on-walnut px-5 py-20 text-center md:py-28">
       <Reveal className="mx-auto max-w-3xl">
         <h2 className="font-display text-[1.9rem] font-bold leading-tight text-balance md:text-[3rem]">
-          Você não precisa aprender mais um sistema. <span className="text-primary">Basta conversar.</span>
+          A sua próxima contratação pode ser uma IA. <span className="text-primary">Mas ela vai parecer uma secretária.</span>
         </h2>
         <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">
-          Comece gratuitamente pelo WhatsApp e organize melhor os números do seu negócio.
+          Você fala. A LUUD organiza sua empresa, direto no WhatsApp que você já usa.
         </p>
         <div className="mt-8 flex flex-col items-center gap-3">
           <WhatsAppCTA />
@@ -881,6 +884,25 @@ function FinalCTA() {
         </div>
       </Reveal>
     </div>
+  );
+}
+
+function AssistanceManifesto() {
+  return (
+    <Section className="bg-secondary/40">
+      <Reveal className="mx-auto max-w-3xl text-center">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <MessageSquareText className="h-5 w-5" />
+        </span>
+        <h2 className="mt-6 font-display text-[1.8rem] font-bold leading-tight text-balance md:text-[2.6rem]">
+          O empresário não precisa de mais um sistema. <span className="text-primary">Precisa de ajuda.</span>
+        </h2>
+        <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">
+          Informações importantes se perdem em cadernos, planilhas e mensagens espalhadas. A LUUD transforma cada conversa
+          em organização para a empresa, sem exigir que você mude a sua rotina.
+        </p>
+      </Reveal>
+    </Section>
   );
 }
 
@@ -913,12 +935,12 @@ function Footer() {
             <Logo />
           </span>
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-            IA financeira que organiza as finanças do seu negócio por conversas no WhatsApp.
+            Sua secretária inteligente, disponível pelo WhatsApp.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
           <a href="#como-funciona" className="transition-colors hover:text-foreground">Como funciona</a>
-          <a href="#contexto" className="transition-colors hover:text-foreground">O que a IA entende</a>
+          <a href="#contexto" className="transition-colors hover:text-foreground">O que perguntar</a>
           <a href="#faq" className="transition-colors hover:text-foreground">Dúvidas</a>
           <Link to="/auth" className="transition-colors hover:text-foreground">Entrar no painel</Link>
         </div>
