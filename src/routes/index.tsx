@@ -6,9 +6,9 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import {
   MessageCircle, CheckCircle2, ArrowRight, ArrowUpRight, Check, CheckCheck, Heart,
-  Users, Receipt, Wallet, Truck, ShoppingBasket, Percent, Repeat, CalendarClock,
+  Receipt, Wallet, ShoppingBasket, CalendarClock,
   LineChart, LayoutDashboard, HelpCircle, Instagram, Camera, Send, Pencil,
-  MessageSquareText, Sparkles, ShieldCheck, ArrowDownRight, Bell, AlertTriangle,
+  MessageSquareText, Sparkles, ArrowDownRight,
   Mic, Boxes, ListChecks, Building2,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/whatsapp-icon";
