@@ -776,6 +776,77 @@ export type Database = {
           },
         ]
       }
+      payables: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string
+          due_date: string
+          id: string
+          paid_movement_id: string | null
+          restaurant_id: string
+          status: string
+          supplier_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          due_date: string
+          id?: string
+          paid_movement_id?: string | null
+          restaurant_id: string
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          due_date?: string
+          id?: string
+          paid_movement_id?: string | null
+          restaurant_id?: string
+          status?: string
+          supplier_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payables_paid_movement_id_fkey"
+            columns: ["paid_movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_paid_movement_id_fkey"
+            columns: ["paid_movement_id"]
+            isOneToOne: false
+            referencedRelation: "movements_current"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payables_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos_manuais: {
         Row: {
           cidade: string | null
@@ -953,6 +1024,7 @@ export type Database = {
           due_date: string
           due_time: string | null
           id: string
+          kind: string
           restaurant_id: string
           sent_at: string | null
           status: string
@@ -965,6 +1037,7 @@ export type Database = {
           due_date: string
           due_time?: string | null
           id?: string
+          kind?: string
           restaurant_id: string
           sent_at?: string | null
           status?: string
@@ -977,6 +1050,7 @@ export type Database = {
           due_date?: string
           due_time?: string | null
           id?: string
+          kind?: string
           restaurant_id?: string
           sent_at?: string | null
           status?: string
