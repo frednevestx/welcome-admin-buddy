@@ -64,6 +64,7 @@ function Landing() {
         <FreeSection />
         <SocialProof />
         <FAQ />
+        <AssistanceManifesto />
         <FinalCTA />
       </main>
       <Footer />
@@ -286,7 +287,7 @@ function Hero() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           backgroundImage:
-            "radial-gradient(rgba(36,27,22,0.10) 1px, transparent 1px), radial-gradient(70% 55% at 70% 10%, rgba(184,148,82,0.16), transparent 70%), radial-gradient(50% 40% at 10% 90%, rgba(63,175,114,0.10), transparent 70%)",
+            "radial-gradient(rgba(15,61,52,0.10) 1px, transparent 1px), radial-gradient(70% 55% at 70% 10%, rgba(15,61,52,0.14), transparent 70%), radial-gradient(50% 40% at 10% 90%, rgba(212,168,78,0.09), transparent 70%)",
           backgroundSize: "24px 24px, 100% 100%, 100% 100%",
           maskImage: "radial-gradient(ellipse 80% 70% at 55% 35%, black 35%, transparent 85%)",
         }}
@@ -500,11 +501,12 @@ const FLOW_CHAT: Bubble[] = [
 ];
 
 const FLOW_STEPS = [
-  { n: "01", title: "Você manda a mensagem", body: "Do jeito que você falaria com alguém da sua equipe. Sem formato, sem código, sem campo obrigatório." },
-  { n: "02", title: "A IA interpreta a intenção", body: "Ela identifica se é entrada, saída, compra, cliente, fornecedor ou uma pergunta sobre o caixa." },
-  { n: "03", title: "Pergunta quando falta informação", body: "Se algo estiver incompleto, ela pergunta antes de registrar. Nada é inventado." },
-  { n: "04", title: "Você confirma ou corrige", body: "Uma mensagem basta para ajustar valor, categoria ou data. O controle continua com você." },
-  { n: "05", title: "A informação aparece organizada", body: "O lançamento entra no painel, dentro do período e da categoria certos." },
+  { n: "01", title: "Mensagem", body: "Você conta o que aconteceu do jeito que falaria com alguém da sua equipe." },
+  { n: "02", title: "Entendimento", body: "A LUUD identifica a intenção e os detalhes importantes da conversa." },
+  { n: "03", title: "Organização", body: "Ela encontra o lugar certo para cada informação dentro da sua empresa." },
+  { n: "04", title: "Pergunta o que falta", body: "Se algo estiver incompleto, ela pergunta antes de continuar. Nada é inventado." },
+  { n: "05", title: "Atualização", body: "Você confirma ou corrige por mensagem, e a LUUD atualiza a informação." },
+  { n: "06", title: "Resultado", body: "Tudo fica organizado e pronto para aparecer quando você perguntar." },
 ];
 
 function ConversationFlow() {
@@ -512,9 +514,9 @@ function ConversationFlow() {
     <div className="on-walnut px-5 py-20 md:py-28">
       <div className="max-w-6xl mx-auto">
         <SectionTitle
-          eyebrow="Demonstração"
-          title="Veja como uma conversa vira organização financeira."
-          sub="Confirmação, correção e informação incompleta fazem parte do fluxo — a IA é útil e transparente, não infalível."
+          eyebrow="Você fala. Ela trabalha."
+          title="Tudo começa com uma conversa"
+          sub="Uma mensagem vira entendimento, organização e resultado — com perguntas sempre que faltar informação."
         />
         <div className="grid items-start gap-12 lg:grid-cols-[0.95fr_1.05fr]">
           <Reveal>
@@ -543,21 +545,21 @@ function ConversationFlow() {
 /* ───────────────── A IA ENTENDE O CONTEXTO ───────────────── */
 
 const CONTEXT_CASES = [
-  { msg: "Vendi 240 no cartão hoje", read: "Receita, forma de pagamento cartão, data de hoje", action: "Entrada registrada no período atual." },
-  { msg: "Paguei o Silva, 1.380", read: "Saída com fornecedor já conhecido pelo histórico", action: "Despesa vinculada ao fornecedor Silva." },
-  { msg: "Aluguel todo dia 5, 2.100", read: "Custo recorrente mensal", action: "Recorrência criada para os próximos meses." },
-  { msg: "Vou comprar uma máquina no mês que vem", read: "Intenção futura, não uma despesa realizada", action: "Acompanhado como planejamento, sem lançar gasto." },
-  { msg: "Recebi da Ana mas não sei de qual serviço", read: "Informação incompleta", action: "A IA pergunta antes de registrar a categoria." },
-  { msg: "Como está o caixa esta semana?", read: "Pergunta sobre fluxo de caixa", action: "Resposta calculada sobre as movimentações registradas." },
+  { msg: "Quanto eu vendi esta semana?", read: "Busca as vendas registradas no período", action: "Mostra o total e ajuda você a entender o resultado." },
+  { msg: "Quem ainda precisa me pagar?", read: "Consulta recebimentos pendentes por cliente", action: "Organiza a resposta para facilitar seu acompanhamento." },
+  { msg: "Quais contas vencem nos próximos dias?", read: "Procura pagamentos e datas já informados", action: "Apresenta as próximas pendências em ordem." },
+  { msg: "Quanto gastei com fornecedores este mês?", read: "Reúne compras e despesas da categoria", action: "Soma os valores registrados no período." },
+  { msg: "O que eu preciso fazer amanhã?", read: "Consulta tarefas e lembretes da rotina", action: "Responde com o que está organizado para o dia." },
+  { msg: "Como está o caixa da empresa?", read: "Cruza entradas e saídas registradas", action: "Mostra uma visão clara do momento atual." },
 ];
 
 function ContextSection() {
   return (
     <Section id="contexto">
       <SectionTitle
-        eyebrow="O que a IA entende"
-        title="A IA entende o contexto, não só palavras."
-        sub="Receitas, despesas, clientes, fornecedores, categorias, forma de pagamento, recorrências, intenções futuras e perguntas sobre o caixa."
+        eyebrow="Pergunte quando precisar"
+        title="O que você pode perguntar para a LUUD"
+        sub="A secretária inteligente consulta o que você já contou e transforma informações espalhadas em respostas úteis."
       />
       <div className="grid gap-4 md:grid-cols-2">
         {CONTEXT_CASES.map((c, i) => (
@@ -580,7 +582,7 @@ function ContextSection() {
       </div>
       <Reveal delay={100} className="mt-8 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <Pencil className="h-4 w-4 text-primary" />
-        Quando a IA não tem certeza, ela pergunta. Quando você discorda, uma mensagem corrige.
+        Quando a LUUD não tem certeza, ela pergunta. Quando você discorda, uma mensagem corrige.
         <DemoTag />
       </Reveal>
     </Section>
