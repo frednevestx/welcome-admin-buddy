@@ -6,9 +6,9 @@ import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import {
   MessageCircle, CheckCircle2, ArrowRight, ArrowUpRight, Check, CheckCheck, Heart,
-  Users, Receipt, Wallet, Truck, ShoppingBasket, Percent, Repeat, CalendarClock,
+  Receipt, Wallet, ShoppingBasket, CalendarClock,
   LineChart, LayoutDashboard, HelpCircle, Instagram, Camera, Send, Pencil,
-  MessageSquareText, Sparkles, ShieldCheck, ArrowDownRight, Bell, AlertTriangle,
+  MessageSquareText, Sparkles, ArrowDownRight,
   Mic, Boxes, ListChecks, Building2,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/whatsapp-icon";
@@ -64,6 +64,7 @@ function Landing() {
         <FreeSection />
         <SocialProof />
         <FAQ />
+        <AssistanceManifesto />
         <FinalCTA />
       </main>
       <Footer />
@@ -286,7 +287,7 @@ function Hero() {
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
           backgroundImage:
-            "radial-gradient(rgba(36,27,22,0.10) 1px, transparent 1px), radial-gradient(70% 55% at 70% 10%, rgba(184,148,82,0.16), transparent 70%), radial-gradient(50% 40% at 10% 90%, rgba(63,175,114,0.10), transparent 70%)",
+            "radial-gradient(rgba(15,61,52,0.10) 1px, transparent 1px), radial-gradient(70% 55% at 70% 10%, rgba(15,61,52,0.14), transparent 70%), radial-gradient(50% 40% at 10% 90%, rgba(212,168,78,0.09), transparent 70%)",
           backgroundSize: "24px 24px, 100% 100%, 100% 100%",
           maskImage: "radial-gradient(ellipse 80% 70% at 55% 35%, black 35%, transparent 85%)",
         }}
@@ -500,11 +501,12 @@ const FLOW_CHAT: Bubble[] = [
 ];
 
 const FLOW_STEPS = [
-  { n: "01", title: "Você manda a mensagem", body: "Do jeito que você falaria com alguém da sua equipe. Sem formato, sem código, sem campo obrigatório." },
-  { n: "02", title: "A IA interpreta a intenção", body: "Ela identifica se é entrada, saída, compra, cliente, fornecedor ou uma pergunta sobre o caixa." },
-  { n: "03", title: "Pergunta quando falta informação", body: "Se algo estiver incompleto, ela pergunta antes de registrar. Nada é inventado." },
-  { n: "04", title: "Você confirma ou corrige", body: "Uma mensagem basta para ajustar valor, categoria ou data. O controle continua com você." },
-  { n: "05", title: "A informação aparece organizada", body: "O lançamento entra no painel, dentro do período e da categoria certos." },
+  { n: "01", title: "Mensagem", body: "Você conta o que aconteceu do jeito que falaria com alguém da sua equipe." },
+  { n: "02", title: "Entendimento", body: "A LUUD identifica a intenção e os detalhes importantes da conversa." },
+  { n: "03", title: "Organização", body: "Ela encontra o lugar certo para cada informação dentro da sua empresa." },
+  { n: "04", title: "Pergunta o que falta", body: "Se algo estiver incompleto, ela pergunta antes de continuar. Nada é inventado." },
+  { n: "05", title: "Atualização", body: "Você confirma ou corrige por mensagem, e a LUUD atualiza a informação." },
+  { n: "06", title: "Resultado", body: "Tudo fica organizado e pronto para aparecer quando você perguntar." },
 ];
 
 function ConversationFlow() {
@@ -512,9 +514,9 @@ function ConversationFlow() {
     <div className="on-walnut px-5 py-20 md:py-28">
       <div className="max-w-6xl mx-auto">
         <SectionTitle
-          eyebrow="Demonstração"
-          title="Veja como uma conversa vira organização financeira."
-          sub="Confirmação, correção e informação incompleta fazem parte do fluxo — a IA é útil e transparente, não infalível."
+          eyebrow="Você fala. Ela trabalha."
+          title="Tudo começa com uma conversa"
+          sub="Uma mensagem vira entendimento, organização e resultado — com perguntas sempre que faltar informação."
         />
         <div className="grid items-start gap-12 lg:grid-cols-[0.95fr_1.05fr]">
           <Reveal>
@@ -543,21 +545,21 @@ function ConversationFlow() {
 /* ───────────────── A IA ENTENDE O CONTEXTO ───────────────── */
 
 const CONTEXT_CASES = [
-  { msg: "Vendi 240 no cartão hoje", read: "Receita, forma de pagamento cartão, data de hoje", action: "Entrada registrada no período atual." },
-  { msg: "Paguei o Silva, 1.380", read: "Saída com fornecedor já conhecido pelo histórico", action: "Despesa vinculada ao fornecedor Silva." },
-  { msg: "Aluguel todo dia 5, 2.100", read: "Custo recorrente mensal", action: "Recorrência criada para os próximos meses." },
-  { msg: "Vou comprar uma máquina no mês que vem", read: "Intenção futura, não uma despesa realizada", action: "Acompanhado como planejamento, sem lançar gasto." },
-  { msg: "Recebi da Ana mas não sei de qual serviço", read: "Informação incompleta", action: "A IA pergunta antes de registrar a categoria." },
-  { msg: "Como está o caixa esta semana?", read: "Pergunta sobre fluxo de caixa", action: "Resposta calculada sobre as movimentações registradas." },
+  { msg: "Quanto eu vendi esta semana?", read: "Busca as vendas registradas no período", action: "Mostra o total e ajuda você a entender o resultado." },
+  { msg: "Quem ainda precisa me pagar?", read: "Consulta recebimentos pendentes por cliente", action: "Organiza a resposta para facilitar seu acompanhamento." },
+  { msg: "Quais contas vencem nos próximos dias?", read: "Procura pagamentos e datas já informados", action: "Apresenta as próximas pendências em ordem." },
+  { msg: "Quanto gastei com fornecedores este mês?", read: "Reúne compras e despesas da categoria", action: "Soma os valores registrados no período." },
+  { msg: "O que eu preciso fazer amanhã?", read: "Consulta tarefas e lembretes da rotina", action: "Responde com o que está organizado para o dia." },
+  { msg: "Como está o caixa da empresa?", read: "Cruza entradas e saídas registradas", action: "Mostra uma visão clara do momento atual." },
 ];
 
 function ContextSection() {
   return (
     <Section id="contexto">
       <SectionTitle
-        eyebrow="O que a IA entende"
-        title="A IA entende o contexto, não só palavras."
-        sub="Receitas, despesas, clientes, fornecedores, categorias, forma de pagamento, recorrências, intenções futuras e perguntas sobre o caixa."
+        eyebrow="Pergunte quando precisar"
+        title="O que você pode perguntar para a LUUD"
+        sub="A secretária inteligente consulta o que você já contou e transforma informações espalhadas em respostas úteis."
       />
       <div className="grid gap-4 md:grid-cols-2">
         {CONTEXT_CASES.map((c, i) => (
@@ -580,7 +582,7 @@ function ContextSection() {
       </div>
       <Reveal delay={100} className="mt-8 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <Pencil className="h-4 w-4 text-primary" />
-        Quando a IA não tem certeza, ela pergunta. Quando você discorda, uma mensagem corrige.
+        Quando a LUUD não tem certeza, ela pergunta. Quando você discorda, uma mensagem corrige.
         <DemoTag />
       </Reveal>
     </Section>
@@ -590,35 +592,38 @@ function ContextSection() {
 /* ───────────────── ANÁLISES ───────────────── */
 
 const ANALYSES = [
-  "As despesas com fornecedores aumentaram neste mês.",
-  "Suas vendas cresceram, mas a margem diminuiu.",
-  "O fluxo de caixa previsto exige atenção nas próximas semanas.",
-  "Você pode revisar estes custos recorrentes.",
+  "Recebi dois mil reais do cliente Marcos hoje.",
+  "Comprei material por trezentos e oitenta reais no Pix.",
+  "Me lembre de pagar o aluguel no dia cinco.",
+  "Quanto eu gastei com fornecedores este mês?",
 ];
 
 function Analyses() {
   return (
     <Section className="bg-secondary/40">
       <SectionTitle
-        eyebrow="Análises"
-        title="Mais do que registrar: entenda o que está acontecendo."
-        sub="A IA compara períodos e aponta o que mudou. A decisão continua sendo sua."
+        eyebrow="Texto ou áudio"
+        title="Sem digitar, se preferir"
+        sub="Mande um áudio como se estivesse falando com sua secretária. A LUUD entende a mensagem e continua a conversa."
       />
       <div className="grid gap-4 md:grid-cols-2">
         {ANALYSES.map((a, i) => (
           <Reveal key={a} delay={i * 70}>
             <div className="flex h-full items-start gap-3 rounded-2xl border border-border bg-card p-5">
-              <ArrowUpRight className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
-              <p className="text-[0.95rem] leading-relaxed text-foreground">{a}</p>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                <Mic className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-[0.95rem] leading-relaxed text-foreground">“{a}”</p>
+                <p className="mt-1 text-xs text-muted-foreground">Mensagem de áudio</p>
+              </div>
             </div>
           </Reveal>
         ))}
       </div>
-      <Reveal delay={120} className="mt-8 rounded-2xl border border-border bg-card p-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          A LUUD apoia a sua decisão: ela mostra o que os números indicam, com a fonte do cálculo. Ela não garante lucro,
-          não elimina riscos e não substitui o seu contador.
-        </p>
+      <Reveal delay={120} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <DemoTag />
+        <p className="text-sm text-muted-foreground">Você pode alternar entre texto e áudio na mesma conversa.</p>
       </Reveal>
     </Section>
   );
@@ -868,10 +873,10 @@ function FinalCTA() {
     <div className="on-walnut px-5 py-20 text-center md:py-28">
       <Reveal className="mx-auto max-w-3xl">
         <h2 className="font-display text-[1.9rem] font-bold leading-tight text-balance md:text-[3rem]">
-          Você não precisa aprender mais um sistema. <span className="text-primary">Basta conversar.</span>
+          A sua próxima contratação pode ser uma IA. <span className="text-primary">Mas ela vai parecer uma secretária.</span>
         </h2>
         <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">
-          Comece gratuitamente pelo WhatsApp e organize melhor os números do seu negócio.
+          Você fala. A LUUD organiza sua empresa, direto no WhatsApp que você já usa.
         </p>
         <div className="mt-8 flex flex-col items-center gap-3">
           <WhatsAppCTA />
@@ -879,6 +884,25 @@ function FinalCTA() {
         </div>
       </Reveal>
     </div>
+  );
+}
+
+function AssistanceManifesto() {
+  return (
+    <Section className="bg-secondary/40">
+      <Reveal className="mx-auto max-w-3xl text-center">
+        <span className="mx-auto grid h-12 w-12 place-items-center rounded-xl bg-primary text-primary-foreground">
+          <MessageSquareText className="h-5 w-5" />
+        </span>
+        <h2 className="mt-6 font-display text-[1.8rem] font-bold leading-tight text-balance md:text-[2.6rem]">
+          O empresário não precisa de mais um sistema. <span className="text-primary">Precisa de ajuda.</span>
+        </h2>
+        <p className="mt-5 text-base leading-relaxed text-muted-foreground md:text-lg">
+          Informações importantes se perdem em cadernos, planilhas e mensagens espalhadas. A LUUD transforma cada conversa
+          em organização para a empresa, sem exigir que você mude a sua rotina.
+        </p>
+      </Reveal>
+    </Section>
   );
 }
 
@@ -911,12 +935,12 @@ function Footer() {
             <Logo />
           </span>
           <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-            IA financeira que organiza as finanças do seu negócio por conversas no WhatsApp.
+            Sua secretária inteligente, disponível pelo WhatsApp.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
           <a href="#como-funciona" className="transition-colors hover:text-foreground">Como funciona</a>
-          <a href="#contexto" className="transition-colors hover:text-foreground">O que a IA entende</a>
+          <a href="#contexto" className="transition-colors hover:text-foreground">O que perguntar</a>
           <a href="#faq" className="transition-colors hover:text-foreground">Dúvidas</a>
           <Link to="/auth" className="transition-colors hover:text-foreground">Entrar no painel</Link>
         </div>
