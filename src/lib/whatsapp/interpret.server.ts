@@ -61,6 +61,10 @@ export interface Interpretation {
   target_name?: string | null;
   /** Data relativa mencionada, já resolvida pela IA quando possível. */
   due_date?: string | null;
+  /** Descrição curta do compromisso futuro. */
+  commitment_description?: string | null;
+  /** Tipo do lembrete quando o compromisso não possui valor. */
+  reminder_kind?: "compromisso" | "tarefa" | "acompanhamento" | null;
   /** Assunto da mensagem, usado como memória de tópico. */
   topic?: string | null;
   /** Dado que a LUUD não tem na base (ex: "estoque"). */
@@ -102,6 +106,8 @@ Responda APENAS com JSON válido, sem markdown, no formato:
   "query_type": "revenue" | "expense" | "both" | null,
   "target_name": string | null,
   "due_date": "YYYY-MM-DD" | null,
+  "commitment_description": string | null,
+  "reminder_kind": "compromisso" | "tarefa" | "acompanhamento" | null,
   "topic": string | null,
   "missing_data_subject": string | null,
   "target_hint": string | null,
@@ -150,9 +156,16 @@ COMO ESCOLHER A INTENÇÃO — pense em TIPOS de mensagem:
 4. DECISÃO / INTENÇÃO FUTURA de compra: "estou pensando em comprar uma máquina de
    8 mil", "vale a pena contratar alguém?" -> "decision". NUNCA é register_movement.
 
-5. COMPROMISSO FUTURO: "tenho que pagar o João sexta", "vence dia 10"
-   -> "future_commitment", com due_date resolvida e supplier_name/amount se houver.
-   NUNCA é register_movement (o pagamento ainda não aconteceu).
+5. COMPROMISSO FUTURO: "tenho que pagar o João sexta", "vence dia 10",
+   "comprei 10 caixas por 1.200 e vence dia 20" -> "future_commitment", com
+   due_date resolvida, commitment_description curta e supplier_name/amount se
+   houver. Se existe valor + vencimento futuro, o sistema oferecerá uma conta a
+   pagar. Sem valor, oferecerá um lembrete: use reminder_kind "compromisso" para
+   obrigações/pagamentos, "tarefa" para algo a fazer e "acompanhamento" para algo
+   a conferir depois. NUNCA é register_movement (o pagamento ainda não aconteceu).
+   Diferencie de "paguei/comprei por 1.200" sem vencimento futuro, que JÁ ocorreu
+   e deve continuar como register_movement. Diferencie também de "estou pensando
+   em comprar", que é apenas decision e não cria conta nem lembrete.
 
 6. CONFIRMAÇÃO/NEGAÇÃO de algo que a LUUD perguntou: "sim", "isso", "pode",
    "confirma" -> "confirm"; "não", "errado", "cancela" -> "deny".
