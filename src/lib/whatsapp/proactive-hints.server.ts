@@ -71,7 +71,7 @@ const BY_INTENT: Record<string, Hint[]> = {
     { key: "weight", text: "💡 Também posso comparar esse investimento com seu resultado recente e mostrar o peso dele no caixa." },
   ],
   future_commitment: [
-    { key: "reminder", text: "💡 Se quiser, eu passo a te lembrar desses compromissos automaticamente." },
+    { key: "reminder", text: "💡 Quando você falar comigo, também posso lembrar dos compromissos que estiverem vencendo." },
   ],
   greeting: [
     { key: "natural", text: "💡 Pode me contar as movimentações do jeito que preferir — eu organizo o resto." },

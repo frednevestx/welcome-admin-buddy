@@ -238,9 +238,6 @@ async function yesterdaySummary(db: any, restaurantId: string): Promise<string> 
   return `Ontem (${day}): entradas de ${brl(revenue)}, saídas de ${brl(expense)} — resultado de ${brl(revenue - expense)}.`;
 }
 
-const NO_DUE_DATE_REPLY =
-  "Hoje eu não guardo data de vencimento das contas — só a data em que o gasto aconteceu. Por isso não consigo listar contas a vencer sem inventar. Se quiser, eu crio um lembrete para você não perder o prazo, ou te mostro seus maiores gastos.";
-
 /* --------------------------- orquestração --------------------------- */
 
 export async function runOrchestrator(
