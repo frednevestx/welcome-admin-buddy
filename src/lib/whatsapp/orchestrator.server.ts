@@ -417,7 +417,7 @@ export async function runOrchestrator(
             contact_id: contactId,
             description: offer.description,
             due_date: offer.due_date,
-            kind: offer.reminder_kind,
+            kind: offer.reminder_kind ?? "compromisso",
             status: "pending",
           })
           .select("id, description, due_date, kind, status")
