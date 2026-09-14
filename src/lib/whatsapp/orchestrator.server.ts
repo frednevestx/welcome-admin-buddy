@@ -10,7 +10,9 @@
 
 import {
   clearPending,
+  loadDueConversationItems,
   loadContext,
+  markDueConversationItemsMentioned,
   recentHistory,
   isFirstInteractionToday,
   saveContext,
@@ -236,9 +238,6 @@ async function yesterdaySummary(db: any, restaurantId: string): Promise<string> 
   return `Ontem (${day}): entradas de ${brl(revenue)}, saídas de ${brl(expense)} — resultado de ${brl(revenue - expense)}.`;
 }
 
-const NO_DUE_DATE_REPLY =
-  "Hoje eu não guardo data de vencimento das contas — só a data em que o gasto aconteceu. Por isso não consigo listar contas a vencer sem inventar. Se quiser, eu crio um lembrete para você não perder o prazo, ou te mostro seus maiores gastos.";
-
 /* --------------------------- orquestração --------------------------- */
 
 export async function runOrchestrator(
@@ -260,9 +259,25 @@ export async function runOrchestrator(
   const history = await recentHistory(db, restaurantId, contactId);
   const firstToday = await isFirstInteractionToday(db, restaurantId, contactId);
   const quickYesNo = parseYesNo(message);
+  const dueItems = await loadDueConversationItems(db, restaurantId, contactId);
 
-  const done = (reply: string, extra: Partial<OrchestratorResult> = {}): OrchestratorResult => ({
-    reply,
+  const appendDueItems = async (mainReply: string): Promise<string> => {
+    if (dueItems.length === 0) return mainReply;
+    const lines = dueItems.map((item) =>
+      item.source === "payable"
+        ? `• ${item.description} — ${brl(item.amount ?? 0)} (venceu em ${item.due_date})`
+        : `• ${item.description} (venceu em ${item.due_date})`,
+    );
+    await markDueConversationItemsMentioned(db, restaurantId, contactId, dueItems);
+    const heading = dueItems.length === 1 ? "Você também tem uma pendência vencida:" : "Você também tem pendências vencidas:";
+    return `${mainReply}\n\n${heading}\n${lines.join("\n")}`;
+  };
+
+  const done = async (
+    reply: string,
+    extra: Partial<OrchestratorResult> = {},
+  ): Promise<OrchestratorResult> => ({
+    reply: await appendDueItems(reply),
     classification: "unknown",
     movementId: null,
     interpretation: null,
@@ -395,18 +410,57 @@ export async function runOrchestrator(
       const offer = ctx.offer;
       await clearPending(db, restaurantId, contactId, ctx);
       if (quickYesNo === "yes") {
-        await db.from("reminders").insert({
-          restaurant_id: restaurantId,
-          contact_id: contactId,
-          description: offer.description,
-          due_date: offer.due_date,
-          status: "pending",
-        });
-        return done(`Anotado: ${offer.description} em ${offer.due_date}. Vou te lembrar.`, {
+        const { data: created } = await db
+          .from("reminders")
+          .insert({
+            restaurant_id: restaurantId,
+            contact_id: contactId,
+            description: offer.description,
+            due_date: offer.due_date,
+            kind: offer.reminder_kind ?? "compromisso",
+            status: "pending",
+          })
+          .select("id, description, due_date, kind, status")
+          .maybeSingle();
+        if (!created?.id || created.status !== "pending") {
+          return done("Não consegui salvar esse lembrete e não vou dizer que salvei. Pode me mandar de novo?", {
+            interpretation: { intent: "confirm" },
+          });
+        }
+        return done(`Anotado: ${created.description} em ${created.due_date}. Vou lembrar quando você falar comigo.`, {
           interpretation: { intent: "confirm" },
         });
       }
       return done("Ok, não vou criar o lembrete.", { interpretation: { intent: "deny" } });
+    }
+    if (ctx.offer.kind === "create_payable") {
+      const offer = ctx.offer;
+      await clearPending(db, restaurantId, contactId, ctx);
+      if (quickYesNo === "yes") {
+        const { data: created } = await db
+          .from("payables")
+          .insert({
+            restaurant_id: restaurantId,
+            supplier_id: offer.supplier_id,
+            description: offer.description,
+            amount: offer.amount,
+            due_date: offer.due_date,
+            status: "pending",
+            created_by: input.userId ?? null,
+          })
+          .select("id, description, amount, due_date, status")
+          .maybeSingle();
+        if (!created?.id || created.status !== "pending") {
+          return done("Não consegui salvar essa conta a pagar e não vou dizer que salvei. Pode me mandar de novo?", {
+            interpretation: { intent: "confirm" },
+          });
+        }
+        return done(
+          `Conta a pagar anotada: ${created.description}, ${brl(Number(created.amount))}, vencimento em ${created.due_date}.`,
+          { interpretation: { intent: "confirm" } },
+        );
+      }
+      return done("Ok, não vou criar essa conta a pagar.", { interpretation: { intent: "deny" } });
     }
   }
 
@@ -805,36 +859,84 @@ export async function runOrchestrator(
       break;
     }
 
-    /* ---------- COMPROMISSO FUTURO: lembrete, não movimentação ---------- */
+    /* ---------- COMPROMISSO FUTURO: conta a pagar ou lembrete ---------- */
     case "future_commitment": {
       const due = parsed.due_date ?? parsed.movement_date ?? null;
       const who = parsed.supplier_name ?? parsed.target_name ?? null;
-      const description = [
-        "Pagar",
-        who,
-        parsed.amount ? `(${brl(Number(parsed.amount))})` : null,
-        parsed.category_name && !who ? `- ${parsed.category_name}` : null,
+      const description = (parsed.commitment_description?.trim() || [
+        who ? `Pagar ${who}` : "Compromisso",
+        parsed.category_name && !who ? parsed.category_name : null,
       ]
         .filter(Boolean)
-        .join(" ");
+        .join(" — ")).trim();
 
       if (!due) {
-        reply = `Entendi que é um compromisso futuro, então não vou lançar como gasto. Para qual dia é?`;
+        reply = "Entendi que é um compromisso futuro, então não vou lançar como gasto. Para qual dia é?";
         awaitingUser = true;
         break;
       }
+
+      const amount = Number(parsed.amount);
+      if (amount > 0 && due > iso(new Date())) {
+        const supplier = who ? await findSupplier(db, restaurantId, who) : null;
+        await saveContext(db, restaurantId, contactId, {
+          ...baseCtx,
+          offer: {
+            kind: "create_payable",
+            description,
+            amount,
+            due_date: due,
+            supplier_id: supplier?.id ?? null,
+          },
+        });
+        reply = `Isso ainda não foi pago, então não vou lançar como gasto. Quer que eu crie uma conta a pagar de ${brl(amount)}, com vencimento em ${due}?`;
+        awaitingUser = true;
+        break;
+      }
+
       await saveContext(db, restaurantId, contactId, {
         ...baseCtx,
-        offer: { kind: "create_reminder", description, due_date: due },
+        offer: {
+          kind: "create_reminder",
+          description,
+          due_date: due,
+          reminder_kind: parsed.reminder_kind ?? "compromisso",
+        },
       });
-      reply = `Isso ainda não aconteceu, então não vou registrar como gasto. Quer que eu te lembre em ${due}${who ? ` de pagar o ${who}` : ""}?`;
+      reply = `Isso ainda não aconteceu, então não vou registrar como gasto. Quer que eu anote um lembrete para ${due}?`;
       awaitingUser = true;
       break;
     }
 
-    case "upcoming_bills":
-      reply = NO_DUE_DATE_REPLY;
+    case "upcoming_bills": {
+      const today = iso(new Date());
+      const [{ data: bills }, { data: reminders }] = await Promise.all([
+        db
+          .from("payables")
+          .select("description, amount, due_date")
+          .eq("restaurant_id", restaurantId)
+          .eq("status", "pending")
+          .gte("due_date", today)
+          .order("due_date", { ascending: true })
+          .limit(5),
+        db
+          .from("reminders")
+          .select("description, due_date")
+          .eq("restaurant_id", restaurantId)
+          .eq("status", "pending")
+          .gte("due_date", today)
+          .order("due_date", { ascending: true })
+          .limit(5),
+      ]);
+      const lines = [
+        ...(bills ?? []).map((bill: any) => `• ${bill.description} — ${brl(Number(bill.amount))} em ${bill.due_date}`),
+        ...(reminders ?? []).map((reminder: any) => `• ${reminder.description} em ${reminder.due_date}`),
+      ]
+        .sort()
+        .slice(0, 5);
+      reply = lines.length > 0 ? `Próximos vencimentos:\n${lines.join("\n")}` : "Não encontrei contas ou lembretes pendentes com vencimento futuro.";
       break;
+    }
 
     /* ---------- CONVERSA ---------- */
     case "greeting": {
@@ -1008,5 +1110,5 @@ export async function runOrchestrator(
     console.error("[orchestrator] sugestão falhou", err);
   }
 
-  return { reply, classification, movementId, interpretation: parsed };
+  return { reply: await appendDueItems(reply), classification, movementId, interpretation: parsed };
 }

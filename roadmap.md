@@ -1,6 +1,8 @@
 # Roteiro LUUD
 
 ## Concluído
+- Contas a pagar no WhatsApp com confirmação e vencimentos mencionados somente durante conversas
+- Disparo externo de lembretes aposentado, preservando os demais comandos do sistema
 - Identidade persistente do WhatsApp (`whatsapp_identities`, normalização de telefone, conflitos)
 - Auditoria (`audit_log`) e arquivamento em vez de exclusão
 - Serviço central de movimentações (criar, confirmar, corrigir, arquivar, restaurar)
