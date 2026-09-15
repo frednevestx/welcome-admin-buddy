@@ -43,36 +43,40 @@ async function callGeminiInline(
 ): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { inline_data: { mime_type: inlineData.mimeType, data: inlineData.data } },
-                { text: prompt },
-              ],
-            },
-          ],
-          generationConfig: { temperature: 0.2 },
-        }),
-      },
-    );
-    const data = (await res.json()) as any;
-    if (!res.ok || data?.error) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { inline_data: { mime_type: inlineData.mimeType, data: inlineData.data } },
+                  { text: prompt },
+                ],
+              },
+            ],
+            generationConfig: { temperature: 0.2 },
+          }),
+        },
+      );
+      const data = (await res.json()) as any;
+      if (res.ok && !data?.error) {
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+      }
       console.error("[whatsapp/media] Gemini indisponível", res.status, data?.error?.message);
-      return null;
+      if (res.status < 500 || attempt === 1) return null;
+    } catch (err) {
+      console.error("[whatsapp/media] falha ao chamar Gemini", err);
+      if (attempt === 1) return null;
     }
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
-  } catch (err) {
-    console.error("[whatsapp/media] falha ao chamar Gemini", err);
-    return null;
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
+  return null;
 }
 
 /**
