@@ -15,6 +15,7 @@
  */
 
 const GEMINI_MODEL = "gemini-3.7-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash";
 const MAX_MEDIA_BYTES = 20 * 1024 * 1024; // 20MB de teto de segurança
 
 async function fetchAsBase64(
@@ -43,10 +44,10 @@ async function callGeminiInline(
 ): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (const model of [GEMINI_MODEL, GEMINI_FALLBACK_MODEL]) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -69,12 +70,11 @@ async function callGeminiInline(
         return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
       }
       console.error("[whatsapp/media] Gemini indisponível", res.status, data?.error?.message);
-      if (res.status < 500 || attempt === 1) return null;
+      if (res.status < 500 || model === GEMINI_FALLBACK_MODEL) return null;
     } catch (err) {
       console.error("[whatsapp/media] falha ao chamar Gemini", err);
-      if (attempt === 1) return null;
+      if (model === GEMINI_FALLBACK_MODEL) return null;
     }
-    await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
   return null;
 }
