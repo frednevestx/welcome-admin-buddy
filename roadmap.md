@@ -13,6 +13,7 @@
 - Painel administrativo em `/admin` (identidades, negócios, conversas, auditoria, limpeza com confirmação)
 - Funções web dos lançamentos passando pelo serviço central (`movements.functions.ts`)
 - Tela `/movimentacoes` usando o serviço central (arquivar em vez de excluir, lista de arquivados com recuperação)
+- Segredo `TALKTOME_API_KEY` configurado para o envio real do código em `/acesso`
 
 ## Pendente
-- Configurar o segredo `TALKTOME_API_KEY` para o envio real do código em `/acesso`
+- Nenhuma pendência conhecida
