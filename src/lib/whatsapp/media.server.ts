@@ -14,7 +14,7 @@
  * amigável de erro (nunca 500 pro usuário final).
  */
 
-const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_MODEL = "gemini-3.7-flash";
 const MAX_MEDIA_BYTES = 20 * 1024 * 1024; // 20MB de teto de segurança
 
 async function fetchAsBase64(
@@ -25,6 +25,7 @@ async function fetchAsBase64(
     const res = await fetch(url);
     if (!res.ok) return null;
     const mime = res.headers.get("content-type")?.split(";")[0]?.trim() || fallbackMime;
+    if (!mime.toLowerCase().startsWith("image/")) return null;
     const buf = new Uint8Array(await res.arrayBuffer());
     if (buf.byteLength === 0 || buf.byteLength > MAX_MEDIA_BYTES) return null;
     let binary = "";
@@ -89,15 +90,16 @@ export async function describeImageAsMessage(
   if (!file) return null;
 
   const prompt = `
-A imagem é um comprovante, nota fiscal, print de pagamento ou recibo enviado por ${name ?? "um usuário"} no WhatsApp para um assistente financeiro.
-Escreva UMA frase curta, em português do Brasil, em primeira pessoa, como se ${name ?? "o usuário"} estivesse descrevendo esse pagamento por escrito (ex.: "paguei 45,90 para o Mercado Central hoje", "recebi 320 de um cliente via pix").
-Inclua o valor (se legível), se foi pagamento (saída) ou recebimento (entrada), e o nome do fornecedor/cliente se aparecer.
-Se não conseguir identificar nenhum dado financeiro na imagem, responda exatamente: SEM_DADOS_FINANCEIROS
-Responda APENAS a frase, sem aspas, sem explicação.
+Esta imagem foi enviada por ${name ?? "um usuário"} no WhatsApp para a secretária inteligente da empresa.
+Leia e interprete todo o conteúdo escrito que estiver legível, incluindo comprovantes, notas fiscais, recibos, listas, pedidos, anotações e capturas de tela.
+Transforme o conteúdo em uma mensagem curta e objetiva, em português do Brasil, como se ${name ?? "o usuário"} tivesse digitado as informações para a secretária.
+Preserve todos os dados relevantes e legíveis, como itens, quantidades, valores, datas, nomes, formas de pagamento e totais. Não invente nem complete informações ilegíveis.
+Se não houver conteúdo escrito útil ou legível, responda exatamente: SEM_CONTEUDO_LEGIVEL
+Responda APENAS com a mensagem extraída, sem aspas, introdução ou explicação.
 `.trim();
 
   const result = await callGeminiInline({ mimeType: file.mime, data: file.base64 }, prompt);
-  if (!result || result.includes("SEM_DADOS_FINANCEIROS")) return null;
+  if (!result || result.includes("SEM_CONTEUDO_LEGIVEL")) return null;
   return result;
 }
 
