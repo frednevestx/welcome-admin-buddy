@@ -107,7 +107,7 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
 
   // Só imagem vai para o Gemini como mídia, e apenas quando "text" veio
   // vazio. Áudio NUNCA: a TalkToMe já transcreve e manda em "text".
-  if (!effectiveText && mediaUrl && mediaKind === "image" && (mediaType ?? "").toLowerCase().startsWith("image/")) {
+  if (!effectiveText && mediaUrl && mediaKind === "image") {
     try {
       const described = await describeImageAsMessage(mediaUrl, mediaType, name);
       if (described) {
