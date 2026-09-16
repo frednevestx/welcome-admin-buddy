@@ -43,40 +43,82 @@ async function callGeminiInline(
   prompt: string,
 ): Promise<string | null> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  for (const model of [GEMINI_MODEL, GEMINI_FALLBACK_MODEL]) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { inline_data: { mime_type: inlineData.mimeType, data: inlineData.data } },
-                  { text: prompt },
-                ],
-              },
-            ],
-            generationConfig: { temperature: 0.2 },
-          }),
-        },
-      );
-      const data = (await res.json()) as any;
-      if (res.ok && !data?.error) {
-        return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+  if (apiKey) {
+    for (const model of [GEMINI_MODEL, GEMINI_FALLBACK_MODEL]) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    { inline_data: { mime_type: inlineData.mimeType, data: inlineData.data } },
+                    { text: prompt },
+                  ],
+                },
+              ],
+              generationConfig: { temperature: 0.2 },
+            }),
+          },
+        );
+        const data = (await res.json()) as any;
+        if (res.ok && !data?.error) {
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (text) return text;
+        } else {
+          console.error("[whatsapp/media] Gemini indisponível", res.status, data?.error?.message);
+          if (res.status < 500) break;
+        }
+      } catch (err) {
+        console.error("[whatsapp/media] falha ao chamar Gemini", err);
       }
-      console.error("[whatsapp/media] Gemini indisponível", res.status, data?.error?.message);
-      if (res.status < 500 || model === GEMINI_FALLBACK_MODEL) return null;
-    } catch (err) {
-      console.error("[whatsapp/media] falha ao chamar Gemini", err);
-      if (model === GEMINI_FALLBACK_MODEL) return null;
     }
   }
-  return null;
+
+  const lovableApiKey = process.env.LOVABLE_API_KEY;
+  if (!lovableApiKey) return null;
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": lovableApiKey,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${inlineData.mimeType};base64,${inlineData.data}` },
+              },
+            ],
+          },
+        ],
+        temperature: 0.2,
+      }),
+    });
+    const data = (await res.json()) as any;
+    if (!res.ok || data?.error) {
+      console.error(
+        "[whatsapp/media] IA Lovable indisponível",
+        res.status,
+        JSON.stringify(data?.error ?? {}),
+      );
+      return null;
+    }
+    return data?.choices?.[0]?.message?.content?.trim() ?? null;
+  } catch (err) {
+    console.error("[whatsapp/media] falha ao chamar IA Lovable", err);
+    return null;
+  }
 }
 
 /**
