@@ -1,6 +1,7 @@
 # Roteiro LUUD
 
 ## Concluído
+- Leitura multimodal de imagens no WhatsApp, integrada ao mesmo histórico e fluxo conversacional de texto/áudio
 - Contas a pagar no WhatsApp com confirmação e vencimentos mencionados somente durante conversas
 - Disparo externo de lembretes aposentado, preservando os demais comandos do sistema
 - Identidade persistente do WhatsApp (`whatsapp_identities`, normalização de telefone, conflitos)
