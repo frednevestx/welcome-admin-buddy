@@ -17,4 +17,4 @@
 - Segredo `TALKTOME_API_KEY` configurado para o envio real do código em `/acesso`
 
 ## Pendente
-- Nenhuma pendência conhecida
+- [ ] Distinguir custo/despesa e processar relatórios financeiros estruturados no WhatsApp
