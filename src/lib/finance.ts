@@ -56,6 +56,39 @@ export interface FinanceSummary {
   despesasPorCategoria: { name: string; value: number }[];
 }
 
+export interface FinancialBreakdownInput {
+  revenues: number[];
+  costs: number[];
+  expenses: number[];
+}
+
+export interface FinancialBreakdown {
+  grossRevenue: number;
+  totalCosts: number;
+  totalExpenses: number;
+  resultAfterCosts: number;
+  operatingResult: number;
+  grossRevenueMarginPct: number;
+}
+
+/** Fórmulas puras compartilhadas por dashboard e relatórios do WhatsApp. */
+export function calculateFinancialBreakdown(input: FinancialBreakdownInput): FinancialBreakdown {
+  const sum = (values: number[]) => values.reduce((total, value) => total + Number(value || 0), 0);
+  const grossRevenue = sum(input.revenues);
+  const totalCosts = sum(input.costs);
+  const totalExpenses = sum(input.expenses);
+  const resultAfterCosts = grossRevenue - totalCosts;
+  const operatingResult = resultAfterCosts - totalExpenses;
+  return {
+    grossRevenue,
+    totalCosts,
+    totalExpenses,
+    resultAfterCosts,
+    operatingResult,
+    grossRevenueMarginPct: grossRevenue > 0 ? (operatingResult / grossRevenue) * 100 : 0,
+  };
+}
+
 export function emptySummary(): FinanceSummary {
   return {
     faturamento: 0,

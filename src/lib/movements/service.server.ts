@@ -21,7 +21,7 @@ export interface MovementActor {
 }
 
 export interface MovementInput {
-  type: "entrada" | "saida" | "transferencia";
+  type: "entrada" | "saida" | "transferencia" | "ajuste";
   amount: number;
   movement_date: string;
   description?: string | null;
@@ -30,6 +30,7 @@ export interface MovementInput {
   payment_method?: string | null;
   notes?: string | null;
   confirmed_by_user?: boolean;
+  expense_kind?: "custo" | "despesa" | null;
 }
 
 export interface MovementResult {
@@ -43,6 +44,7 @@ function validate(actor: MovementActor, input: MovementInput): string | null {
   if (!input.type) return "tipo do lançamento não informado";
   if (!(Number(input.amount) > 0)) return "valor inválido";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.movement_date)) return "data inválida";
+  if (input.expense_kind && input.type !== "saida") return "custo/despesa só pode classificar uma saída";
   return null;
 }
 
@@ -91,6 +93,7 @@ export async function createMovement(
       created_from_event_id: actor.sourceEventId ?? null,
       status: "active",
       confirmed_by_user: input.confirmed_by_user ?? false,
+      expense_kind: input.expense_kind ?? null,
     })
     .select("id")
     .maybeSingle();

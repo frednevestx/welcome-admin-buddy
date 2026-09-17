@@ -23,6 +23,7 @@ export type Intent =
   | "business_overview"
   | "decision"
   | "future_commitment"
+  | "financial_report"
   | "upcoming_bills"
   | "greeting"
   | "smalltalk"
@@ -41,6 +42,23 @@ export interface MovementDraft {
   supplier_name?: string | null;
   payment_method?: string | null;
   description?: string | null;
+  expense_kind?: "custo" | "despesa" | null;
+}
+
+export interface FinancialReportItem {
+  description: string;
+  amount: number;
+}
+
+export interface FinancialReportSale extends FinancialReportItem {
+  costs: FinancialReportItem[];
+}
+
+export interface FinancialReportData {
+  report_date: string | null;
+  sales: FinancialReportSale[];
+  expenses?: FinancialReportItem[] | null;
+  reported_net_profit: number | null;
 }
 
 export interface Interpretation {
@@ -51,8 +69,13 @@ export interface Interpretation {
   movement_date?: string | null;
   supplier_name?: string | null;
   payment_method?: string | null;
+  expense_kind?: "custo" | "despesa" | null;
   /** LISTA de lançamentos da mensagem. Nunca somar valores de dias diferentes. */
   movements?: MovementDraft[] | null;
+  report_date?: string | null;
+  sales?: FinancialReportSale[] | null;
+  expenses?: FinancialReportItem[] | null;
+  reported_net_profit?: number | null;
   pending_operation?: PendingOperation | null;
 
   query_period?: "today" | "week" | "month" | "previous_month" | null;
@@ -92,14 +115,19 @@ contexto da conversa. Você NÃO calcula nada e NÃO decide o que gravar.
 Responda APENAS com JSON válido, sem markdown, no formato:
 
 {
-  "intent": "register_movement" | "pending_operation" | "confirm" | "deny" | "query_summary" | "query_supplier" | "query_category" | "compare_periods" | "top_expenses" | "supplier_analysis" | "business_overview" | "decision" | "future_commitment" | "upcoming_bills" | "greeting" | "smalltalk" | "missing_data" | "update_movement" | "delete_movement" | "reset_data" | "other",
+  "intent": "register_movement" | "financial_report" | "pending_operation" | "confirm" | "deny" | "query_summary" | "query_supplier" | "query_category" | "compare_periods" | "top_expenses" | "supplier_analysis" | "business_overview" | "decision" | "future_commitment" | "upcoming_bills" | "greeting" | "smalltalk" | "missing_data" | "update_movement" | "delete_movement" | "reset_data" | "other",
   "movement_type": "entrada" | "saida" | null,
   "category_name": string | null,
   "amount": number | null,
   "movement_date": "YYYY-MM-DD" | null,
   "supplier_name": string | null,
   "payment_method": "pix" | "dinheiro" | "cartão" | "boleto" | "transferência" | null,
-  "movements": [ { "movement_type": ..., "category_name": ..., "amount": number, "movement_date": "YYYY-MM-DD", "supplier_name": ..., "payment_method": ... } ] | null,
+  "expense_kind": "custo" | "despesa" | null,
+  "movements": [ { "movement_type": ..., "category_name": ..., "amount": number, "movement_date": "YYYY-MM-DD", "supplier_name": ..., "payment_method": ..., "expense_kind": "custo" | "despesa" | null } ] | null,
+  "report_date": "YYYY-MM-DD" | null,
+  "sales": [ { "description": string, "amount": number, "costs": [ { "description": string, "amount": number } ] } ] | null,
+  "expenses": [ { "description": string, "amount": number } ] | null,
+  "reported_net_profit": number | null,
 
   "pending_operation": { "movement_type": ..., "category_name": ..., "amount": ..., "movement_date": ..., "supplier_name": ..., "payment_method": ..., "missing": "amount" | "movement_type" | "category_name" | "movement_date" } | null,
   "query_period": "today" | "week" | "month" | "previous_month" | null,
@@ -135,6 +163,14 @@ COMO ESCOLHER A INTENÇÃO — pense em TIPOS de mensagem:
    um único lançamento, NUNCA descarte itens da lista. Quando houver só um
    lançamento, "movements" pode ter 1 item ou ser null (os campos da raiz valem).
    Datas escritas como DD/MM sem ano são do ano corrente.
+
+   RELATÓRIO FINANCEIRO ESTRUTURADO: quando a mensagem descreve DUAS OU MAIS
+   vendas e relaciona um ou mais custos a cada venda, use "financial_report".
+   Preserve cada venda e seus custos em "sales". Despesas gerais que não pertencem
+   a uma venda ficam em "expenses". Se o próprio relatório informar lucro líquido,
+   copie em "reported_net_profit"; nunca calcule ou invente esse campo. Uma única
+   venda, comprovante único ou lista plana sem relação venda→custo continua como
+   "register_movement".
 
 
 2. PERGUNTA / CONSULTA:
@@ -190,6 +226,12 @@ COMO ESCOLHER A INTENÇÃO — pense em TIPOS de mensagem:
 
 REGRAS:
 - "movement_type": "entrada" para receita/recebimento, "saida" para despesa/pagamento.
+- Para toda saída, classifique "expense_kind" somente quando houver segurança:
+  "custo" é gasto diretamente ligado à venda/produção do item vendido (mercadoria,
+  matéria-prima, embalagem, frete do produto, comissão ou taxa de venda);
+  "despesa" é funcionamento do negócio sem ligação com uma venda específica
+  (aluguel, energia, água, internet, salários, marketing, contador, sistemas,
+  manutenção ou administrativo). Se houver dúvida, use null. Nunca invente.
 - "category_name": categoria curta e genérica em português ("Vendas", "Energia",
   "Insumos", "Combustível", "Aluguel"). Não invente categorias hiperespecíficas.
 - "supplier_name": só o nome da pessoa/empresa que recebeu ou vendeu, quando citado.

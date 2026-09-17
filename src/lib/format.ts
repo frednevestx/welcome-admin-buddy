@@ -29,6 +29,13 @@ export function formatDate(d: string | Date): string {
   return date.toLocaleDateString("pt-BR");
 }
 
+export function formatDateBR(iso: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  const [year, month, day] = iso.split("-");
+  if (!year || !month || !day) return iso;
+  return `${day}/${month}/${year}`;
+}
+
 export function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
