@@ -547,6 +547,7 @@ export type Database = {
           created_by: string | null
           created_from_event_id: string | null
           description: string | null
+          expense_kind: string | null
           fixed_parent_id: string | null
           id: string
           integration_id: string | null
@@ -570,6 +571,7 @@ export type Database = {
           created_by?: string | null
           created_from_event_id?: string | null
           description?: string | null
+          expense_kind?: string | null
           fixed_parent_id?: string | null
           id?: string
           integration_id?: string | null
@@ -593,6 +595,7 @@ export type Database = {
           created_by?: string | null
           created_from_event_id?: string | null
           description?: string | null
+          expense_kind?: string | null
           fixed_parent_id?: string | null
           id?: string
           integration_id?: string | null
@@ -1966,7 +1969,7 @@ export type Database = {
         | "connected"
         | "error"
         | "expired"
-      movement_type: "entrada" | "saida" | "transferencia"
+      movement_type: "entrada" | "saida" | "transferencia" | "ajuste"
       plan_tier: "basico" | "pro" | "premium"
       sale_source: "ifood" | "99food" | "loja" | "whatsapp"
       subscription_status: "trialing" | "active" | "expired" | "canceled"
@@ -2122,7 +2125,7 @@ export const Constants = {
         "error",
         "expired",
       ],
-      movement_type: ["entrada", "saida", "transferencia"],
+      movement_type: ["entrada", "saida", "transferencia", "ajuste"],
       plan_tier: ["basico", "pro", "premium"],
       sale_source: ["ifood", "99food", "loja", "whatsapp"],
       subscription_status: ["trialing", "active", "expired", "canceled"],
