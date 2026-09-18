@@ -98,14 +98,18 @@ async function confirmMovements(
   db: any,
   restaurantId: string,
   ids: string[],
+  actor: { userId?: string | null; phone?: string | null },
 ): Promise<{ confirmed: any[]; failed: string[] }> {
   if (ids.length === 0) return { confirmed: [], failed: [] };
-  const { error } = await db
-    .from("movements")
-    .update({ confirmed_by_user: true })
-    .in("id", ids)
-    .eq("restaurant_id", restaurantId);
-  if (error) console.error("[orchestrator] falha ao confirmar", error.message);
+  const { confirmMovement } = await import("@/lib/movements/service.server");
+  for (const id of ids) {
+    await confirmMovement(db, {
+      restaurantId,
+      userId: actor.userId ?? null,
+      phone: actor.phone ?? null,
+      origin: "whatsapp",
+    }, id);
+  }
 
   const { data } = await db
     .from("movements")
@@ -228,7 +232,7 @@ async function yesterdaySummary(db: any, restaurantId: string): Promise<string> 
     .select("type, amount")
     .eq("restaurant_id", restaurantId)
     .eq("movement_date", day);
-  if (!data || data.length === 0) return `Não encontrei nenhum lançamento registrado em ${day}.`;
+  if (!data || data.length === 0) return `Não encontrei nenhum lançamento registrado em ${formatDateBR(day)}.`;
   let revenue = 0;
   let expense = 0;
   for (const row of data) {
@@ -236,7 +240,7 @@ async function yesterdaySummary(db: any, restaurantId: string): Promise<string> 
     if (row.type === "entrada") revenue += amount;
     else expense += amount;
   }
-  return `Ontem (${day}): entradas de ${brl(revenue)}, saídas de ${brl(expense)} — resultado de ${brl(revenue - expense)}.`;
+  return `Ontem (${formatDateBR(day)}): entradas de ${brl(revenue)}, saídas de ${brl(expense)} — resultado de ${brl(revenue - expense)}.`;
 }
 
 /* --------------------------- orquestração --------------------------- */
@@ -268,8 +272,8 @@ export async function runOrchestrator(
     if (dueItems.length === 0) return mainReply;
     const lines = dueItems.map((item) =>
       item.source === "payable"
-        ? `• ${item.description} — ${brl(item.amount ?? 0)} (venceu em ${item.due_date})`
-        : `• ${item.description} (venceu em ${item.due_date})`,
+        ? `• ${item.description} — ${brl(item.amount ?? 0)} (venceu em ${formatDateBR(item.due_date)})`
+        : `• ${item.description} (venceu em ${formatDateBR(item.due_date)})`,
     );
     await markDueConversationItemsMentioned(db, restaurantId, contactId, dueItems);
     const heading = dueItems.length === 1 ? "Você também tem uma pendência vencida:" : "Você também tem pendências vencidas:";
@@ -330,7 +334,7 @@ export async function runOrchestrator(
       );
     }
 
-    const outcome = await confirmMovements(db, restaurantId, pendingIds);
+    const outcome = await confirmMovements(db, restaurantId, pendingIds, { userId: input.userId, phone: contactId });
     if (outcome.confirmed.length === 0) {
       await clearPending(db, restaurantId, contactId, ctx);
       return done(
@@ -354,12 +358,12 @@ export async function runOrchestrator(
     await clearPending(db, restaurantId, contactId, ctx);
 
     const lines = outcome.confirmed
-      .map((m: any) => `• ${m.movement_date} — ${brl(Number(m.amount))}`)
+      .map((m: any) => `• ${formatDateBR(m.movement_date)} — ${brl(Number(m.amount))}`)
       .join("\n");
     const head =
       outcome.confirmed.length > 1
         ? `Registrado. ${outcome.confirmed.length} lançamentos salvos:\n${lines}`
-        : `Registrado. ${brl(Number(outcome.confirmed[0].amount))} em ${outcome.confirmed[0].movement_date}.`;
+        : `Registrado. ${brl(Number(outcome.confirmed[0].amount))} em ${formatDateBR(outcome.confirmed[0].movement_date)}.`;
     const failed =
       outcome.failed.length > 0
         ? `\n\nAtenção: ${outcome.failed.length} lançamento(s) não conseguiram ser confirmados. Pode me mandar de novo?`
@@ -374,7 +378,7 @@ export async function runOrchestrator(
 
   const confirmation = pendingIds ? null : await findPendingConfirmation(db, restaurantId, contactId);
   if (confirmation && quickYesNo === "yes") {
-    const outcome = await confirmMovements(db, restaurantId, [confirmation.id]);
+    const outcome = await confirmMovements(db, restaurantId, [confirmation.id], { userId: input.userId, phone: contactId });
     await clearPending(db, restaurantId, contactId, ctx);
     if (outcome.confirmed.length === 0) {
       return done(
@@ -384,7 +388,7 @@ export async function runOrchestrator(
     }
     const aggregate = await categoryFeedback(db, restaurantId, outcome.confirmed);
     return done(
-      `Registrado. ${brl(Number(confirmation.amount))} em ${confirmation.movement_date}.${aggregate ? `\n${aggregate}` : ""}`,
+      `Registrado. ${brl(Number(confirmation.amount))} em ${formatDateBR(confirmation.movement_date)}.${aggregate ? `\n${aggregate}` : ""}`,
       { interpretation: { intent: "confirm" }, movementId: confirmation.id },
     );
   }
@@ -430,7 +434,7 @@ export async function runOrchestrator(
             interpretation: { intent: "confirm" },
           });
         }
-        return done(`Anotado: ${created.description} em ${created.due_date}. Vou lembrar quando você falar comigo.`, {
+        return done(`Anotado: ${created.description} em ${formatDateBR(created.due_date)}. Vou lembrar quando você falar comigo.`, {
           interpretation: { intent: "confirm" },
         });
       }
@@ -459,7 +463,7 @@ export async function runOrchestrator(
           });
         }
         return done(
-          `Conta a pagar anotada: ${created.description}, ${brl(Number(created.amount))}, vencimento em ${created.due_date}.`,
+          `Conta a pagar anotada: ${created.description}, ${brl(Number(created.amount))}, vencimento em ${formatDateBR(created.due_date)}.`,
           { interpretation: { intent: "confirm" } },
         );
       }
@@ -584,6 +588,60 @@ export async function runOrchestrator(
   let awaitingUser = false;
 
   switch (parsed.intent) {
+    case "financial_report": {
+      const { normalizeFinancialReport, prepareFinancialReport } = await import("./financial-report.server");
+      const report = normalizeFinancialReport(
+        {
+          report_date: parsed.report_date ?? null,
+          sales: parsed.sales ?? [],
+          expenses: parsed.expenses ?? [],
+          reported_net_profit: parsed.reported_net_profit ?? null,
+        },
+        iso(new Date()),
+      );
+      if (!report) {
+        reply = "Não consegui identificar pelo menos duas vendas com seus custos sem inventar dados. Pode enviar uma imagem mais nítida?";
+        break;
+      }
+      const prepared = await prepareFinancialReport(
+        db,
+        {
+          restaurantId,
+          userId: input.userId ?? null,
+          phone: contactId,
+          origin: "whatsapp",
+          sourceEventId: eventId,
+          idempotencyKey: input.idempotencyKey ?? (eventId ? `whatsapp:${eventId}` : null),
+        },
+        report,
+      );
+      if (prepared.failures.length > 0 || prepared.ids.length === 0) {
+        if (prepared.ids.length > 0) {
+          await db
+            .from("movements")
+            .update({ status: "superseded", notes: "relatório incompleto; preparação cancelada" })
+            .in("id", prepared.ids)
+            .eq("restaurant_id", restaurantId);
+        }
+        reply = "Não consegui preparar todos os lançamentos desse relatório, então nenhum ficou aguardando confirmação. Pode enviar a imagem novamente?";
+        break;
+      }
+      classification = prepared.duplicated === prepared.ids.length ? "duplicate" : "new";
+      movementId = prepared.ids[0] ?? null;
+      reply = prepared.summary;
+      await saveContext(db, restaurantId, contactId, {
+        ...baseCtx,
+        offer: {
+          kind: "confirm_movements",
+          ids: prepared.ids,
+          summary: prepared.summary,
+          created_at: new Date().toISOString(),
+        },
+      });
+      awaitingUser = true;
+      break;
+    }
+
     /* ---------- DADO: registrar ---------- */
     case "register_movement": {
       /* Lista de lançamentos: um por item citado. NUNCA somamos valores. */
@@ -596,6 +654,7 @@ export async function runOrchestrator(
           movement_date: parsed.movement_date ?? null,
           supplier_name: parsed.supplier_name ?? null,
           payment_method: parsed.payment_method ?? null,
+          expense_kind: parsed.expense_kind ?? null,
         });
       }
 
@@ -638,8 +697,8 @@ export async function runOrchestrator(
           categoryId,
         );
         const label = [
-          `${movementDate} — ${brl(Number(d.amount))}`,
-          categoryName ? `(${categoryName})` : null,
+          `${formatDateBR(movementDate)} — ${brl(Number(d.amount))}`,
+          categoryName ? `(${categoryName})` : type === "saida" ? "(Não classificado)" : null,
         ]
           .filter(Boolean)
           .join(" ");
@@ -680,6 +739,7 @@ export async function runOrchestrator(
             supplier_id: supplierId,
             payment_method: d.payment_method ?? parsed.payment_method ?? null,
             confirmed_by_user: false,
+            expense_kind: type === "saida" ? d.expense_kind ?? parsed.expense_kind ?? null : null,
           },
         );
 
@@ -892,7 +952,7 @@ export async function runOrchestrator(
             supplier_id: supplier?.id ?? null,
           },
         });
-        reply = `Isso ainda não foi pago, então não vou lançar como gasto. Quer que eu crie uma conta a pagar de ${brl(amount)}, com vencimento em ${due}?`;
+        reply = `Isso ainda não foi pago, então não vou lançar como gasto. Quer que eu crie uma conta a pagar de ${brl(amount)}, com vencimento em ${formatDateBR(due)}?`;
         awaitingUser = true;
         break;
       }
@@ -906,7 +966,7 @@ export async function runOrchestrator(
           reminder_kind: parsed.reminder_kind ?? "compromisso",
         },
       });
-      reply = `Isso ainda não aconteceu, então não vou registrar como gasto. Quer que eu anote um lembrete para ${due}?`;
+      reply = `Isso ainda não aconteceu, então não vou registrar como gasto. Quer que eu anote um lembrete para ${formatDateBR(due)}?`;
       awaitingUser = true;
       break;
     }
@@ -932,8 +992,8 @@ export async function runOrchestrator(
           .limit(5),
       ]);
       const lines = [
-        ...(bills ?? []).map((bill: any) => `• ${bill.description} — ${brl(Number(bill.amount))} em ${bill.due_date}`),
-        ...(reminders ?? []).map((reminder: any) => `• ${reminder.description} em ${reminder.due_date}`),
+        ...(bills ?? []).map((bill: any) => `• ${bill.description} — ${brl(Number(bill.amount))} em ${formatDateBR(bill.due_date)}`),
+        ...(reminders ?? []).map((reminder: any) => `• ${reminder.description} em ${formatDateBR(reminder.due_date)}`),
       ]
         .sort()
         .slice(0, 5);

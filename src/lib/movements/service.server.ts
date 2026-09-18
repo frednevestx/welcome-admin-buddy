@@ -118,11 +118,12 @@ export async function createMovement(
 }
 
 export async function confirmMovement(db: any, actor: MovementActor, movementId: string): Promise<void> {
-  await db
+  const { error } = await db
     .from("movements")
     .update({ confirmed_by_user: true })
     .eq("id", movementId)
     .eq("restaurant_id", actor.restaurantId);
+  if (error) throw new Error(error.message);
   await audit(db, {
     action: "movement.confirmed",
     entity: "movement",
