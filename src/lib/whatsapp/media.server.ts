@@ -18,6 +18,13 @@ const GEMINI_MODEL = "gemini-3.7-flash";
 const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash";
 const MAX_MEDIA_BYTES = 20 * 1024 * 1024; // 20MB de teto de segurança
 
+import type { FinancialReportData, Interpretation } from "./interpret.server";
+
+export interface ImageMessageResult {
+  message: string;
+  interpretation: Interpretation | null;
+}
+
 async function fetchAsBase64(
   url: string,
   fallbackMime: string,
@@ -147,6 +154,80 @@ Responda APENAS com a mensagem extraída, sem aspas, introdução ou explicaçã
   const result = await callGeminiInline({ mimeType: file.mime, data: file.base64 }, prompt);
   if (!result || result.includes("SEM_CONTEUDO_LEGIVEL")) return null;
   return result;
+}
+
+function parseFinancialReport(text: string): FinancialReportData | null {
+  try {
+    const cleaned = text.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+    const parsed = JSON.parse(cleaned) as Partial<FinancialReportData>;
+    if (!Array.isArray(parsed.sales)) return null;
+    const sales = parsed.sales.filter(
+      (sale) =>
+        sale &&
+        typeof sale.description === "string" &&
+        Number(sale.amount) > 0 &&
+        Array.isArray(sale.costs) &&
+        sale.costs.some((cost) => cost && typeof cost.description === "string" && Number(cost.amount) > 0),
+    );
+    if (sales.length < 2) return null;
+    return {
+      report_date: typeof parsed.report_date === "string" ? parsed.report_date : null,
+      sales,
+      expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+      reported_net_profit:
+        parsed.reported_net_profit === null || Number.isFinite(Number(parsed.reported_net_profit))
+          ? parsed.reported_net_profit ?? null
+          : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Primeiro tenta relatório estruturado; fora desse caso preserva a descrição antiga. */
+export async function analyzeImageAsMessage(
+  imageUrl: string,
+  mime: string | null,
+  name: string | null,
+): Promise<ImageMessageResult | null> {
+  const file = await fetchAsBase64(imageUrl, mime ?? "image/jpeg");
+  if (!file) return null;
+  const structuredPrompt = `
+Leia esta imagem como um possível relatório financeiro. Responda APENAS JSON válido:
+{
+  "report_date": "YYYY-MM-DD" | null,
+  "sales": [{ "description": string, "amount": number, "costs": [{ "description": string, "amount": number }] }],
+  "expenses": [{ "description": string, "amount": number }],
+  "reported_net_profit": number | null
+}
+Use sales somente para vendas/recebimentos e associe a cada venda apenas custos explicitamente ligados a ela.
+Use expenses apenas para despesas gerais explicitamente apresentadas fora das vendas.
+Não calcule, não complete e não invente valores ou datas ilegíveis. Se não houver duas ou mais vendas com custos associados, mantenha sales vazio.
+`.trim();
+  const structuredText = await callGeminiInline({ mimeType: file.mime, data: file.base64 }, structuredPrompt);
+  const report = structuredText ? parseFinancialReport(structuredText) : null;
+  if (report) {
+    const interpretation: Interpretation = {
+      intent: "financial_report",
+      report_date: report.report_date,
+      sales: report.sales,
+      expenses: report.expenses ?? [],
+      reported_net_profit: report.reported_net_profit,
+    };
+    return { message: JSON.stringify(interpretation), interpretation };
+  }
+
+  const fallbackPrompt = `
+Esta imagem foi enviada por ${name ?? "um usuário"} no WhatsApp para a secretária inteligente da empresa.
+Leia e interprete todo o conteúdo escrito que estiver legível, incluindo comprovantes, notas fiscais, recibos, listas, pedidos, anotações e capturas de tela.
+Transforme o conteúdo em uma mensagem curta e objetiva, em português do Brasil, como se ${name ?? "o usuário"} tivesse digitado as informações para a secretária.
+Preserve todos os dados relevantes e legíveis, como itens, quantidades, valores, datas, nomes, formas de pagamento e totais. Não invente nem complete informações ilegíveis.
+Se não houver conteúdo escrito útil ou legível, responda exatamente: SEM_CONTEUDO_LEGIVEL
+Responda APENAS com a mensagem extraída, sem aspas, introdução ou explicação.
+`.trim();
+  const message = await callGeminiInline({ mimeType: file.mime, data: file.base64 }, fallbackPrompt);
+  if (!message || message.includes("SEM_CONTEUDO_LEGIVEL")) return null;
+  return { message, interpretation: null };
 }
 
 /**

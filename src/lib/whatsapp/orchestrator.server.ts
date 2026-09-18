@@ -22,6 +22,7 @@ import {
 
 } from "./context.server";
 import { interpret, type Interpretation } from "./interpret.server";
+import { formatDateBR } from "@/lib/format";
 import { BUSY_REPLY, fallbackReply, greetingReply, narrate } from "./reply.server";
 import {
   comparePeriods,
@@ -251,6 +252,8 @@ export async function runOrchestrator(
     userId?: string | null;
     /** chave de idempotência da mensagem original */
     idempotencyKey?: string | null;
+    /** Extração multimodal já validada, quando a imagem é um relatório. */
+    interpretation?: Interpretation | null;
   },
 ): Promise<OrchestratorResult> {
   const { restaurantId, contactId, message, eventId } = input;
@@ -559,7 +562,7 @@ export async function runOrchestrator(
 
 
   /* 3. Interpretação (com histórico + contexto). */
-  const parsed = await interpret(message, ctx, history);
+  const parsed = input.interpretation ?? (await interpret(message, ctx, history));
   if (!parsed) {
     // Nenhum provedor de IA respondeu — preservamos o contexto pendente.
     return done(BUSY_REPLY);
