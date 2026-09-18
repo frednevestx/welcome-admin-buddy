@@ -8,6 +8,8 @@
  * - todas as consultas são sempre filtradas pelo restaurant_id do telefone.
  */
 
+import { formatDateBR } from "@/lib/format";
+
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 
@@ -31,7 +33,7 @@ export interface MovementRow {
 export function describeMovement(m: MovementRow): string {
   const kind = m.type === "entrada" ? "entrada" : "despesa";
   const what = m.category_name || m.description || "lançamento";
-  return `${kind} de ${brl(Number(m.amount))} — ${what} (${m.movement_date})`;
+  return `${kind} de ${brl(Number(m.amount))} — ${what} (${formatDateBR(m.movement_date)})`;
 }
 
 /**
@@ -131,7 +133,7 @@ export function changesLabel(changes: MovementChanges): string {
   const parts: string[] = [];
   if (changes.amount != null) parts.push(`valor para ${brl(Number(changes.amount))}`);
   if (changes.category_name) parts.push(`categoria para ${changes.category_name}`);
-  if (changes.movement_date) parts.push(`data para ${changes.movement_date}`);
+  if (changes.movement_date) parts.push(`data para ${formatDateBR(changes.movement_date)}`);
   if (changes.movement_type) parts.push(`tipo para ${changes.movement_type === "entrada" ? "receita" : "despesa"}`);
   return parts.join(", ");
 }

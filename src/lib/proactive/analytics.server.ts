@@ -3,6 +3,8 @@
  * Toda a matemática acontece aqui; a IA nunca calcula números.
  */
 
+import { formatDateBR } from "@/lib/format";
+
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
 
@@ -54,7 +56,7 @@ export async function comparePeriods(db: any, restaurantId: string): Promise<str
   const pct = (a: number, b: number) => (b > 0 ? `${(((a - b) / b) * 100).toFixed(1)}%` : "sem base de comparação");
 
   return [
-    `Mês atual (${cur.from} a ${cur.to}): entradas ${brl(rc)}, saídas ${brl(ec)}, resultado ${brl(rc - ec)}.`,
+    `Mês atual (${formatDateBR(cur.from)} a ${formatDateBR(cur.to)}): entradas ${brl(rc)}, saídas ${brl(ec)}, resultado ${brl(rc - ec)}.`,
     `Mês anterior: entradas ${brl(rp)}, saídas ${brl(ep)}, resultado ${brl(rp - ep)}.`,
     `Variação de entradas: ${pct(rc, rp)} · variação de saídas: ${pct(ec, ep)}.`,
   ].join("\n");
@@ -115,7 +117,7 @@ export async function getSupplierAnalysis(db: any, restaurantId: string, days = 
     `Fornecedores nos últimos ${days} dias:`,
     ...top.map(
       ([n, v]) =>
-        `• ${n} — ${brl(v.total)} em ${v.count} compra(s), ticket médio ${brl(v.total / v.count)}, última em ${v.last}`,
+        `• ${n} — ${brl(v.total)} em ${v.count} compra(s), ticket médio ${brl(v.total / v.count)}, última em ${formatDateBR(v.last)}`,
     ),
   ].join("\n");
 }

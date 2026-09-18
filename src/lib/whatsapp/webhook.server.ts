@@ -16,7 +16,8 @@
 
 import { dedupeKey, normalizePhone } from "./phone";
 import { resolveOrOnboard, loadSession, saveSession } from "./onboarding.server";
-import { describeImageAsMessage, transcribeAudioAsMessage } from "./media.server";
+import { analyzeImageAsMessage, transcribeAudioAsMessage } from "./media.server";
+import type { Interpretation } from "./interpret.server";
 
 export interface WebhookOutcome {
   status: number;
@@ -104,14 +105,16 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
   // porque é uma mídia que a TalkToMe não transcreve (imagem).
   let effectiveText = text;
   let mediaOrigin: "image" | "audio" | null = null;
+  let mediaInterpretation: Interpretation | null = null;
 
   // Só imagem vai para o Gemini como mídia, e apenas quando "text" veio
   // vazio. Áudio NUNCA: a TalkToMe já transcreve e manda em "text".
   if (!effectiveText && mediaUrl && mediaKind === "image") {
     try {
-      const described = await describeImageAsMessage(mediaUrl, mediaType, name);
-      if (described) {
-        effectiveText = described;
+      const analyzed = await analyzeImageAsMessage(mediaUrl, mediaType, name);
+      if (analyzed) {
+        effectiveText = analyzed.message;
+        mediaInterpretation = analyzed.interpretation;
         mediaOrigin = "image";
       }
     } catch (err) {
@@ -197,6 +200,7 @@ export async function handleWhatsAppWebhook(db: any, body: any): Promise<Webhook
       eventId,
       userId: resolved.userId,
       idempotencyKey: eventId ? `whatsapp:${eventId}` : `whatsapp:${key}`,
+      interpretation: mediaInterpretation,
     });
   } catch (err) {
     console.error("[whatsapp/webhook] orquestrador falhou", err);
