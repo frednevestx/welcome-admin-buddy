@@ -1,6 +1,7 @@
 # Roteiro LUUD
 
 ## Concluído
+- Distinção entre custo e despesa e leitura estruturada de relatórios financeiros no WhatsApp
 - Leitura multimodal de imagens no WhatsApp, integrada ao mesmo histórico e fluxo conversacional de texto/áudio
 - Contas a pagar no WhatsApp com confirmação e vencimentos mencionados somente durante conversas
 - Disparo externo de lembretes aposentado, preservando os demais comandos do sistema
@@ -17,4 +18,4 @@
 - Segredo `TALKTOME_API_KEY` configurado para o envio real do código em `/acesso`
 
 ## Pendente
-- [ ] Distinguir custo/despesa e processar relatórios financeiros estruturados no WhatsApp
+- Nenhuma pendência conhecida

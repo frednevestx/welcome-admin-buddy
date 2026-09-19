@@ -103,12 +103,16 @@ async function confirmMovements(
   if (ids.length === 0) return { confirmed: [], failed: [] };
   const { confirmMovement } = await import("@/lib/movements/service.server");
   for (const id of ids) {
-    await confirmMovement(db, {
-      restaurantId,
-      userId: actor.userId ?? null,
-      phone: actor.phone ?? null,
-      origin: "whatsapp",
-    }, id);
+    try {
+      await confirmMovement(db, {
+        restaurantId,
+        userId: actor.userId ?? null,
+        phone: actor.phone ?? null,
+        origin: "whatsapp",
+      }, id);
+    } catch (err) {
+      console.error("[orchestrator] falha ao confirmar lançamento", id, err);
+    }
   }
 
   const { data } = await db
@@ -626,6 +630,13 @@ export async function runOrchestrator(
         reply = "Não consegui preparar todos os lançamentos desse relatório, então nenhum ficou aguardando confirmação. Pode enviar a imagem novamente?";
         break;
       }
+      if (prepared.duplicated === prepared.ids.length) {
+        classification = "duplicate";
+        movementId = prepared.ids[0] ?? null;
+        reply = "Esse relatório já foi processado, então não criei lançamentos duplicados.";
+        await clearPending(db, restaurantId, contactId, baseCtx);
+        break;
+      }
       classification = prepared.duplicated === prepared.ids.length ? "duplicate" : "new";
       movementId = prepared.ids[0] ?? null;
       reply = prepared.summary;
@@ -855,7 +866,7 @@ export async function runOrchestrator(
       reply = await narrate(
         "Responda em 1 a 3 linhas quanto o usuário já pagou para essa pessoa/fornecedor, usando exatamente os valores dos fatos.",
         facts,
-        `Com ${facts["nome"]}: ${facts["total"]} em ${facts["lancamentos"] ?? facts["compras"]} lançamento(s), último em ${facts["ultimo_pagamento"]}.`,
+        `Com ${facts["nome"]}: ${facts["total"]} em ${facts["lancamentos"] ?? facts["compras"]} lançamento(s), último em ${typeof facts["ultimo_pagamento"] === "string" ? formatDateBR(facts["ultimo_pagamento"]) : facts["ultimo_pagamento"]}.`,
       );
       break;
     }
