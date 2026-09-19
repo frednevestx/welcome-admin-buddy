@@ -630,6 +630,13 @@ export async function runOrchestrator(
         reply = "Não consegui preparar todos os lançamentos desse relatório, então nenhum ficou aguardando confirmação. Pode enviar a imagem novamente?";
         break;
       }
+      if (prepared.duplicated === prepared.ids.length) {
+        classification = "duplicate";
+        movementId = prepared.ids[0] ?? null;
+        reply = "Esse relatório já foi processado, então não criei lançamentos duplicados.";
+        await clearPending(db, restaurantId, contactId, baseCtx);
+        break;
+      }
       classification = prepared.duplicated === prepared.ids.length ? "duplicate" : "new";
       movementId = prepared.ids[0] ?? null;
       reply = prepared.summary;
