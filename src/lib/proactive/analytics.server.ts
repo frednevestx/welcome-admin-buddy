@@ -200,7 +200,7 @@ export async function getSupplierSpendFacts(
       periodo_dias: days,
       total: brl(total),
       lancamentos: rowsDesc.length,
-      ultimo_pagamento: rowsDesc.map((r: any) => r.movement_date).sort().at(-1),
+      ultimo_pagamento: formatDateBR(rowsDesc.map((r: any) => r.movement_date).sort().at(-1) ?? ""),
       categorias: Array.from(
         new Set(rowsDesc.map((r: any) => (r.category_id ? catNames.get(r.category_id) ?? "Sem categoria" : "Sem categoria"))),
       ),
@@ -222,7 +222,7 @@ export async function getSupplierSpendFacts(
     total_neste_mes: brl(thisMonth),
     compras: matched.length,
     ticket_medio: brl(total / matched.length),
-    ultimo_pagamento: matched.map((r: any) => r.movement_date).sort().at(-1),
+    ultimo_pagamento: formatDateBR(matched.map((r: any) => r.movement_date).sort().at(-1) ?? ""),
     categorias: Array.from(
       new Set(matched.map((r: any) => (r.category_id ? catNames.get(r.category_id) ?? "Sem categoria" : "Sem categoria"))),
     ),
@@ -294,7 +294,7 @@ export async function getBusinessOverviewFacts(
   const supNames = await names(db, "suppliers", restaurantId);
 
   if (rowsCur.length === 0 && rowsPrev.length === 0) {
-    return { tipo: "visao_geral", dados_suficientes: false, periodo: `${cur.from} a ${cur.to}` };
+    return { tipo: "visao_geral", dados_suficientes: false, periodo: `${formatDateBR(cur.from)} a ${formatDateBR(cur.to)}` };
   }
 
   const rc = sumBy(rowsCur, "entrada");
@@ -325,7 +325,7 @@ export async function getBusinessOverviewFacts(
   return {
     tipo: "visao_geral",
     dados_suficientes: true,
-    periodo_atual: `${cur.from} a ${cur.to}`,
+    periodo_atual: `${formatDateBR(cur.from)} a ${formatDateBR(cur.to)}`,
     entradas_mes_atual: brl(rc),
     saidas_mes_atual: brl(ec),
     resultado_mes_atual: brl(rc - ec),
