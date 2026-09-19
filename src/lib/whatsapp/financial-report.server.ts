@@ -46,12 +46,14 @@ export function normalizeFinancialReport(
   const expenses = Array.isArray(value.expenses)
     ? value.expenses.filter(validItem).map((item) => ({ description: item.description.trim(), amount: Number(item.amount) }))
     : [];
-  const reported = Number(value.reported_net_profit);
+  const reported = value.reported_net_profit === null || value.reported_net_profit === undefined
+    ? null
+    : Number(value.reported_net_profit);
   return {
     report_date: validDate(value.report_date) ? value.report_date : fallbackDate,
     sales,
     expenses,
-    reported_net_profit: Number.isFinite(reported) ? reported : null,
+    reported_net_profit: reported !== null && Number.isFinite(reported) ? reported : null,
   };
 }
 
