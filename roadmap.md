@@ -1,21 +1,6 @@
-# Roteiro LUUD
-
-## Concluído
-- Distinção entre custo e despesa e leitura estruturada de relatórios financeiros no WhatsApp
-- Leitura multimodal de imagens no WhatsApp, integrada ao mesmo histórico e fluxo conversacional de texto/áudio
-- Contas a pagar no WhatsApp com confirmação e vencimentos mencionados somente durante conversas
-- Disparo externo de lembretes aposentado, preservando os demais comandos do sistema
-- Identidade persistente do WhatsApp (`whatsapp_identities`, normalização de telefone, conflitos)
-- Auditoria (`audit_log`) e arquivamento em vez de exclusão
-- Serviço central de movimentações (criar, confirmar, corrigir, arquivar, restaurar)
-- Webhook unificado: evento cru -> identidade -> orquestrador -> resposta, com idempotência
-- Orquestrador conversacional com uma sugestão por resposta, sem push
-- Acesso web por código de 6 dígitos em `/acesso` (hash, expiração 10 min, uso único, limites)
-- Painel enxuto: Visão geral, Lançamentos, Conversas, Negócio, Ajuda (páginas legadas removidas)
-- Painel administrativo em `/admin` (identidades, negócios, conversas, auditoria, limpeza com confirmação)
-- Funções web dos lançamentos passando pelo serviço central (`movements.functions.ts`)
-- Tela `/movimentacoes` usando o serviço central (arquivar em vez de excluir, lista de arquivados com recuperação)
-- Segredo `TALKTOME_API_KEY` configurado para o envio real do código em `/acesso`
-
-## Pendente
-- Nenhuma pendência conhecida
+## Em andamento
+- [ ] Remover /auth, cadastro por e-mail e corrigir redirects para /acesso
+- [ ] Preservar login administrativo por e-mail/senha em /acesso
+- [ ] Adicionar mesclagem auditada de negócios no painel admin
+- [ ] Limpar copy pública e de onboarding para linguagem de negócio
+- [ ] Validar cadastro/login/mesclagem ponta a ponta
