@@ -86,7 +86,7 @@ export function OnboardingDialog({ onCreated }: { onCreated: () => void }) {
         >
           <div className="space-y-2">
             <Label htmlFor="rname">Nome do negócio</Label>
-            <Input id="rname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Pizzaria do João" autoFocus />
+            <Input id="rname" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Loja da Ana" autoFocus />
           </div>
           <Button type="submit" className="w-full" disabled={loading || !name.trim()}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (<>Continuar <ArrowRight className="h-4 w-4 ml-1" /></>)}

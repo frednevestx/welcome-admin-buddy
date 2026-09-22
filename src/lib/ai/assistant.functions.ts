@@ -31,10 +31,10 @@ const MODE_INSTRUCTIONS: Record<AssistantMode, string> = {
   previsao_metas:
     "Com base no ritmo atual das vendas e na meta ativa, calcule: probabilidade de atingir a meta, quanto falta, quanto precisa vender por dia até o fim do período, previsão de faturamento e de lucro no fim do período. Se não houver meta ativa, sugira uma meta realista baseada no histórico.",
   insights:
-    "Gere de 6 a 10 insights personalizados e específicos sobre o comportamento financeiro do restaurante. Padrões por dia da semana, sazonalidade, mudanças de fornecedores, evolução de ticket médio, produtos/canais mais lucrativos, tendências de custos. Cada insight em uma linha, com número e contexto.",
+    "Gere de 6 a 10 insights personalizados e específicos sobre o comportamento financeiro do negócio. Padrões por dia da semana, sazonalidade, mudanças de fornecedores, evolução de ticket médio, produtos/canais mais lucrativos, tendências de custos. Cada insight em uma linha, com número e contexto.",
 };
 
-const BASE_SYSTEM = `Você é uma IA consultora financeira especializada em restaurantes, delivery e food service. Seu papel NÃO é apenas mostrar números, é responder às perguntas mais importantes do empresário:
+const BASE_SYSTEM = `Você é uma IA consultora financeira especializada em pequenos negócios. Seu papel NÃO é apenas mostrar números, é responder às perguntas mais importantes do empresário:
 1. O que aconteceu?
 2. Por que aconteceu?
 3. Qual o impacto financeiro (em R$ ou %)?
@@ -255,7 +255,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     if (!profile?.restaurant_id) {
       return {
         content:
-          "Você ainda não tem um restaurante cadastrado. Complete o onboarding para começar a receber análises da IA.",
+          "Você ainda não tem um negócio cadastrado. Complete o onboarding para começar a receber análises da IA.",
       };
     }
 
@@ -263,7 +263,7 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     const systemPrompt =
       BASE_SYSTEM +
-      "\n\n===== DADOS DO RESTAURANTE =====\n" +
+      "\n\n===== DADOS DO NEGÓCIO =====\n" +
       snapshot +
       "\n===== FIM DOS DADOS =====\n\n" +
       "Instrução para esta resposta: " +

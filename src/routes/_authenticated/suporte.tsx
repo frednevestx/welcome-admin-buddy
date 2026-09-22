@@ -242,7 +242,7 @@ function NewTicketDialog({
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Ex: Não consigo importar planilha do iFood"
+              placeholder="Ex: Não consigo importar minha planilha de vendas"
               required
               maxLength={120}
               autoFocus

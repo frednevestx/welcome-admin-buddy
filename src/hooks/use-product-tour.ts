@@ -33,7 +33,7 @@ const STEPS: TourStepDef[] = [
   {
     selector: '[data-tour="menu-importacoes"]',
     title: "3. Entrada de Vendas",
-    description: "Importe planilhas do iFood/99Food ou preencha a planilha inteligente para lançar pedidos manuais.",
+    description: "Importe planilhas de vendas ou preencha a planilha inteligente para lançar pedidos manuais.",
     side: "right",
   },
   {
@@ -57,7 +57,7 @@ const STEPS: TourStepDef[] = [
   {
     selector: '[data-tour="menu-lucro-plataforma"]',
     title: "7. Lucro por Plataforma — PRO",
-    description: "Compare quanto sobra em cada canal: iFood, salão, delivery próprio.",
+    description: "Compare quanto sobra em cada canal: marketplaces, balcão e venda direta.",
     side: "right",
   },
   {

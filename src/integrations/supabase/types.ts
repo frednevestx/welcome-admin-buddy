@@ -1919,6 +1919,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_merge_restaurants: {
+        Args: { _actor_user_id: string; _source_id: string; _target_id: string }
+        Returns: Json
+      }
       admin_revoke_plan: { Args: { _user_id: string }; Returns: undefined }
       current_restaurant_id: { Args: never; Returns: string }
       effective_plan: {
