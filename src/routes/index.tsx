@@ -942,7 +942,7 @@ function Footer() {
           <a href="#como-funciona" className="transition-colors hover:text-foreground">Como funciona</a>
           <a href="#contexto" className="transition-colors hover:text-foreground">O que perguntar</a>
           <a href="#faq" className="transition-colors hover:text-foreground">Dúvidas</a>
-          <Link to="/auth" className="transition-colors hover:text-foreground">Entrar no painel</Link>
+          <Link to="/acesso" className="transition-colors hover:text-foreground">Entrar no painel</Link>
         </div>
       </div>
       <div className="max-w-6xl mx-auto mt-8 border-t border-border pt-6 text-xs text-muted-foreground">

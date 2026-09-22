@@ -45,6 +45,18 @@ function AccessPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  async function navigateAfterSignIn() {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (!user) throw new Error("Sessão não encontrada.");
+    const { data: isAdmin, error } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    if (error) throw error;
+    navigate({ to: isAdmin ? "/admin" : "/dashboard", replace: true });
+  }
+
   async function handleSend() {
     setLoading(true);
     try {
@@ -66,7 +78,7 @@ function AccessPage() {
       if (!r.ok || !r.tokenHash) return toast.error(r.error ?? "Código inválido.");
       const { error } = await supabase.auth.verifyOtp({ token_hash: r.tokenHash, type: "magiclink" });
       if (error) return toast.error("Não foi possível abrir sua sessão. Tente novamente.");
-      navigate({ to: "/dashboard", replace: true });
+      await navigateAfterSignIn();
     } catch {
       toast.error("Falha ao validar o código.");
     } finally {
@@ -80,7 +92,7 @@ function AccessPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      navigate({ to: "/dashboard", replace: true });
+      await navigateAfterSignIn();
     } catch (err: unknown) {
       toast.error(translateAuthError(err, "Não foi possível entrar com e-mail e senha."));
     } finally {
@@ -201,7 +213,7 @@ function AccessPage() {
                       aria-label="Alternar para o login com e-mail e senha"
                       className="inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-                      <Mail className="h-3.5 w-3.5" /> Prefere entrar com e-mail?
+                      <Mail className="h-3.5 w-3.5" /> Já tem conta ou faz parte da equipe administrativa?
                     </button>
                   </div>
                 </>

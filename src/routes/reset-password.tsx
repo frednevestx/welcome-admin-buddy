@@ -12,6 +12,16 @@ import { translateAuthError } from "@/lib/auth-errors";
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
   component: ResetPasswordPage,
+  head: () => ({
+    meta: [
+      { title: "Redefinir senha — LUUD" },
+      { name: "description", content: "Escolha uma nova senha para sua conta LUUD." },
+      { property: "og:title", content: "Redefinir senha — LUUD" },
+      { property: "og:description", content: "Escolha uma nova senha para sua conta LUUD." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function ResetPasswordPage() {
@@ -64,7 +74,7 @@ function ResetPasswordPage() {
           <div className="h-10 w-10 rounded-xl grid place-items-center" style={{ background: "var(--gradient-primary)" }}>
             <Wallet className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-semibold tracking-tight">Systen Finanças</span>
+          <span className="text-xl font-semibold tracking-tight">LUUD</span>
         </div>
 
         <Card className="p-8 border-border/60" style={{ boxShadow: "var(--shadow-card)" }}>
@@ -77,7 +87,7 @@ function ResetPasswordPage() {
             <div className="text-sm text-muted-foreground">
               Validando link de recuperação...
               <div className="mt-4">
-                <Link to="/auth" className="text-primary hover:underline">
+                <Link to="/acesso" className="text-primary hover:underline">
                   Voltar para o login
                 </Link>
               </div>
