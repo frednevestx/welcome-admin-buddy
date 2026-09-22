@@ -12,12 +12,16 @@ import {
   resolveIdentityConflict,
   cleanupPreview,
   cleanupExecute,
+  previewBusinessMergeAdmin,
+  mergeBusinessesAdmin,
 } from "@/lib/admin/admin.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -45,8 +49,14 @@ function AdminPanel() {
   const resolveFn = useServerFn(resolveIdentityConflict);
   const previewFn = useServerFn(cleanupPreview);
   const cleanupFn = useServerFn(cleanupExecute);
+  const mergePreviewFn = useServerFn(previewBusinessMergeAdmin);
+  const mergeFn = useServerFn(mergeBusinessesAdmin);
 
   const [confirmation, setConfirmation] = useState("");
+  const [mergeConfirmation, setMergeConfirmation] = useState("");
+  const [sourceId, setSourceId] = useState("");
+  const [targetId, setTargetId] = useState("");
+  const [mergeResult, setMergeResult] = useState<string | null>(null);
 
   const overview = useQuery({ queryKey: ["admin-overview"], queryFn: () => overviewFn({}) });
   const identities = useQuery({ queryKey: ["admin-identities"], queryFn: () => identitiesFn({}) });
@@ -54,6 +64,11 @@ function AdminPanel() {
   const audit = useQuery({ queryKey: ["admin-audit"], queryFn: () => auditFn({}) });
   const conversations = useQuery({ queryKey: ["admin-conversations"], queryFn: () => conversationsFn({}) });
   const preview = useQuery({ queryKey: ["admin-cleanup-preview"], queryFn: () => previewFn({}) });
+  const mergePreview = useQuery({
+    queryKey: ["admin-merge-preview", sourceId, targetId],
+    queryFn: () => mergePreviewFn({ data: { sourceId, targetId } }),
+    enabled: Boolean(sourceId && targetId && sourceId !== targetId),
+  });
 
   if (overview.isError) {
     return (
@@ -152,13 +167,83 @@ function AdminPanel() {
         </TabsContent>
 
         <TabsContent value="negocios" className="space-y-2 pt-4">
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-base">Mesclar negócios duplicados</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <p className="text-muted-foreground">
+                Move os lançamentos e o vínculo do WhatsApp para o negócio real. A origem será arquivada e a ação não pode ser desfeita automaticamente.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Origem criada pelo WhatsApp</Label>
+                  <Select value={sourceId} onValueChange={setSourceId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a origem" /></SelectTrigger>
+                    <SelectContent>
+                      {(businesses.data ?? []).filter((b: any) => b.is_whatsapp_created && !b.archived_at).map((b: any) => (
+                        <SelectItem key={b.id} value={b.id}>{b.name} · {b.identity_phone_masked}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Destino real sem WhatsApp</Label>
+                  <Select value={targetId} onValueChange={setTargetId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o destino" /></SelectTrigger>
+                    <SelectContent>
+                      {(businesses.data ?? []).filter((b: any) => b.is_unlinked_candidate && !b.archived_at).map((b: any) => (
+                        <SelectItem key={b.id} value={b.id}>{b.name} · {b.owner_email_masked}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {mergePreview.data && (
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-muted-foreground">
+                  <p><strong className="text-foreground">{mergePreview.data.source.name}</strong> será arquivado e unido a <strong className="text-foreground">{mergePreview.data.target.name}</strong>.</p>
+                  <p>{mergePreview.data.movements} lançamentos, {mergePreview.data.identities} identidade e {mergePreview.data.sessions} sessões serão movidos.</p>
+                </div>
+              )}
+              {mergePreview.isError && <p className="text-destructive">Não foi possível preparar esta mesclagem.</p>}
+              <div className="space-y-2">
+                <Label htmlFor="merge-confirmation">Digite MESCLAR para confirmar</Label>
+                <Input id="merge-confirmation" value={mergeConfirmation} onChange={(e) => setMergeConfirmation(e.target.value)} />
+              </div>
+              <Button
+                variant="destructive"
+                disabled={!mergePreview.data || mergeConfirmation.trim() !== "MESCLAR"}
+                onClick={async () => {
+                  try {
+                    const result = await mergeFn({ data: { sourceId, targetId, confirmation: mergeConfirmation } });
+                    setMergeResult(`${result.movements_moved} lançamentos movidos; negócio de origem arquivado.`);
+                    setSourceId("");
+                    setTargetId("");
+                    setMergeConfirmation("");
+                    await Promise.all([
+                      qc.invalidateQueries({ queryKey: ["admin-businesses"] }),
+                      qc.invalidateQueries({ queryKey: ["admin-identities"] }),
+                      qc.invalidateQueries({ queryKey: ["admin-overview"] }),
+                      qc.invalidateQueries({ queryKey: ["admin-audit"] }),
+                    ]);
+                    toast.success("Negócios mesclados com segurança.");
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Não foi possível mesclar os negócios.");
+                  }
+                }}
+              >
+                Mesclar negócios
+              </Button>
+              {mergeResult && <p className="text-primary">{mergeResult}</p>}
+            </CardContent>
+          </Card>
           {(businesses.data ?? []).map((b: any) => (
             <div key={b.id} className="rounded-md border border-border/60 px-3 py-2">
               <div className="text-sm font-medium">
                 {b.name} {b.archived_at && <Badge variant="outline">arquivado</Badge>}
               </div>
               <div className="text-xs text-muted-foreground">
-                {b.whatsapp_masked} · {b.cidade ?? "—"} · criado em{" "}
+                {b.whatsapp_masked} · {b.cidade ?? "—"} · {b.movement_count} lançamentos · {b.is_whatsapp_created ? "criado pelo WhatsApp" : b.is_unlinked_candidate ? "sem WhatsApp" : "conta existente"} · criado em{" "}
                 {new Date(b.created_at).toLocaleDateString("pt-BR")}
               </div>
             </div>

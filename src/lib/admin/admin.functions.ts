@@ -134,10 +134,94 @@ export const listBusinessesAdmin = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("restaurants")
-      .select("id, name, whatsapp, cidade, created_at, archived_at")
+      .select("id, name, owner_id, whatsapp, cidade, created_at, archived_at")
       .order("created_at", { ascending: false })
       .limit(200);
-    return (data ?? []).map((r: any) => ({ ...r, whatsapp_masked: mask(r.whatsapp) }));
+    const restaurantIds = (data ?? []).map((r: any) => r.id);
+    const ownerIds = (data ?? []).map((r: any) => r.owner_id);
+    const [{ data: profiles }, { data: identities }, { data: movementRows }] = await Promise.all([
+      ownerIds.length
+        ? supabaseAdmin.from("profiles").select("id, email").in("id", ownerIds)
+        : Promise.resolve({ data: [] }),
+      restaurantIds.length
+        ? supabaseAdmin.from("whatsapp_identities").select("restaurant_id, phone_normalized").in("restaurant_id", restaurantIds)
+        : Promise.resolve({ data: [] }),
+      restaurantIds.length
+        ? supabaseAdmin.from("movements").select("restaurant_id").in("restaurant_id", restaurantIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+    const emails = new Map((profiles ?? []).map((p: any) => [p.id, p.email as string | null]));
+    const identityPhones = new Map((identities ?? []).map((i: any) => [i.restaurant_id, i.phone_normalized as string]));
+    const movementCounts = new Map<string, number>();
+    for (const movement of movementRows ?? []) {
+      movementCounts.set(movement.restaurant_id, (movementCounts.get(movement.restaurant_id) ?? 0) + 1);
+    }
+    return (data ?? []).map((r: any) => {
+      const ownerEmail = emails.get(r.owner_id) ?? null;
+      const isWhatsAppCreated = /^wa\d+@luud\.app$/i.test(ownerEmail ?? "");
+      return {
+        ...r,
+        whatsapp_masked: mask(r.whatsapp),
+        owner_email_masked: ownerEmail ? ownerEmail.replace(/^(.{2}).*(@.*)$/, "$1***$2") : "—",
+        is_whatsapp_created: isWhatsAppCreated,
+        is_unlinked_candidate: !r.whatsapp && !isWhatsAppCreated && !r.archived_at,
+        identity_phone_masked: mask(identityPhones.get(r.id) ?? null),
+        movement_count: movementCounts.get(r.id) ?? 0,
+      };
+    });
+  });
+
+export const previewBusinessMergeAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sourceId: string; targetId: string }) => input)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (!data.sourceId || !data.targetId || data.sourceId === data.targetId) {
+      throw new Error("Escolha negócios diferentes para origem e destino.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: rows }, { count: movements }, { count: identities }, { count: sessions }] = await Promise.all([
+      supabaseAdmin.from("restaurants").select("id, name, whatsapp, archived_at").in("id", [data.sourceId, data.targetId]),
+      supabaseAdmin.from("movements").select("id", { count: "exact", head: true }).eq("restaurant_id", data.sourceId),
+      supabaseAdmin.from("whatsapp_identities").select("id", { count: "exact", head: true }).eq("restaurant_id", data.sourceId),
+      supabaseAdmin.from("whatsapp_sessions").select("id", { count: "exact", head: true }).eq("restaurant_id", data.sourceId),
+    ]);
+    const source = (rows ?? []).find((r: any) => r.id === data.sourceId);
+    const target = (rows ?? []).find((r: any) => r.id === data.targetId);
+    if (!source || !target) throw new Error("Negócio de origem ou destino não encontrado.");
+    return {
+      source: { id: source.id, name: source.name, whatsapp_masked: mask(source.whatsapp) },
+      target: { id: target.id, name: target.name, whatsapp_masked: mask(target.whatsapp) },
+      movements: movements ?? 0,
+      identities: identities ?? 0,
+      sessions: sessions ?? 0,
+    };
+  });
+
+export const mergeBusinessesAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sourceId: string; targetId: string; confirmation: string }) => input)
+  .handler(async ({ data, context }) => {
+    const adminId = await assertAdmin(context);
+    if (data.confirmation.trim() !== "MESCLAR") throw new Error("Confirmação incorreta.");
+    if (!data.sourceId || !data.targetId || data.sourceId === data.targetId) {
+      throw new Error("Escolha negócios diferentes para origem e destino.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin.rpc("admin_merge_restaurants", {
+      _source_id: data.sourceId,
+      _target_id: data.targetId,
+      _actor_user_id: adminId,
+    });
+    if (error) throw new Error(error.message);
+    return result as {
+      ok: boolean;
+      source_id: string;
+      target_id: string;
+      movements_moved: number;
+      identities_moved: number;
+      sessions_moved: number;
+    };
   });
 
 export const listAuditAdmin = createServerFn({ method: "POST" })
