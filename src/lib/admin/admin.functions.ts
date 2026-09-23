@@ -143,13 +143,13 @@ export const listBusinessesAdmin = createServerFn({ method: "POST" })
     const [profilesResult, identitiesResult, movementsResult] = await Promise.all([
       ownerIds.length
         ? supabaseAdmin.from("profiles").select("id, email").in("id", ownerIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       restaurantIds.length
         ? supabaseAdmin.from("whatsapp_identities").select("restaurant_id, phone_normalized").in("restaurant_id", restaurantIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       restaurantIds.length
         ? supabaseAdmin.from("movements").select("restaurant_id").in("restaurant_id", restaurantIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
     ]);
     if (profilesResult.error) throw new Error(`Não foi possível listar os responsáveis: ${profilesResult.error.message}`);
     if (identitiesResult.error) throw new Error(`Não foi possível listar as identidades: ${identitiesResult.error.message}`);
