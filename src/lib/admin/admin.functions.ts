@@ -132,24 +132,31 @@ export const listBusinessesAdmin = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data, error: businessesError } = await supabaseAdmin
       .from("restaurants")
       .select("id, name, owner_id, whatsapp, cidade, created_at, archived_at")
       .order("created_at", { ascending: false })
       .limit(200);
+    if (businessesError) throw new Error(`Não foi possível listar os negócios: ${businessesError.message}`);
     const restaurantIds = (data ?? []).map((r: any) => r.id);
     const ownerIds = (data ?? []).map((r: any) => r.owner_id);
-    const [{ data: profiles }, { data: identities }, { data: movementRows }] = await Promise.all([
+    const [profilesResult, identitiesResult, movementsResult] = await Promise.all([
       ownerIds.length
         ? supabaseAdmin.from("profiles").select("id, email").in("id", ownerIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       restaurantIds.length
         ? supabaseAdmin.from("whatsapp_identities").select("restaurant_id, phone_normalized").in("restaurant_id", restaurantIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
       restaurantIds.length
         ? supabaseAdmin.from("movements").select("restaurant_id").in("restaurant_id", restaurantIds)
-        : Promise.resolve({ data: [] }),
+        : Promise.resolve({ data: [], error: null }),
     ]);
+    if (profilesResult.error) throw new Error(`Não foi possível listar os responsáveis: ${profilesResult.error.message}`);
+    if (identitiesResult.error) throw new Error(`Não foi possível listar as identidades: ${identitiesResult.error.message}`);
+    if (movementsResult.error) throw new Error(`Não foi possível contar os lançamentos: ${movementsResult.error.message}`);
+    const profiles = profilesResult.data;
+    const identities = identitiesResult.data;
+    const movementRows = movementsResult.data;
     const emails = new Map((profiles ?? []).map((p: any) => [p.id, p.email as string | null]));
     const identityPhones = new Map((identities ?? []).map((i: any) => [i.restaurant_id, i.phone_normalized as string]));
     const movementCounts = new Map<string, number>();
