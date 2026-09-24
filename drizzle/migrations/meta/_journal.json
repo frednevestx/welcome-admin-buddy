@@ -29,6 +29,13 @@
       "when": 1790270937099,
       "tag": "0003_strengthen_financial_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790271610049,
+      "tag": "0004_add_paginated_movement_filter",
+      "breakpoints": true
     }
   ]
 }
