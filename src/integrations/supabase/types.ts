@@ -1938,34 +1938,71 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["plan_tier"]
       }
-      filter_movements: {
-        Args: {
-          _category_ids?: string[]
-          _from: string
-          _include_uncategorized?: boolean
-          _restaurant_id: string
-          _search?: string
-          _to: string
-          _type?: Database["public"]["Enums"]["movement_type"]
-        }
-        Returns: {
-          amount: number
-          category_id: string
-          category_name: string
-          created_at: string
-          description: string
-          id: string
-          movement_date: string
-          notes: string
-          origin: Database["public"]["Enums"]["data_origin"]
-          payment_method: string
-          restaurant_id: string
-          status: string
-          supplier_id: string
-          supplier_name: string
-          type: Database["public"]["Enums"]["movement_type"]
-        }[]
-      }
+      filter_movements:
+        | {
+            Args: {
+              _category_ids?: string[]
+              _from: string
+              _include_uncategorized?: boolean
+              _restaurant_id: string
+              _search?: string
+              _to: string
+              _type?: Database["public"]["Enums"]["movement_type"]
+            }
+            Returns: {
+              amount: number
+              category_id: string
+              category_name: string
+              created_at: string
+              description: string
+              id: string
+              movement_date: string
+              notes: string
+              origin: Database["public"]["Enums"]["data_origin"]
+              payment_method: string
+              restaurant_id: string
+              status: string
+              supplier_id: string
+              supplier_name: string
+              type: Database["public"]["Enums"]["movement_type"]
+            }[]
+          }
+        | {
+            Args: {
+              _category_ids?: string[]
+              _from: string
+              _include_uncategorized?: boolean
+              _limit?: number
+              _offset?: number
+              _restaurant_id: string
+              _search?: string
+              _to: string
+              _type?: Database["public"]["Enums"]["movement_type"]
+            }
+            Returns: {
+              amount: number
+              category_archived_at: string
+              category_color: string
+              category_id: string
+              category_name: string
+              created_at: string
+              created_from_event_id: string
+              description: string
+              id: string
+              integration_id: string
+              is_fixed: boolean
+              movement_date: string
+              notes: string
+              origin: Database["public"]["Enums"]["data_origin"]
+              payment_method: string
+              restaurant_id: string
+              source_ref: string
+              status: string
+              supplier_id: string
+              supplier_name: string
+              type: Database["public"]["Enums"]["movement_type"]
+            }[]
+          }
       has_plan: {
         Args: {
           _min: Database["public"]["Enums"]["plan_tier"]

@@ -1,497 +1,223 @@
-import { translateAuthError } from "@/lib/auth-errors";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
+import { Archive, CalendarDays, Check, ChevronDown, Download, FilterX, Pencil, Plus, Search, Settings2 } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurant } from "@/hooks/use-restaurant";
-import { usePeriod } from "@/hooks/use-period";
-import { PeriodSelector } from "@/components/period-selector";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { currentMonthInSaoPaulo, previousMonthInSaoPaulo, todayInSaoPaulo, type DateRangeBR } from "@/lib/date-br";
+import { formatBRL, formatDateBR } from "@/lib/format";
+import { translateAuthError } from "@/lib/auth-errors";
+import { archiveMovementWeb, listArchivedMovements, listMovementsWeb, restoreMovementWeb, saveMovementWeb, summarizeMovementsWeb } from "@/lib/movements/movements.functions";
+import { downloadCsv, movementsToCsv } from "@/lib/movements/csv";
+import { CATEGORY_COLOR_CLASS, movementOrigin, TYPE_LABEL, type Category, type MovementRow, type MovementType } from "@/lib/movements/view-model";
+import { cn } from "@/lib/utils";
+import { MovementForm } from "@/components/movements/movement-form";
+import { CategoryManager } from "@/components/movements/category-manager";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ShoppingCart, DollarSign, BarChart2, Pencil, Trash2, RotateCcw } from "lucide-react";
-import { formatBRL, formatNumber, formatDate, isoDate } from "@/lib/format";
-import { useState } from "react";
-import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  saveMovementWeb,
-  archiveMovementWeb,
-  restoreMovementWeb,
-  listArchivedMovements,
-} from "@/lib/movements/movements.functions";
 
 export const Route = createFileRoute("/_authenticated/movimentacoes")({
   component: MovementsPage,
+  head: () => ({ meta: [
+    { title: "Lançamentos | LUUD" },
+    { name: "description", content: "Controle as entradas e saídas do seu negócio." },
+    { property: "og:title", content: "Lançamentos | LUUD" },
+    { property: "og:description", content: "Controle as entradas e saídas do seu negócio." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
-type MovementType = "entrada" | "saida" | "transferencia";
+type PeriodKey = "today" | "7d" | "30d" | "month" | "previous" | "custom";
+type TypeFilter = "all" | "entrada" | "saida";
 
-const TYPE_LABEL: Record<MovementType, string> = {
-  entrada: "Entrada",
-  saida: "Saída",
-  transferencia: "Transferência",
-};
+function subtractDays(iso: string, days: number): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day - days));
+  return date.toISOString().slice(0, 10);
+}
 
-type MovementRow = {
-  id: string;
-  movement_date: string;
-  description: string | null;
-  amount: number;
-  type: MovementType;
-  payment_method: string | null;
-  notes: string | null;
-  category_id: string | null;
-  supplier_id: string | null;
-  is_fixed?: boolean | null;
-  source_ref?: string | null;
-  categories?: { id: string; name: string; movement_type: MovementType | null } | null;
-  suppliers?: { name: string } | null;
-};
+function periodFor(key: PeriodKey): DateRangeBR {
+  const today = todayInSaoPaulo();
+  if (key === "today") return { from: today, to: today };
+  if (key === "7d") return { from: subtractDays(today, 6), to: today };
+  if (key === "month") return currentMonthInSaoPaulo();
+  if (key === "previous") return previousMonthInSaoPaulo();
+  return { from: subtractDays(today, 29), to: today };
+}
 
+function useDebounced(value: string, delay: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => { const timer = window.setTimeout(() => setDebounced(value), delay); return () => window.clearTimeout(timer); }, [value, delay]);
+  return debounced;
+}
 
 function MovementsPage() {
   const { restaurant } = useRestaurant();
-  const { period, setPeriod } = usePeriod("30d");
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<MovementRow | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<MovementRow | null>(null);
   const qc = useQueryClient();
-
+  const listFn = useServerFn(listMovementsWeb);
+  const summaryFn = useServerFn(summarizeMovementsWeb);
   const archiveFn = useServerFn(archiveMovementWeb);
   const restoreFn = useServerFn(restoreMovementWeb);
-  const listArchivedFn = useServerFn(listArchivedMovements);
+  const archivedFn = useServerFn(listArchivedMovements);
+  const saveFn = useServerFn(saveMovementWeb);
+  const [periodKey, setPeriodKey] = useState<PeriodKey>("30d");
+  const [period, setPeriod] = useState<DateRangeBR>(() => periodFor("30d"));
+  const [type, setType] = useState<TypeFilter>("all");
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [uncategorized, setUncategorized] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounced(search, 300);
+  const [limit, setLimit] = useState(50);
+  const [newOpen, setNewOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [editing, setEditing] = useState<MovementRow | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const q = useQuery({
+  useEffect(() => { setLimit(50); }, [period.from, period.to, type, categoryIds.join(","), uncategorized, debouncedSearch]);
+
+  const categoriesQuery = useQuery({
     enabled: !!restaurant?.id,
-    queryKey: ["movements", restaurant?.id, period.from, period.to],
+    queryKey: ["movement-categories", restaurant?.id],
     queryFn: async () => {
-      const rid = restaurant!.id;
-      const { data } = await supabase.from("movements")
-        .select("id, movement_date, description, amount, type, payment_method, notes, category_id, supplier_id, is_fixed, source_ref, categories(id, name, movement_type), suppliers(name)")
-        .eq("restaurant_id", rid)
-        .eq("status", "active")
-        .gte("movement_date", period.from).lte("movement_date", period.to)
-        .order("movement_date", { ascending: false });
-      return (data ?? []) as unknown as MovementRow[];
+      if (!restaurant?.id) return [];
+      const { data, error } = await supabase.from("categories").select("id,name,movement_type,color,archived_at,is_system,is_default,movements(count)").eq("restaurant_id", restaurant.id).order("name");
+      if (error) throw error;
+      return (data ?? []).map((item: any) => ({ ...item, linkedCount: Number(item.movements?.[0]?.count ?? 0) })) as Category[];
     },
   });
+  const categories = categoriesQuery.data ?? [];
+  const filterCategories = categories.filter((category) => !category.archived_at || category.linkedCount > 0);
+  const filters = useMemo(() => ({
+    restaurant_id: restaurant?.id ?? "",
+    from: period.from,
+    to: period.to,
+    type: type === "all" ? null : type,
+    category_ids: categoryIds.length ? categoryIds : null,
+    include_uncategorized: uncategorized,
+    search: debouncedSearch || null,
+  }), [restaurant?.id, period, type, categoryIds, uncategorized, debouncedSearch]);
 
+  const movements = useQuery({
+    enabled: !!restaurant?.id,
+    queryKey: ["movements", filters, limit],
+    queryFn: async () => await listFn({ data: { ...filters, limit, offset: 0 } }) as MovementRow[],
+  });
+  const summary = useQuery({
+    enabled: !!restaurant?.id,
+    queryKey: ["movements-summary", filters],
+    queryFn: async () => await summaryFn({ data: filters }),
+  });
   const archived = useQuery({
     enabled: !!restaurant?.id,
     queryKey: ["movements-archived", restaurant?.id],
-    queryFn: async () => (await listArchivedFn({ data: undefined as any })) as any[],
+    queryFn: async () => await archivedFn({ data: undefined as never }) as MovementRow[],
   });
 
-  const del = useMutation({
-    mutationFn: async (id: string) => {
-      await archiveFn({ data: { id, reason: "arquivado pelo painel" } });
-    },
-    onSuccess: () => {
-      toast.success("Lançamento arquivado");
-      setConfirmDelete(null);
-      qc.invalidateQueries({ queryKey: ["movements"] });
-      qc.invalidateQueries({ queryKey: ["movements-archived"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
-    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao arquivar")),
-  });
-
-  const restore = useMutation({
-    mutationFn: async (id: string) => {
-      await restoreFn({ data: { id } });
-    },
-    onSuccess: () => {
-      toast.success("Lançamento recuperado");
-      qc.invalidateQueries({ queryKey: ["movements"] });
-      qc.invalidateQueries({ queryKey: ["movements-archived"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
-    },
-    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao recuperar")),
-  });
-
-  const rows = q.data ?? [];
-  const totalCount = rows.length;
-  const totalValue = rows.reduce((a, r) => a + Number(r.amount || 0), 0);
-  const avg = totalCount > 0 ? totalValue / totalCount : 0;
-
-  const byCat = new Map<string, { name: string; count: number; total: number }>();
-  for (const r of rows) {
-    const name = r.categories?.name ?? "Sem categoria";
-    const cur = byCat.get(name) ?? { name, count: 0, total: 0 };
-    cur.count++;
-    cur.total += Number(r.amount || 0);
-    byCat.set(name, cur);
-  }
-  const byCatList = Array.from(byCat.values()).sort((a, b) => b.total - a.total);
-
-  const invalidate = () => {
+  const refresh = () => {
     qc.invalidateQueries({ queryKey: ["movements"] });
+    qc.invalidateQueries({ queryKey: ["movements-summary"] });
+    qc.invalidateQueries({ queryKey: ["movements-archived"] });
     qc.invalidateQueries({ queryKey: ["dashboard"] });
   };
-
-  return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight truncate">Movimentações</h1>
-          <p className="text-sm text-muted-foreground mt-1">Compras e despesas do negócio.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <PeriodSelector period={period} onChange={setPeriod} />
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4" /> Nova</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader><DialogTitle>Nova movimentação</DialogTitle></DialogHeader>
-              <MovementForm onDone={() => { setOpen(false); invalidate(); }} />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard icon={<ShoppingCart className="h-4 w-4" />} label="Lançamentos" value={formatNumber(totalCount)} />
-        <SummaryCard icon={<DollarSign className="h-4 w-4" />} label="Valor total" value={formatBRL(totalValue)} />
-        <SummaryCard icon={<BarChart2 className="h-4 w-4" />} label="Média por lançamento" value={formatBRL(avg)} />
-
-      </div>
-
-      <Card className="p-5">
-        <h2 className="text-sm font-medium mb-4">Resumo por categoria</h2>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Categoria</TableHead>
-              <TableHead className="text-right">Quantidade</TableHead>
-              <TableHead className="text-right">Valor Total</TableHead>
-              <TableHead className="text-right">Média</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {byCatList.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Nenhuma movimentação no período.</TableCell></TableRow>
-            )}
-            {byCatList.map((c) => (
-              <TableRow key={c.name}>
-                <TableCell className="font-medium">{c.name}</TableCell>
-                <TableCell className="text-right tabular-nums">{c.count}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatBRL(c.total)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">{formatBRL(c.total / c.count)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-
-      <Card className="p-5">
-        <h2 className="text-sm font-medium mb-4">Todas as movimentações</h2>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Fornecedor</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="w-[100px] text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Sem lançamentos.</TableCell></TableRow>
-            )}
-            {rows.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell className="tabular-nums text-muted-foreground">{formatDate(r.movement_date)}</TableCell>
-                <TableCell className="max-w-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{r.description || "—"}</span>
-                    {r.is_fixed && <Badge variant="secondary" className="shrink-0 text-[10px]">Fixa</Badge>}
-                    {r.source_ref?.startsWith("taxa:") && <Badge variant="outline" className="shrink-0 text-[10px]">Importada</Badge>}
-                  </div>
-                </TableCell>
-                <TableCell>{r.categories?.name || "—"}</TableCell>
-                <TableCell>{r.suppliers?.name || "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type]}</TableCell>
-                <TableCell className="text-right tabular-nums font-medium">{formatBRL(r.amount)}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(r)} aria-label="Editar">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} aria-label="Excluir">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-
-      {(archived.data?.length ?? 0) > 0 && (
-        <Card className="p-5">
-          <h2 className="text-sm font-medium mb-1">Arquivados</h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Fora dos totais, mas recuperáveis a qualquer momento.
-          </p>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="w-[80px] text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(archived.data ?? []).map((r: any) => (
-                <TableRow key={r.id}>
-                  <TableCell className="tabular-nums text-muted-foreground">{formatDate(r.movement_date)}</TableCell>
-                  <TableCell className="max-w-xs truncate">{r.description || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{TYPE_LABEL[r.type as MovementType]}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatBRL(r.amount)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Recuperar"
-                      disabled={restore.isPending}
-                      onClick={() => restore.mutate(r.id)}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
-
-      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Editar movimentação</DialogTitle></DialogHeader>
-          {editing && (
-            <MovementForm
-              initial={editing}
-              onDone={() => { setEditing(null); invalidate(); }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!confirmDelete} onOpenChange={(v) => !v && setConfirmDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Arquivar lançamento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O valor sai dos totais, mas o lançamento continua recuperável na lista de arquivados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmDelete && del.mutate(confirmDelete.id)}>
-              Arquivar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-function SummaryCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="h-8 w-8 rounded-lg grid place-items-center bg-secondary text-primary">{icon}</span>
-      </div>
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
-    </Card>
-  );
-}
-
-function MovementForm({ initial, onDone }: { initial?: MovementRow; onDone: () => void }) {
-  const { restaurant } = useRestaurant();
-  const [type, setType] = useState<MovementType>(initial?.type ?? "saida");
-  const [categoryId, setCategoryId] = useState<string>(initial?.category_id ?? "");
-  const [supplier, setSupplier] = useState(initial?.suppliers?.name ?? "");
-  const [description, setDescription] = useState(initial?.description ?? "");
-  const [amount, setAmount] = useState(initial ? String(initial.amount).replace(".", ",") : "");
-  const [date, setDate] = useState(initial?.movement_date ?? isoDate(new Date()));
-  const [paymentMethod, setPaymentMethod] = useState(initial?.payment_method ?? "");
-  const [notes, setNotes] = useState(initial?.notes ?? "");
-  const [isFixed, setIsFixed] = useState(!!initial?.is_fixed);
-  const [meses, setMeses] = useState(12);
-
-  const cats = useQuery({
-    enabled: !!restaurant?.id,
-    queryKey: ["cats", restaurant?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("categories")
-        .select("id, name, movement_type")
-        .eq("restaurant_id", restaurant!.id)
-        .order("name");
-      return (data ?? []) as { id: string; name: string; movement_type: MovementType | null }[];
+  const restore = useMutation({ mutationFn: (id: string) => restoreFn({ data: { id } }), onSuccess: () => { refresh(); toast.success("Lançamento restaurado"); }, onError: (error) => toast.error(translateAuthError(error, "Não foi possível restaurar.")) });
+  const archive = useMutation({
+    mutationFn: (id: string) => archiveFn({ data: { id, reason: "arquivado pelo painel" } }),
+    onSuccess: (_result, id) => { refresh(); toast.success("Lançamento arquivado", { action: { label: "Desfazer", onClick: () => restore.mutate(id) } }); },
+    onError: (error) => toast.error(translateAuthError(error, "Não foi possível arquivar.")),
+  });
+  const quickCategory = useMutation({
+    mutationFn: async ({ row, categoryId }: { row: MovementRow; categoryId: string | null }) => saveFn({ data: { id: row.id, type: row.type, amount: Number(row.amount), movement_date: row.movement_date, description: row.description, category_id: categoryId, supplier_name: row.supplier_name, payment_method: row.payment_method, notes: row.notes } }),
+    onMutate: async ({ row, categoryId }) => {
+      await qc.cancelQueries({ queryKey: ["movements"] });
+      const previous = qc.getQueriesData({ queryKey: ["movements"] });
+      const category = categories.find((item) => item.id === categoryId);
+      qc.setQueriesData({ queryKey: ["movements"] }, (old: MovementRow[] | undefined) => old?.map((item) => item.id === row.id ? { ...item, category_id: categoryId, category_name: category?.name ?? null, category_color: category?.color ?? null } : item));
+      return { previous };
     },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["movements-summary"] }); toast.success("Categoria atualizada"); },
+    onError: (error, _variables, context) => { context?.previous.forEach(([key, data]) => qc.setQueryData(key, data)); toast.error(translateAuthError(error, "A categoria não foi alterada.")); },
   });
 
-  const filteredCats = (cats.data ?? []).filter(
-    (c) => c.movement_type === type || c.movement_type === null,
-  );
+  const hasFilters = periodKey !== "30d" || type !== "all" || categoryIds.length > 0 || uncategorized || search.trim().length > 0;
+  const clearFilters = () => { setPeriodKey("30d"); setPeriod(periodFor("30d")); setType("all"); setCategoryIds([]); setUncategorized(false); setSearch(""); };
+  const selectPeriod = (key: PeriodKey) => { setPeriodKey(key); if (key !== "custom") setPeriod(periodFor(key)); };
 
-  const saveFn = useServerFn(saveMovementWeb);
-
-  const save = useMutation({
-    mutationFn: async () => {
-      if (!restaurant) throw new Error("Sem negócio");
-      const base = {
-        type,
-        amount: Number(amount.replace(",", ".")),
-        movement_date: date,
-        description: description || null,
-        category_id: categoryId || null,
-        supplier_name: supplier.trim() || null,
-        payment_method: paymentMethod || null,
-        notes: notes || null,
-      };
-
-      if (initial) {
-        await saveFn({ data: { ...base, id: initial.id } });
-        return 0;
+  async function exportCsv() {
+    if (!restaurant?.id) return;
+    setExporting(true);
+    try {
+      const all: MovementRow[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const page = await listFn({ data: { ...filters, limit: 1000, offset } }) as MovementRow[];
+        all.push(...page);
+        if (page.length < 1000) break;
       }
+      downloadCsv(movementsToCsv(all.map((row) => ({ movement_date: row.movement_date, type: TYPE_LABEL[row.type], description: row.description, supplier_name: row.supplier_name, category_name: row.category_name, originLabel: movementOrigin(row), amount: Number(row.amount) }))), `lancamentos-${period.from}-a-${period.to}.csv`);
+      toast.success(`${all.length} lançamento(s) exportado(s)`);
+    } catch (error) { toast.error(translateAuthError(error, "Não foi possível exportar o CSV.")); }
+    finally { setExporting(false); }
+  }
 
-      await saveFn({ data: base });
+  const rows = movements.data ?? [];
+  return <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+    <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><h1 className="font-display text-2xl font-semibold">Lançamentos</h1><p className="mt-1 text-sm text-muted-foreground">Controle tudo que entra e sai do seu negócio.</p></div><div className="grid grid-cols-1 gap-2 sm:grid-cols-3"><Dialog open={newOpen} onOpenChange={setNewOpen}><DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Novo lançamento</Button></DialogTrigger><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg"><DialogHeader><DialogTitle>Novo lançamento</DialogTitle></DialogHeader><MovementForm categories={categories} onDone={() => { setNewOpen(false); refresh(); }} /></DialogContent></Dialog><Dialog open={categoriesOpen} onOpenChange={setCategoriesOpen}><DialogTrigger asChild><Button variant="outline"><Settings2 className="h-4 w-4" /> Gerenciar categorias</Button></DialogTrigger><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Gerenciar categorias</DialogTitle></DialogHeader><CategoryManager categories={categories} /></DialogContent></Dialog><Button variant="outline" onClick={exportCsv} disabled={exporting}><Download className="h-4 w-4" /> {exporting ? "Exportando..." : "Exportar CSV"}</Button></div></header>
 
-      // despesa fixa: replica automaticamente nos próximos meses
-      if (isFixed && meses > 1) {
-        const start = new Date(`${date}T12:00:00`);
-        const dia = start.getDate();
-        let criados = 0;
-        for (let i = 1; i < meses; i++) {
-          const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
-          const ultimoDia = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-          d.setDate(Math.min(dia, ultimoDia));
-          await saveFn({ data: { ...base, movement_date: isoDate(d) } });
-          criados++;
-        }
-        return criados;
-      }
-      return 0;
-    },
-    onSuccess: (replicas) => {
-      toast.success(
-        initial
-          ? "Movimentação atualizada!"
-          : replicas
-            ? `Despesa fixa criada e lançada nos próximos ${replicas} meses!`
-            : "Movimentação salva!",
-      );
-      onDone();
-    },
-    onError: (e: any) => toast.error(translateAuthError(e, "Erro ao salvar")),
-  });
+    <Card className="space-y-4 p-4"><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"><PeriodFilter periodKey={periodKey} period={period} onKey={selectPeriod} onRange={(range) => { setPeriodKey("custom"); setPeriod(range); }} /><Select value={type} onValueChange={(value) => setType(value as TypeFilter)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Todos os tipos</SelectItem><SelectItem value="entrada">Entradas</SelectItem><SelectItem value="saida">Saídas</SelectItem></SelectContent></Select><CategoryFilter categories={filterCategories} selected={categoryIds} uncategorized={uncategorized} onSelected={setCategoryIds} onUncategorized={setUncategorized} /><div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-9" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Descrição ou fornecedor" /></div></div>{hasFilters && <div className="flex flex-wrap items-center gap-2"><ActiveFilters periodKey={periodKey} type={type} categories={categories} selected={categoryIds} uncategorized={uncategorized} search={search} /><Button size="sm" variant="ghost" onClick={clearFilters}><FilterX className="h-4 w-4" /> Limpar filtros</Button></div>}</Card>
 
+    <div className="grid gap-3 sm:grid-cols-3"><SummaryCard label="Entradas" value={Number(summary.data?.entradas ?? 0)} tone="positive" /><SummaryCard label="Saídas" value={Number(summary.data?.saidas ?? 0)} tone="negative" /><SummaryCard label="Resultado" value={Number(summary.data?.resultado ?? 0)} tone={Number(summary.data?.resultado ?? 0) >= 0 ? "positive" : "negative"} /></div>
 
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Tipo</Label>
-          <Select value={type} onValueChange={(v) => { setType(v as MovementType); setCategoryId(""); }}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="entrada">Entrada</SelectItem>
-              <SelectItem value="saida">Saída</SelectItem>
-              <SelectItem value="transferencia">Transferência</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Data</Label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Categoria</Label>
-        <Select value={categoryId} onValueChange={setCategoryId}>
-          <SelectTrigger><SelectValue placeholder={`Escolha uma categoria de ${TYPE_LABEL[type]}`} /></SelectTrigger>
-          <SelectContent>
-            {filteredCats.length === 0 && (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhuma categoria para este tipo.</div>
-            )}
-            {filteredCats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+    {movements.isLoading ? <div className="space-y-3">{Array.from({ length: 6 }, (_, index) => <Skeleton key={index} className="h-16 w-full" />)}</div> : rows.length === 0 ? <EmptyState filtered={hasFilters} onClear={clearFilters} onCreate={() => setNewOpen(true)} /> : <><MovementList rows={rows} categories={categories} onEdit={setEditing} onArchive={(row) => archive.mutate(row.id)} onCategory={(row, categoryId) => quickCategory.mutate({ row, categoryId })} pendingCategory={quickCategory.isPending} />{rows.length >= limit && <div className="flex justify-center"><Button variant="outline" onClick={() => setLimit((value) => value + 50)}>Carregar mais</Button></div>}</>}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Fornecedor</Label>
-          <Input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="(opcional)" />
-        </div>
-        <div className="space-y-2">
-          <Label>Valor (R$)</Label>
-          <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="0,00" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Descrição</Label>
-        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Compra semanal de carne" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Forma de pagamento</Label>
-          <Input value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} placeholder="Ex: Pix, Cartão..." />
-        </div>
-        <div className="space-y-2">
-          <Label>Observação</Label>
-          <Input value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </div>
-      </div>
+    {(archived.data?.length ?? 0) > 0 && <Collapsible><Card className="p-4"><CollapsibleTrigger asChild><Button variant="ghost" className="w-full justify-between"><span>Arquivados ({archived.data?.length})</span><ChevronDown className="h-4 w-4" /></Button></CollapsibleTrigger><CollapsibleContent className="space-y-2 pt-3">{archived.data?.map((row) => <div key={row.id} className="flex items-center justify-between gap-3 border-t border-border py-3"><div className="min-w-0"><p className="truncate text-sm font-medium">{row.description || "Sem descrição"}</p><p className="text-xs text-muted-foreground">{formatDateBR(row.movement_date)} · {formatBRL(row.amount)}</p></div><Button size="sm" variant="outline" onClick={() => restore.mutate(row.id)}>Restaurar</Button></div>)}</CollapsibleContent></Card></Collapsible>}
 
-      {type === "saida" && (
-        <div className="rounded-lg border border-border/60 p-3 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <Label className="text-sm">Despesa fixa (recorrente)</Label>
-              <p className="text-xs text-muted-foreground">Repete automaticamente todo mês (aluguel, energia, salários...).</p>
-            </div>
-            <Switch checked={isFixed} onCheckedChange={setIsFixed} />
-          </div>
-          {isFixed && !initial && (
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Lançar por quantos meses</Label>
-              <Select value={String(meses)} onValueChange={(v) => setMeses(Number(v))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {[3, 6, 12, 24].map((m) => (
-                    <SelectItem key={m} value={String(m)}>{m} meses</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-      )}
+    <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg"><DialogHeader><DialogTitle>Editar lançamento</DialogTitle></DialogHeader>{editing && <MovementForm initial={editing} categories={categories} onDone={() => { setEditing(null); refresh(); }} />}</DialogContent></Dialog>
+  </div>;
+}
 
-      <Button type="submit" className="w-full" disabled={save.isPending || !amount || !date}>
-        {save.isPending ? "Salvando..." : initial ? "Salvar alterações" : "Salvar movimentação"}
-      </Button>
-    </form>
-  );
+function PeriodFilter({ periodKey, period, onKey, onRange }: { periodKey: PeriodKey; period: DateRangeBR; onKey: (key: PeriodKey) => void; onRange: (range: DateRangeBR) => void }) {
+  const labels: Record<PeriodKey, string> = { today: "Hoje", "7d": "7 dias", "30d": "30 dias", month: "Este mês", previous: "Mês anterior", custom: "Personalizado" };
+  return <Popover><PopoverTrigger asChild><Button variant="outline" className="justify-between"><span className="flex items-center gap-2"><CalendarDays className="h-4 w-4" />{labels[periodKey]}</span><ChevronDown className="h-4 w-4" /></Button></PopoverTrigger><PopoverContent align="start" className="w-72 space-y-3"><div className="grid grid-cols-2 gap-1">{(Object.keys(labels) as PeriodKey[]).map((key) => <Button key={key} size="sm" variant={periodKey === key ? "secondary" : "ghost"} onClick={() => onKey(key)}>{labels[key]}</Button>)}</div>{periodKey === "custom" && <div className="grid grid-cols-2 gap-2"><Input aria-label="Data inicial" type="date" value={period.from} onChange={(event) => onRange({ ...period, from: event.target.value })} /><Input aria-label="Data final" type="date" value={period.to} onChange={(event) => onRange({ ...period, to: event.target.value })} /></div>}</PopoverContent></Popover>;
+}
+
+function CategoryFilter({ categories, selected, uncategorized, onSelected, onUncategorized }: { categories: Category[]; selected: string[]; uncategorized: boolean; onSelected: (ids: string[]) => void; onUncategorized: (value: boolean) => void }) {
+  const count = selected.length + (uncategorized ? 1 : 0);
+  return <Popover><PopoverTrigger asChild><Button variant="outline" className="justify-between"><span>{count ? `${count} categoria(s)` : "Todas as categorias"}</span><ChevronDown className="h-4 w-4" /></Button></PopoverTrigger><PopoverContent className="max-h-80 w-72 overflow-y-auto p-2" align="start"><label className="flex cursor-pointer items-center gap-2 rounded-sm p-2 text-sm"><Checkbox checked={uncategorized} onCheckedChange={(checked) => onUncategorized(checked === true)} />Sem categoria</label>{categories.map((category) => <label key={category.id} className="flex cursor-pointer items-center gap-2 rounded-sm p-2 text-sm"><Checkbox checked={selected.includes(category.id)} onCheckedChange={(checked) => onSelected(checked ? [...selected, category.id] : selected.filter((id) => id !== category.id))} /><span className={cn("h-2.5 w-2.5 rounded-full", CATEGORY_COLOR_CLASS[category.color])} /><span className="truncate">{category.name}{category.archived_at ? " (arquivada)" : ""}</span></label>)}</PopoverContent></Popover>;
+}
+
+function ActiveFilters({ periodKey, type, categories, selected, uncategorized, search }: { periodKey: PeriodKey; type: TypeFilter; categories: Category[]; selected: string[]; uncategorized: boolean; search: string }) {
+  return <>{periodKey !== "30d" && <Badge variant="secondary">Período alterado</Badge>}{type !== "all" && <Badge variant="secondary">{type === "entrada" ? "Entradas" : "Saídas"}</Badge>}{selected.map((id) => <Badge key={id} variant="secondary">{categories.find((category) => category.id === id)?.name ?? "Categoria"}</Badge>)}{uncategorized && <Badge variant="secondary">Sem categoria</Badge>}{search.trim() && <Badge variant="secondary">Busca: {search.trim()}</Badge>}</>;
+}
+
+function SummaryCard({ label, value, tone }: { label: string; value: number; tone: "positive" | "negative" }) {
+  return <Card className="p-4"><p className="text-sm text-muted-foreground">{label}</p><p className={cn("mt-2 text-2xl font-semibold tabular-nums", tone === "positive" ? "text-success" : "text-destructive")}>{formatBRL(value)}</p></Card>;
+}
+
+function MovementList({ rows, categories, onEdit, onArchive, onCategory, pendingCategory }: { rows: MovementRow[]; categories: Category[]; onEdit: (row: MovementRow) => void; onArchive: (row: MovementRow) => void; onCategory: (row: MovementRow, categoryId: string | null) => void; pendingCategory: boolean }) {
+  return <Card className="overflow-hidden"><div className="hidden md:block"><Table><TableHeader><TableRow><TableHead>Data</TableHead><TableHead>Descrição</TableHead><TableHead>Fornecedor/Contato</TableHead><TableHead>Categoria</TableHead><TableHead>Origem</TableHead><TableHead className="text-right">Valor</TableHead><TableHead className="w-24 text-right">Ações</TableHead></TableRow></TableHeader><TableBody>{rows.map((row) => <TableRow key={row.id}><TableCell className="whitespace-nowrap text-muted-foreground">{formatDateBR(row.movement_date)}</TableCell><TableCell className="max-w-64"><div className="flex items-center gap-2"><span className="truncate">{row.description || "Sem descrição"}</span>{row.is_fixed && <Badge variant="secondary">Fixa</Badge>}</div></TableCell><TableCell>{row.supplier_name || "—"}</TableCell><TableCell><QuickCategory row={row} categories={categories} onChange={onCategory} disabled={pendingCategory} /></TableCell><TableCell><Badge variant="outline">{movementOrigin(row)}</Badge></TableCell><TableCell className={cn("text-right font-medium tabular-nums", row.type === "entrada" && "text-success", row.type === "saida" && "text-destructive")}>{amountLabel(row)}</TableCell><TableCell><div className="flex justify-end"><Button size="icon" variant="ghost" aria-label="Editar lançamento" onClick={() => onEdit(row)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label="Arquivar lançamento" onClick={() => onArchive(row)}><Archive className="h-4 w-4" /></Button></div></TableCell></TableRow>)}</TableBody></Table></div><div className="divide-y divide-border md:hidden">{rows.map((row) => <article key={row.id} className="space-y-3 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-medium">{row.description || "Sem descrição"}</p><p className="mt-1 text-xs text-muted-foreground">{formatDateBR(row.movement_date)} · {movementOrigin(row)}</p></div><span className={cn("shrink-0 font-semibold tabular-nums", row.type === "entrada" && "text-success", row.type === "saida" && "text-destructive")}>{amountLabel(row)}</span></div><div className="flex items-center justify-between gap-2"><QuickCategory row={row} categories={categories} onChange={onCategory} disabled={pendingCategory} /><span className="truncate text-xs text-muted-foreground">{row.supplier_name || "Sem fornecedor"}</span></div><div className="flex justify-end"><Button size="icon" variant="ghost" aria-label="Editar lançamento" onClick={() => onEdit(row)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="ghost" aria-label="Arquivar lançamento" onClick={() => onArchive(row)}><Archive className="h-4 w-4" /></Button></div></article>)}</div></Card>;
+}
+
+function QuickCategory({ row, categories, onChange, disabled }: { row: MovementRow; categories: Category[]; onChange: (row: MovementRow, categoryId: string | null) => void; disabled: boolean }) {
+  const options = categories.filter((category) => !category.archived_at && (category.movement_type === row.type || category.movement_type === null));
+  return <Popover><PopoverTrigger asChild><Button variant="ghost" size="sm" className="max-w-44 justify-start gap-2 px-2" disabled={disabled}><span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", row.category_color ? CATEGORY_COLOR_CLASS[row.category_color] : "bg-muted-foreground")} /><span className="truncate">{row.category_name || "Sem categoria"}</span><ChevronDown className="h-3 w-3 shrink-0" /></Button></PopoverTrigger><PopoverContent className="w-64 p-1" align="start"><Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => onChange(row, null)}>{!row.category_id && <Check className="h-4 w-4" />}Sem categoria</Button>{options.map((category) => <Button key={category.id} variant="ghost" size="sm" className="w-full justify-start" onClick={() => onChange(row, category.id)}>{row.category_id === category.id && <Check className="h-4 w-4" />}<span className={cn("h-2.5 w-2.5 rounded-full", CATEGORY_COLOR_CLASS[category.color])} />{category.name}</Button>)}</PopoverContent></Popover>;
+}
+
+function amountLabel(row: MovementRow): string {
+  const prefix = row.type === "entrada" ? "+" : row.type === "saida" ? "−" : "";
+  return `${prefix}${formatBRL(row.amount)}`;
+}
+
+function EmptyState({ filtered, onClear, onCreate }: { filtered: boolean; onClear: () => void; onCreate: () => void }) {
+  return <Card className="flex min-h-64 flex-col items-center justify-center p-6 text-center"><h2 className="font-medium">{filtered ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento encontrado."}</h2><p className="mt-2 max-w-md text-sm text-muted-foreground">{filtered ? "Ajuste ou limpe os filtros para ampliar a busca." : "Crie seu primeiro lançamento para começar a acompanhar o resultado do negócio."}</p><Button className="mt-4" onClick={filtered ? onClear : onCreate}>{filtered ? <FilterX className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{filtered ? "Limpar filtros" : "Novo lançamento"}</Button></Card>;
 }
