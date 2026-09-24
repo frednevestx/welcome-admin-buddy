@@ -72,25 +72,34 @@ export type Database = {
       }
       categories: {
         Row: {
+          archived_at: string | null
+          color: string
           created_at: string
           id: string
           is_default: boolean
+          is_system: boolean
           movement_type: Database["public"]["Enums"]["movement_type"] | null
           name: string
           restaurant_id: string
         }
         Insert: {
+          archived_at?: string | null
+          color?: string
           created_at?: string
           id?: string
           is_default?: boolean
+          is_system?: boolean
           movement_type?: Database["public"]["Enums"]["movement_type"] | null
           name: string
           restaurant_id: string
         }
         Update: {
+          archived_at?: string | null
+          color?: string
           created_at?: string
           id?: string
           is_default?: boolean
+          is_system?: boolean
           movement_type?: Database["public"]["Enums"]["movement_type"] | null
           name?: string
           restaurant_id?: string
@@ -1929,6 +1938,34 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["plan_tier"]
       }
+      filter_movements: {
+        Args: {
+          _category_ids?: string[]
+          _from: string
+          _include_uncategorized?: boolean
+          _restaurant_id: string
+          _search?: string
+          _to: string
+          _type?: Database["public"]["Enums"]["movement_type"]
+        }
+        Returns: {
+          amount: number
+          category_id: string
+          category_name: string
+          created_at: string
+          description: string
+          id: string
+          movement_date: string
+          notes: string
+          origin: Database["public"]["Enums"]["data_origin"]
+          payment_method: string
+          restaurant_id: string
+          status: string
+          supplier_id: string
+          supplier_name: string
+          type: Database["public"]["Enums"]["movement_type"]
+        }[]
+      }
       has_plan: {
         Args: {
           _min: Database["public"]["Enums"]["plan_tier"]
@@ -1951,6 +1988,22 @@ export type Database = {
       seed_default_categories: {
         Args: { _restaurant_id: string }
         Returns: undefined
+      }
+      summarize_movements: {
+        Args: {
+          _category_ids?: string[]
+          _from: string
+          _include_uncategorized?: boolean
+          _restaurant_id: string
+          _search?: string
+          _to: string
+          _type?: Database["public"]["Enums"]["movement_type"]
+        }
+        Returns: {
+          entradas: number
+          resultado: number
+          saidas: number
+        }[]
       }
     }
     Enums: {
