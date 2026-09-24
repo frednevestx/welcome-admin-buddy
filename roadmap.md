@@ -8,4 +8,4 @@
 - [x] Adicionar filtros e resumo financeiro protegidos por RLS
 - [x] Corrigir campos anuláveis, auditoria e fornecedores no serviço central
 - [x] Adicionar utilitários brasileiros de data e moeda
-- [ ] Validar migração, serviço e isolamento ponta a ponta
+- [x] Validar migração, serviço e isolamento ponta a ponta
