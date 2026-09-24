@@ -48,7 +48,7 @@ export function MovementForm({ initial, categories, onDone }: { initial?: Moveme
       if (!date) throw new Error("Informe a data do lançamento.");
       if (supplier.trim().length > 120) throw new Error("O fornecedor deve ter no máximo 120 caracteres.");
       const base = {
-        type: type as "entrada" | "saida" | "transferencia",
+        type,
         amount: parsedAmount,
         movement_date: date,
         description: description.trim() || null,
@@ -85,7 +85,7 @@ export function MovementForm({ initial, categories, onDone }: { initial?: Moveme
   return (
     <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); save.mutate(); }}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-2"><Label>Tipo</Label><Select value={type} onValueChange={(value) => { setType(value as MovementType); setCategoryId("none"); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(["entrada", "saida", "transferencia"] as MovementType[]).map((value) => <SelectItem key={value} value={value}>{TYPE_LABEL[value]}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-2"><Label>Tipo</Label><Select value={type} onValueChange={(value) => { setType(value as MovementType); setCategoryId("none"); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{(["entrada", "saida", "transferencia", ...(initial?.type === "ajuste" ? ["ajuste" as const] : [])] as MovementType[]).map((value) => <SelectItem key={value} value={value}>{TYPE_LABEL[value]}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-2"><Label>Data</Label><Input type="date" value={date} onChange={(event) => setDate(event.target.value)} required /></div>
       </div>
       <div className="space-y-2"><Label>Categoria</Label><Select value={categoryId} onValueChange={setCategoryId}><SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger><SelectContent><SelectItem value="none">Sem categoria</SelectItem>{compatibleCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>)}</SelectContent></Select></div>

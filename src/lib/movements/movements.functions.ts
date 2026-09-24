@@ -19,7 +19,7 @@ function normalizeSupplierName(value: string): string {
 
 export interface SaveMovementPayload {
   id?: string | null;
-  type: "entrada" | "saida" | "transferencia";
+  type: "entrada" | "saida" | "transferencia" | "ajuste";
   amount: number;
   movement_date: string;
   description?: string | null;

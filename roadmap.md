@@ -9,3 +9,4 @@
 - [x] Corrigir campos anuláveis, auditoria e fornecedores no serviço central
 - [x] Adicionar utilitários brasileiros de data e moeda
 - [x] Validar migração, serviço e isolamento ponta a ponta
+- [ ] Reformar a tela de Lançamentos conforme o documento aprovado
