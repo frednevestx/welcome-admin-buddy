@@ -13,6 +13,10 @@ async function currentRestaurant(supabase: any, userId: string): Promise<string>
   return data.restaurant_id as string;
 }
 
+function normalizeSupplierName(value: string): string {
+  return value.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
+}
+
 export interface SaveMovementPayload {
   id?: string | null;
   type: "entrada" | "saida" | "transferencia";
@@ -36,19 +40,23 @@ export const saveMovementWeb = createServerFn({ method: "POST" })
     let supplierId: string | null = null;
     const supplierName = data.supplier_name?.trim();
     if (supplierName) {
-      const { data: existing } = await supabase
+      if (supplierName.length > 120) throw new Error("O nome do fornecedor deve ter no máximo 120 caracteres.");
+      const { data: candidates, error: supplierLookupError } = await supabase
         .from("suppliers")
-        .select("id")
-        .eq("restaurant_id", restaurantId)
-        .eq("name", supplierName)
-        .maybeSingle();
+        .select("id, name")
+        .eq("restaurant_id", restaurantId);
+      if (supplierLookupError) throw new Error(supplierLookupError.message);
+      const existing = (candidates ?? []).find(
+        (candidate: { id: string; name: string }) => normalizeSupplierName(candidate.name) === normalizeSupplierName(supplierName),
+      );
       if (existing?.id) supplierId = existing.id;
       else {
-        const { data: created } = await supabase
+        const { data: created, error: supplierCreateError } = await supabase
           .from("suppliers")
           .insert({ restaurant_id: restaurantId, name: supplierName })
           .select("id")
           .maybeSingle();
+        if (supplierCreateError) throw new Error(supplierCreateError.message);
         supplierId = created?.id ?? null;
       }
     }

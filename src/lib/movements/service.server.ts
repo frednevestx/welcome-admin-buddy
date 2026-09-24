@@ -149,8 +149,11 @@ export async function updateMovement(
     .maybeSingle();
   if (!before) return { id: null, duplicated: false, error: "lançamento não encontrado" };
 
+  const nullableFields = new Set(["category_id", "supplier_id", "description", "payment_method", "notes"]);
   const clean: Record<string, any> = {};
-  for (const [k, v] of Object.entries(patch)) if (v !== undefined && v !== null) clean[k] = v;
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined && (value !== null || nullableFields.has(key))) clean[key] = value;
+  }
   if (Object.keys(clean).length === 0) return { id: movementId, duplicated: false };
 
   const { error } = await db.from("movements").update(clean).eq("id", movementId).eq("restaurant_id", actor.restaurantId);
@@ -200,11 +203,12 @@ export async function archiveMovement(
     .maybeSingle();
   if (!before) return { id: null, duplicated: false, error: "lançamento não encontrado" };
 
-  await db
+  const { error } = await db
     .from("movements")
-    .update({ status: "deleted", notes: reason })
+    .update({ status: "deleted" })
     .eq("id", movementId)
     .eq("restaurant_id", actor.restaurantId);
+  if (error) return { id: null, duplicated: false, error: error.message };
 
   await audit(db, {
     action: "movement.archived",
@@ -234,11 +238,12 @@ export async function restoreMovement(
     .maybeSingle();
   if (!before) return { id: null, duplicated: false, error: "lançamento não encontrado" };
 
-  await db
+  const { error } = await db
     .from("movements")
-    .update({ status: "active", notes: "recuperado" })
+    .update({ status: "active" })
     .eq("id", movementId)
     .eq("restaurant_id", actor.restaurantId);
+  if (error) return { id: null, duplicated: false, error: error.message };
 
   await audit(db, {
     action: "movement.restored",
