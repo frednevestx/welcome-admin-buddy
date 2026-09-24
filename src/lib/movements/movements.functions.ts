@@ -29,6 +29,58 @@ export interface SaveMovementPayload {
   notes?: string | null;
 }
 
+export interface MovementFiltersPayload {
+  restaurant_id: string;
+  from: string;
+  to: string;
+  type?: "entrada" | "saida" | null;
+  category_ids?: string[] | null;
+  include_uncategorized?: boolean;
+  search?: string | null;
+  limit?: number;
+  offset?: number;
+}
+
+function rpcFilters(data: MovementFiltersPayload) {
+  return {
+    _restaurant_id: data.restaurant_id,
+    _from: `${data.from}T00:00:00-03:00`,
+    _to: `${data.to}T23:59:59-03:00`,
+    _type: data.type ?? null,
+    _category_ids: data.category_ids?.length ? data.category_ids : null,
+    _include_uncategorized: data.include_uncategorized ?? false,
+    _search: data.search?.trim() || null,
+  };
+}
+
+export const listMovementsWeb = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: MovementFiltersPayload) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const restaurantId = await currentRestaurant(supabase, userId);
+    if (restaurantId !== data.restaurant_id) throw new Error("Negócio inválido.");
+    const { data: rows, error } = await supabase.rpc("filter_movements", {
+      ...rpcFilters(data),
+      _limit: Math.min(Math.max(data.limit ?? 50, 1), 1000),
+      _offset: Math.max(data.offset ?? 0, 0),
+    });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const summarizeMovementsWeb = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: MovementFiltersPayload) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any;
+    const restaurantId = await currentRestaurant(supabase, userId);
+    if (restaurantId !== data.restaurant_id) throw new Error("Negócio inválido.");
+    const { data: rows, error } = await supabase.rpc("summarize_movements", rpcFilters(data));
+    if (error) throw new Error(error.message);
+    return rows?.[0] ?? { entradas: 0, saidas: 0, resultado: 0 };
+  });
+
 export const saveMovementWeb = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: SaveMovementPayload) => input)
