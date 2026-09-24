@@ -41,7 +41,6 @@ export function OnboardingDialog({ onCreated }: { onCreated: () => void }) {
         .upsert({ id: userData.user.id, restaurant_id: rest.id, email: userData.user.email });
       if (profErr) throw profErr;
 
-      await supabase.rpc("seed_default_categories", { _restaurant_id: rest.id });
       await refetch();
       toast.success("Negócio criado!");
       setStep("theme");

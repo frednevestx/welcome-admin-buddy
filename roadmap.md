@@ -4,3 +4,8 @@
 - [x] Adicionar mesclagem auditada de negócios no painel admin
 - [x] Limpar copy pública e de onboarding para linguagem de negócio
 - [x] Validar cadastro/login/mesclagem ponta a ponta
+- [x] Estruturar categorias financeiras, seeds e validações por negócio
+- [x] Adicionar filtros e resumo financeiro protegidos por RLS
+- [x] Corrigir campos anuláveis, auditoria e fornecedores no serviço central
+- [x] Adicionar utilitários brasileiros de data e moeda
+- [x] Validar migração, serviço e isolamento ponta a ponta
