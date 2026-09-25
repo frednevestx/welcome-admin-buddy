@@ -36,6 +36,13 @@
       "when": 1790271610049,
       "tag": "0004_add_paginated_movement_filter",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790335213786,
+      "tag": "0005_fix_movement_summary_full_filter",
+      "breakpoints": true
     }
   ]
 }
