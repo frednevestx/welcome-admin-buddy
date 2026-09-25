@@ -159,7 +159,7 @@ export async function updateMovement(
   const { error } = await db.from("movements").update(clean).eq("id", movementId).eq("restaurant_id", actor.restaurantId);
   if (error) return { id: null, duplicated: false, error: error.message };
 
-  if (clean["amount"] != null) {
+  if (clean["amount"] != null && Number(clean["amount"]) !== Number(before.amount)) {
     await db.from("financial_adjustments").insert({
       restaurant_id: actor.restaurantId,
       target_table: "movements",
