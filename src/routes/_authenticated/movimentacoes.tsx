@@ -138,7 +138,7 @@ function MovementsPage() {
     onError: (error) => toast.error(translateAuthError(error, "Não foi possível arquivar.")),
   });
   const quickCategory = useMutation({
-    mutationFn: async ({ row, categoryId }: { row: MovementRow; categoryId: string | null }) => saveFn({ data: { id: row.id, type: row.type, amount: Number(row.amount), movement_date: row.movement_date, description: row.description, category_id: categoryId, supplier_name: row.supplier_name, payment_method: row.payment_method, notes: row.notes } }),
+    mutationFn: async ({ row, categoryId }: { row: MovementRow; categoryId: string | null }) => saveFn({ data: { id: row.id, type: row.type, amount: Number(row.amount), movement_date: row.movement_date, category_id: categoryId, category_only: true } }),
     onMutate: async ({ row, categoryId }) => {
       await qc.cancelQueries({ queryKey: ["movements"] });
       const previous = qc.getQueriesData({ queryKey: ["movements"] });

@@ -29,6 +29,7 @@ export interface SaveMovementPayload {
   notes?: string | null;
   is_fixed?: boolean;
   fixed_parent_id?: string | null;
+  category_only?: boolean;
 }
 
 export interface MovementFiltersPayload {
@@ -90,6 +91,13 @@ export const saveMovementWeb = createServerFn({ method: "POST" })
     const { supabase, userId } = context as any;
     const restaurantId = await currentRestaurant(supabase, userId);
     const { createMovement, updateMovement } = await import("./service.server");
+    const actor = { restaurantId, userId, origin: "web" as const };
+    if (data.category_only) {
+      if (!data.id) throw new Error("Lançamento não encontrado.");
+      const result = await updateMovement(supabase, actor, data.id, { category_id: data.category_id ?? null });
+      if (result.error) throw new Error(result.error);
+      return { id: result.id };
+    }
 
     let supplierId: string | null = null;
     const supplierName = data.supplier_name?.trim();
@@ -115,7 +123,6 @@ export const saveMovementWeb = createServerFn({ method: "POST" })
       }
     }
 
-    const actor = { restaurantId, userId, origin: "web" as const };
     const input = {
       type: data.type,
       amount: Number(data.amount),
