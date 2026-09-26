@@ -56,12 +56,13 @@ export function MovementForm({ initial, categories, onDone }: { initial?: Moveme
         supplier_name: supplier.trim() || null,
         payment_method: paymentMethod.trim() || null,
         notes: notes.trim() || null,
+        is_fixed: isFixed && type === "saida",
       };
       if (initial) {
         await saveFn({ data: { ...base, id: initial.id } });
         return 0;
       }
-      await saveFn({ data: base });
+      const parent = await saveFn({ data: base });
       if (!isFixed || type !== "saida" || months <= 1) return 0;
       const [yearText, monthText, dayText] = date.split("-");
       const year = Number(yearText);
@@ -71,7 +72,7 @@ export function MovementForm({ initial, categories, onDone }: { initial?: Moveme
         const target = new Date(Date.UTC(year, month - 1 + index, 1));
         const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
         const recurringDate = `${target.getUTCFullYear()}-${String(target.getUTCMonth() + 1).padStart(2, "0")}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
-        await saveFn({ data: { ...base, movement_date: recurringDate } });
+        await saveFn({ data: { ...base, movement_date: recurringDate, fixed_parent_id: parent.id } });
       }
       return months - 1;
     },

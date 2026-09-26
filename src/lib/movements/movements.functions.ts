@@ -27,6 +27,8 @@ export interface SaveMovementPayload {
   supplier_name?: string | null;
   payment_method?: string | null;
   notes?: string | null;
+  is_fixed?: boolean;
+  fixed_parent_id?: string | null;
 }
 
 export interface MovementFiltersPayload {
@@ -123,6 +125,8 @@ export const saveMovementWeb = createServerFn({ method: "POST" })
       supplier_id: supplierId,
       payment_method: data.payment_method || null,
       notes: data.notes || null,
+      is_fixed: data.is_fixed ?? false,
+      fixed_parent_id: data.fixed_parent_id ?? null,
       confirmed_by_user: true,
     };
 
