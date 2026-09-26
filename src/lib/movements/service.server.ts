@@ -29,6 +29,8 @@ export interface MovementInput {
   supplier_id?: string | null;
   payment_method?: string | null;
   notes?: string | null;
+  is_fixed?: boolean;
+  fixed_parent_id?: string | null;
   confirmed_by_user?: boolean;
   expense_kind?: "custo" | "despesa" | null;
 }
@@ -87,6 +89,8 @@ export async function createMovement(
       supplier_id: input.supplier_id ?? null,
       payment_method: input.payment_method ?? null,
       notes: input.notes ?? null,
+      is_fixed: input.is_fixed ?? false,
+      fixed_parent_id: input.fixed_parent_id ?? null,
       created_by: actor.userId ?? null,
       origin: actor.origin === "whatsapp" ? "automatico" : "manual",
       source_ref: key,
@@ -149,7 +153,7 @@ export async function updateMovement(
     .maybeSingle();
   if (!before) return { id: null, duplicated: false, error: "lançamento não encontrado" };
 
-  const nullableFields = new Set(["category_id", "supplier_id", "description", "payment_method", "notes"]);
+  const nullableFields = new Set(["category_id", "supplier_id", "description", "payment_method", "notes", "fixed_parent_id"]);
   const clean: Record<string, any> = {};
   for (const [key, value] of Object.entries(patch)) {
     if (value !== undefined && (value !== null || nullableFields.has(key))) clean[key] = value;
