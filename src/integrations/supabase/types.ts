@@ -1934,6 +1934,43 @@ export type Database = {
       }
       admin_revoke_plan: { Args: { _user_id: string }; Returns: undefined }
       current_restaurant_id: { Args: never; Returns: string }
+      dashboard_cashflow_series: {
+        Args: { _from: string; _restaurant_id: string; _to: string }
+        Returns: {
+          entradas: number
+          period_date: string
+          resultado: number
+          saidas: number
+        }[]
+      }
+      dashboard_category_comparison: {
+        Args: {
+          _from: string
+          _previous_from: string
+          _previous_to: string
+          _restaurant_id: string
+          _to: string
+        }
+        Returns: {
+          category_color: string
+          category_id: string
+          category_name: string
+          current_amount: number
+          previous_amount: number
+          uncategorized: boolean
+        }[]
+      }
+      dashboard_supplier_summary: {
+        Args: { _from: string; _restaurant_id: string; _to: string }
+        Returns: {
+          average_ticket: number
+          last_purchase: string
+          purchases: number
+          supplier_id: string
+          supplier_name: string
+          total: number
+        }[]
+      }
       effective_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["plan_tier"]
@@ -2016,6 +2053,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_payable_paid: {
+        Args: { _payable_id: string; _payment_date: string }
+        Returns: string
       }
       my_effective_plan: {
         Args: never
