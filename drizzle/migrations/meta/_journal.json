@@ -43,6 +43,13 @@
       "when": 1790335213786,
       "tag": "0005_fix_movement_summary_full_filter",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790875828131,
+      "tag": "0006_add_financial_dashboard_aggregates",
+      "breakpoints": true
     }
   ]
 }

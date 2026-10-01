@@ -10,3 +10,8 @@
 - [x] Adicionar utilitários brasileiros de data e moeda
 - [x] Validar migração, serviço e isolamento ponta a ponta
 - [x] Reformar a tela de Lançamentos conforme o documento aprovado
+- [ ] Evoluir cabeçalho, período global e navegação responsiva
+- [ ] Entregar dashboard financeiro em quatro faixas
+- [ ] Entregar Contas a pagar e Metas
+- [ ] Entregar Comparativos, Evolução e Fornecedores
+- [ ] Validar interface financeira ponta a ponta no desktop e celular
