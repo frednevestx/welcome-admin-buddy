@@ -1,6 +1,6 @@
-import { isoDate } from "./format";
+import { currentMonthInSaoPaulo, previousMonthInSaoPaulo, todayInSaoPaulo } from "./date-br";
 
-export type PeriodKey = "today" | "7d" | "30d" | "90d" | "custom";
+export type PeriodKey = "today" | "7d" | "30d" | "90d" | "month" | "previous" | "custom";
 
 export interface Period {
   key: PeriodKey;
@@ -14,18 +14,24 @@ export const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
   { key: "7d", label: "Últimos 7 dias" },
   { key: "30d", label: "Últimos 30 dias" },
   { key: "90d", label: "Últimos 90 dias" },
+  { key: "month", label: "Este mês" },
+  { key: "previous", label: "Mês anterior" },
   { key: "custom", label: "Personalizado" },
 ];
 
+function subtractDays(iso: string, days: number): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day - days)).toISOString().slice(0, 10);
+}
+
 export function periodFromKey(key: PeriodKey, custom?: { from: string; to: string }): Period {
-  const today = new Date();
-  const to = isoDate(today);
+  const to = todayInSaoPaulo();
   if (key === "today") return { key, from: to, to, label: "Hoje" };
   if (key === "custom" && custom) return { key, ...custom, label: "Personalizado" };
+  if (key === "month") return { key, ...currentMonthInSaoPaulo(), label: "Este mês" };
+  if (key === "previous") return { key, ...previousMonthInSaoPaulo(), label: "Mês anterior" };
   const days = key === "7d" ? 6 : key === "30d" ? 29 : 89;
-  const start = new Date(today);
-  start.setDate(start.getDate() - days);
-  return { key, from: isoDate(start), to, label: `Últimos ${days + 1} dias` };
+  return { key, from: subtractDays(to, days), to, label: `Últimos ${days + 1} dias` };
 }
 
 export function previousPeriod(p: Period): Period {
@@ -36,5 +42,6 @@ export function previousPeriod(p: Period): Period {
   prevTo.setDate(prevTo.getDate() - 1);
   const prevFrom = new Date(prevTo);
   prevFrom.setDate(prevFrom.getDate() - (days - 1));
-  return { key: "custom", from: isoDate(prevFrom), to: isoDate(prevTo), label: "Período anterior" };
+  const asIso = (date: Date) => date.toISOString().slice(0, 10);
+  return { key: "custom", from: asIso(prevFrom), to: asIso(prevTo), label: "Período anterior" };
 }
