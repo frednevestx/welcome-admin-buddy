@@ -19,7 +19,7 @@ export const listGoalsWithProgress = createServerFn({ method: "GET" })
     if (error) throw error;
     return Promise.all((goals ?? []).map(async (goal: any) => {
       const window = currentGoalWindow(goal.period);
-      const { data, error: summaryError } = await context.supabase.rpc("summarize_movements", { _restaurant_id: id, _from: window.start, _to: window.end, _type: "entrada", _category_ids: null, _include_uncategorized: false, _search: null });
+      const { data, error: summaryError } = await context.supabase.rpc("summarize_movements", { _restaurant_id: id, _from: window.from, _to: window.to, _type: "entrada", _include_uncategorized: false });
       if (summaryError) throw summaryError;
       const current = Number(data?.[0]?.entradas ?? 0);
       const target = Number(goal.target_amount);

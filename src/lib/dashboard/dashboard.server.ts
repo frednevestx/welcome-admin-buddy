@@ -27,15 +27,15 @@ export async function loadDashboardOverview(db: Db, userId: string, period: Peri
   const monthWindow = currentGoalWindow("mensal", new Date(`${today}T12:00:00-03:00`));
 
   const [currentSummary, previousSummary, seriesResult, categoryResult, recentResult, payablesResult, uncategorizedResult, goalResult, goalSummary, insightResult, identityResult, movementCount, integrationResult] = await Promise.all([
-    db.rpc("summarize_movements", { _restaurant_id: restaurantId, _from: period.from, _to: period.to, _type: null, _category_ids: null, _include_uncategorized: false, _search: null }),
-    db.rpc("summarize_movements", { _restaurant_id: restaurantId, _from: previous.from, _to: previous.to, _type: null, _category_ids: null, _include_uncategorized: false, _search: null }),
+    db.rpc("summarize_movements", { _restaurant_id: restaurantId, _from: period.from, _to: period.to, _include_uncategorized: false }),
+    db.rpc("summarize_movements", { _restaurant_id: restaurantId, _from: previous.from, _to: previous.to, _include_uncategorized: false }),
     db.rpc("dashboard_cashflow_series", { _restaurant_id: restaurantId, _from: period.from, _to: period.to }),
     db.rpc("dashboard_category_comparison", { _restaurant_id: restaurantId, _from: period.from, _to: period.to, _previous_from: previous.from, _previous_to: previous.to }),
-    db.rpc("filter_movements", { _restaurant_id: restaurantId, _from: period.from, _to: period.to, _type: null, _category_ids: null, _include_uncategorized: false, _search: null, _limit: 10, _offset: 0 }),
+    db.rpc("filter_movements", { _restaurant_id: restaurantId, _from: period.from, _to: period.to, _include_uncategorized: false, _limit: 10, _offset: 0 }),
     db.from("payables").select("amount,due_date,status").eq("restaurant_id", restaurantId).eq("status", "pending"),
     db.from("movements").select("amount", { count: "exact" }).eq("restaurant_id", restaurantId).eq("status", "active").is("category_id", null).gte("movement_date", period.from).lte("movement_date", period.to),
     db.from("goals").select("id,target_amount").eq("restaurant_id", restaurantId).eq("period", "mensal").eq("active", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-    db.rpc("summarize_movements", { _restaurant_id: restaurantId, _from: monthWindow.start, _to: monthWindow.end, _type: "entrada", _category_ids: null, _include_uncategorized: false, _search: null }),
+    db.rpc("summarize_movements", { _restaurant_id: restaurantId, _from: monthWindow.from, _to: monthWindow.to, _type: "entrada", _include_uncategorized: false }),
     db.from("system_events").select("title,body,severity").eq("restaurant_id", restaurantId).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("whatsapp_identities").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("status", "active"),
     db.from("movements").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurantId).eq("status", "active"),
