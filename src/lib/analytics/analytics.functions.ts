@@ -19,8 +19,8 @@ export const getFinancialAnalysis = createServerFn({ method: "POST" })
     const id = await restaurantId(context);
     const previous = previousPeriod(data);
     const [current, prior, series, categories, suppliers] = await Promise.all([
-      context.supabase.rpc("summarize_movements", { _restaurant_id: id, _from: data.from, _to: data.to, _type: null, _category_ids: null, _include_uncategorized: false, _search: null }),
-      context.supabase.rpc("summarize_movements", { _restaurant_id: id, _from: previous.from, _to: previous.to, _type: null, _category_ids: null, _include_uncategorized: false, _search: null }),
+      context.supabase.rpc("summarize_movements", { _restaurant_id: id, _from: data.from, _to: data.to, _include_uncategorized: false }),
+      context.supabase.rpc("summarize_movements", { _restaurant_id: id, _from: previous.from, _to: previous.to, _include_uncategorized: false }),
       context.supabase.rpc("dashboard_cashflow_series", { _restaurant_id: id, _from: data.from, _to: data.to }),
       context.supabase.rpc("dashboard_category_comparison", { _restaurant_id: id, _from: data.from, _to: data.to, _previous_from: previous.from, _previous_to: previous.to }),
       context.supabase.rpc("dashboard_supplier_summary", { _restaurant_id: id, _from: data.from, _to: data.to }),
