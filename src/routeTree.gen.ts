@@ -9,36 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AcessoRouteImport } from './routes/acesso'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
-import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
-import { Route as AuthenticatedConversasRouteImport } from './routes/_authenticated/conversas'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AcessoRouteImport } from './routes/acesso'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSuporteRouteImport } from './routes/_authenticated/suporte'
+import { Route as AuthenticatedMovimentacoesRouteImport } from './routes/_authenticated/movimentacoes'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConversasRouteImport } from './routes/_authenticated/conversas'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedCategoriasRouteImport } from './routes/_authenticated/categorias'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin.usuarios'
-import { Route as ApiPublicIntegrationsSyncRouteImport } from './routes/api/public/integrations/sync'
-import { Route as ApiPublicWhatsappGeminiRouteImport } from './routes/api/public/whatsapp/gemini'
 import { Route as ApiPublicWhatsappTalktomeRouteImport } from './routes/api/public/whatsapp/talktome'
+import { Route as ApiPublicWhatsappGeminiRouteImport } from './routes/api/public/whatsapp/gemini'
+import { Route as ApiPublicIntegrationsSyncRouteImport } from './routes/api/public/integrations/sync'
 import { Route as ApiPublicIntegrationsProviderWebhookRouteImport } from './routes/api/public/integrations/$provider/webhook'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AcessoRoute = AcessoRouteImport.update({
-  id: '/acesso',
-  path: '/acesso',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -46,30 +37,23 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const AcessoRoute = AcessoRouteImport.update({
+  id: '/acesso',
+  path: '/acesso',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
-  id: '/categorias',
-  path: '/categorias',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedConfiguracoesRoute =
-  AuthenticatedConfiguracoesRouteImport.update({
-    id: '/configuracoes',
-    path: '/configuracoes',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedConversasRoute = AuthenticatedConversasRouteImport.update({
-  id: '/conversas',
-  path: '/conversas',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedSuporteRoute = AuthenticatedSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMovimentacoesRoute =
@@ -78,9 +62,25 @@ const AuthenticatedMovimentacoesRoute =
     path: '/movimentacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedSuporteRoute = AuthenticatedSuporteRouteImport.update({
-  id: '/suporte',
-  path: '/suporte',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConversasRoute = AuthenticatedConversasRouteImport.update({
+  id: '/conversas',
+  path: '/conversas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCategoriasRoute = AuthenticatedCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -94,10 +94,10 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicIntegrationsSyncRoute =
-  ApiPublicIntegrationsSyncRouteImport.update({
-    id: '/api/public/integrations/sync',
-    path: '/api/public/integrations/sync',
+const ApiPublicWhatsappTalktomeRoute =
+  ApiPublicWhatsappTalktomeRouteImport.update({
+    id: '/api/public/whatsapp/talktome',
+    path: '/api/public/whatsapp/talktome',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWhatsappGeminiRoute = ApiPublicWhatsappGeminiRouteImport.update({
@@ -105,10 +105,10 @@ const ApiPublicWhatsappGeminiRoute = ApiPublicWhatsappGeminiRouteImport.update({
   path: '/api/public/whatsapp/gemini',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicWhatsappTalktomeRoute =
-  ApiPublicWhatsappTalktomeRouteImport.update({
-    id: '/api/public/whatsapp/talktome',
-    path: '/api/public/whatsapp/talktome',
+const ApiPublicIntegrationsSyncRoute =
+  ApiPublicIntegrationsSyncRouteImport.update({
+    id: '/api/public/integrations/sync',
+    path: '/api/public/integrations/sync',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicIntegrationsProviderWebhookRoute =
@@ -246,25 +246,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/acesso': {
-      id: '/acesso'
-      path: '/acesso'
-      fullPath: '/acesso'
-      preLoaderRoute: typeof AcessoRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -274,39 +260,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/acesso': {
+      id: '/acesso'
+      path: '/acesso'
+      fullPath: '/acesso'
+      preLoaderRoute: typeof AcessoRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/categorias': {
-      id: '/_authenticated/categorias'
-      path: '/categorias'
-      fullPath: '/categorias'
-      preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/configuracoes': {
-      id: '/_authenticated/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/conversas': {
-      id: '/_authenticated/conversas'
-      path: '/conversas'
-      fullPath: '/conversas'
-      preLoaderRoute: typeof AuthenticatedConversasRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+    '/_authenticated/suporte': {
+      id: '/_authenticated/suporte'
+      path: '/suporte'
+      fullPath: '/suporte'
+      preLoaderRoute: typeof AuthenticatedSuporteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/movimentacoes': {
@@ -316,11 +295,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMovimentacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/suporte': {
-      id: '/_authenticated/suporte'
-      path: '/suporte'
-      fullPath: '/suporte'
-      preLoaderRoute: typeof AuthenticatedSuporteRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/conversas': {
+      id: '/_authenticated/conversas'
+      path: '/conversas'
+      fullPath: '/conversas'
+      preLoaderRoute: typeof AuthenticatedConversasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/categorias': {
+      id: '/_authenticated/categorias'
+      path: '/categorias'
+      fullPath: '/categorias'
+      preLoaderRoute: typeof AuthenticatedCategoriasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/': {
@@ -337,11 +337,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/integrations/sync': {
-      id: '/api/public/integrations/sync'
-      path: '/api/public/integrations/sync'
-      fullPath: '/api/public/integrations/sync'
-      preLoaderRoute: typeof ApiPublicIntegrationsSyncRouteImport
+    '/api/public/whatsapp/talktome': {
+      id: '/api/public/whatsapp/talktome'
+      path: '/api/public/whatsapp/talktome'
+      fullPath: '/api/public/whatsapp/talktome'
+      preLoaderRoute: typeof ApiPublicWhatsappTalktomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/whatsapp/gemini': {
@@ -351,11 +351,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWhatsappGeminiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/whatsapp/talktome': {
-      id: '/api/public/whatsapp/talktome'
-      path: '/api/public/whatsapp/talktome'
-      fullPath: '/api/public/whatsapp/talktome'
-      preLoaderRoute: typeof ApiPublicWhatsappTalktomeRouteImport
+    '/api/public/integrations/sync': {
+      id: '/api/public/integrations/sync'
+      path: '/api/public/integrations/sync'
+      fullPath: '/api/public/integrations/sync'
+      preLoaderRoute: typeof ApiPublicIntegrationsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/integrations/$provider/webhook': {
